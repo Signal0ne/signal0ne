@@ -3,17 +3,17 @@ package tools
 import (
 	"context"
 	"fmt"
+	"signal0ne/internal/models"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error {
-	namespace := bson.M{
-		"name":      "default",
-		"workflows": make([]string, 0),
-		"users":     make([]string, 0),
+	namespace := models.Namespace{
+		Name:      "default",
+		Workflows: make([]string, 0),
+		Users:     make([]string, 0),
 	}
 	res, err := mongoNamespaceColl.InsertOne(ctx, namespace)
 	if err != nil {

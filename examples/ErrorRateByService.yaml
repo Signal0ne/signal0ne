@@ -1,10 +1,10 @@
 ---
-name: ErrorRateByServiceMvp
+name: ErrorRateByService
 lookback: 15m
 steps:
 - name: Receive alert from Prometheus Alertmanager
   action: receive_alert
-  type: webhook
+  integration: webhook
   config:
     mappings:
       job: service
@@ -12,7 +12,7 @@ steps:
       startsAt: timestamp
 - name: Get ownership
   action: get_ownership
-  type: backstage
+  integration: backstage
   config:
     host: 20.127.192.216:7007
     filter: kind=component,metadata.name={service}
@@ -24,7 +24,7 @@ steps:
     - metadata.labels.slack_channel
 - name: Get relevant logs
   action: get_relevant_logs
-  type: opensearch
+  integration: opensearch
   config:
     host: 20.127.192.216:9200
     index: otel
@@ -39,7 +39,7 @@ steps:
     - resource:host.name
 - name: Inspect traces
   action: inspect_traces
-  type: jeager
+  integration: jeager
   config:
     host: 20.127.192.216:16686
     tags:
@@ -54,7 +54,7 @@ steps:
     - if_empty: additional_context.occured_error_logs
 - name: Correlate alerts
   action: similarity_search
-  type: signal0ne
+  integration: signal0ne
   config:
     available_enrichments:
     - alerts-ongoing
@@ -63,11 +63,11 @@ steps:
     - alerts-ongoing
 - name: Summarize context
   action: summarize
-  type: openai
+  integration: openai
   config: {}
 - name: Send to slack channel
   action: send_to_slack
-  type: slack
+  integration: slack
   config:
     mappings:
       channel: metadata.labels.slack_channel

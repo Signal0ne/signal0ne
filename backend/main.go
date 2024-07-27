@@ -37,7 +37,7 @@ func main() {
 	defer mongoConn.Disconnect(ctx)
 
 	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
-	_ = mongoConn.Database("signalone").Collection("workflows")
+	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
 	_ = mongoConn.Database("signalone").Collection("users")
 
 	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
@@ -69,7 +69,7 @@ func main() {
 
 	mainController := controllers.NewMainController()
 	namespaceController := controllers.NewNamespaceController()
-	workflowController := controllers.NewWorkflowController()
+	workflowController := controllers.NewWorkflowController(workflowsCollection, namespacesCollection)
 	mainRouter := routers.NewMainRouter(mainController, namespaceController, workflowController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
