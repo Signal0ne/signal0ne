@@ -1,0 +1,25 @@
+version: '3'
+services:
+
+  backend:
+    container_name: s0backend
+    image: '322456/s0backend:latest'
+    ports:
+      - 8080:8080
+    depends_on:
+      - mongo-db
+    # volumes:
+    #   - ./sock:/net
+      
+  mongo-db:
+    container_name: mongodb
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo-data:/data/db
+
+  # frontend:
+  #     container_name: frontend
+  #     image: 
+  #     ports:
