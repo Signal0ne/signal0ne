@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"signal0ne/api/routers"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/controllers"
+	"signal0ne/internal/tools"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -20,14 +23,35 @@ func main() {
 		panic("CRITICAL: unable to load config")
 	}
 
-	socketPath := "/net/socket"
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	conn, err := net.DialTimeout("unix", socketPath, (15 * time.Second))
+	mongoConn, err := tools.InitMongoClient(ctx, cfg.MongoUri)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to establish connectiom to %s, error: %s", socketPath, err))
+		panic(
+			fmt.Sprintf("Failed to establish connectiom to %s, error: %s",
+				strings.Split(cfg.MongoUri, "/")[2],
+				err),
+		)
+	}
+	defer mongoConn.Disconnect(ctx)
+
+	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
+	_ = mongoConn.Database("signalone").Collection("workflows")
+	_ = mongoConn.Database("signalone").Collection("users")
+
+	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
+	if err != nil {
+		panic(
+			fmt.Sprintf("Failed to establish connectiom to %s, error: %s",
+				cfg.IPCSocket,
+				err),
+		)
 	} else {
 		defer conn.Close()
 	}
+
+	tools.Initialize(ctx, namespacesCollection)
 
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"*"}
@@ -44,7 +68,9 @@ func main() {
 	})
 
 	mainController := controllers.NewMainController()
-	mainRouter := routers.NewMainRouter(mainController)
+	namespaceController := controllers.NewNamespaceController()
+	workflowController := controllers.NewWorkflowController()
+	mainRouter := routers.NewMainRouter(mainController, namespaceController, workflowController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	//==========REMOVE BEFORE RELEASE==========

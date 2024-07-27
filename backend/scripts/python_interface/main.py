@@ -1,9 +1,11 @@
+from dotenv import load_dotenv
 import socket
 import os
 
-socket_path = '/net/socket'
-
 def main():
+
+    load_dotenv(dotenv_path='.default.env')
+    socket_path = os.getenv('IPC_SOCKET')
 
     try:
         os.unlink(socket_path)

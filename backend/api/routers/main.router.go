@@ -7,12 +7,20 @@ import (
 )
 
 type MainRouter struct {
-	Controller *controllers.MainController
+	MainController      *controllers.MainController
+	NamespaceController *controllers.NamespaceController
+	WorkflowController  *controllers.WorkflowController
 }
 
-func NewMainRouter(MainController *controllers.MainController) *MainRouter {
+func NewMainRouter(
+	MainController *controllers.MainController,
+	NamespaceController *controllers.NamespaceController,
+	WorkflowController *controllers.WorkflowController,
+) *MainRouter {
 	return &MainRouter{
-		Controller: MainController,
+		MainController:      MainController,
+		NamespaceController: NamespaceController,
+		WorkflowController:  WorkflowController,
 	}
 }
 
@@ -28,14 +36,22 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 
 	workflowGroup := rg.Group("/:namespaceid/workflow")
 	{
-		workflowGroup.POST("/create", r.Controller.ApplyWorkflow)
+		workflowGroup.POST("/create", r.WorkflowController.ApplyWorkflow)
 		workflowGroup.GET("/:workflowid/get")
 		workflowGroup.DELETE("/:workflowid/delete")
 		workflowGroup.PATCH("/:workflowid/update")
 	}
 
+	integrationGroup := rg.Group("/:namespaceid/integration")
+	{
+		integrationGroup.POST("/create")
+		integrationGroup.GET("/:integrationid/get")
+		integrationGroup.DELETE("/:integrationid/delete")
+		integrationGroup.PATCH("/:integrationid/update")
+	}
+
 	webhookGroup := rg.Group("/webhook")
 	{
-		webhookGroup.POST("/:namespaceid/:workflowid/:salt", r.Controller.ReceiveAlert)
+		webhookGroup.POST("/:namespaceid/:workflowid/:salt", r.WorkflowController.ReceiveAlert)
 	}
 }

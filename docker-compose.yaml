@@ -8,8 +8,6 @@ services:
       - 8080:8080
     depends_on:
       - mongo-db
-    # volumes:
-    #   - ./sock:/net
       
   mongo-db:
     container_name: mongodb

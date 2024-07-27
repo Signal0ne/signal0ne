@@ -9,10 +9,6 @@ func NewMainController() *MainController {
 	return &MainController{}
 }
 
-func (c *MainController) ReceiveAlert(ctx *gin.Context) {
-
-}
-
-func (c *MainController) ApplyWorkflow(ctx *gin.Context) {
+func (c *NamespaceController) HealthCheck(ctx *gin.Context) {
 
 }
