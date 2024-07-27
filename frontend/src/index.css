@@ -1,5 +1,6 @@
 :root {
   background-color: #242424;
+  /* background-color: white; */
   color: rgba(255, 255, 255, 0.87);
   color-scheme: light dark;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -9,6 +10,24 @@
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  height: 100%;
 }
 
 

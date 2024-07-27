@@ -1,0 +1,30 @@
+.workflows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  list-style: none;
+  margin-top: 24px;
+  max-height: calc(100% - 120px);
+  overflow-y: scroll;
+  padding: 0;
+  padding-right: 8px;
+
+  &::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #CACACA;
+    border-radius: 1px;
+  }
+
+  .workflows-list--empty {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,30 @@
+.search-input-container {
+  display: flex;
+  position: relative;
+
+  .search-icon {
+    color: #757575;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+
+    path {
+      fill: white;
+    }
+  }
+  
+  .search-input {
+    background-color: white;
+    border: 1px solid #aaa;
+    border-radius: 8px;
+    color: #232323;
+    font-size: 15px;
+    height: 48px;
+    min-width: 295px;
+    padding: 16px 48px 16px 16px;
+
+    &::placeholder {
+      color: #757575;
+    }
+  }
+}

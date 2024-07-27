@@ -1,0 +1,12 @@
+.workflows-main-panel {
+  height: 100%;
+  padding: 24px;
+  width: 100%;
+
+  .workflows-main-panel--empty {
+    align-items: center;
+    display: flex;
+    font-size: 18px;
+    justify-content: center;
+  }
+}
