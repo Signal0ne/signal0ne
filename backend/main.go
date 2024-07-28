@@ -69,7 +69,7 @@ func main() {
 
 	mainController := controllers.NewMainController()
 	namespaceController := controllers.NewNamespaceController()
-	workflowController := controllers.NewWorkflowController(workflowsCollection, namespacesCollection)
+	workflowController := controllers.NewWorkflowController(workflowsCollection, namespacesCollection, cfg.Server)
 	mainRouter := routers.NewMainRouter(mainController, namespaceController, workflowController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
@@ -89,5 +89,5 @@ func main() {
 	fmt.Printf("%s\n", buffer[:n])
 	//===================
 
-	server.Run(":" + cfg.ServerPort)
+	server.Run(":" + cfg.Server.ServerPort)
 }

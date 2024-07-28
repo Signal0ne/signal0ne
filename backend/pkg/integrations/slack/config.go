@@ -1,1 +1,1 @@
-package backstage
+package slack

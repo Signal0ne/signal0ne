@@ -14,40 +14,27 @@ steps:
   action: get_ownership
   integration: backstage
   config:
-    host: 20.127.192.216:7007
     filter: kind=component,metadata.name={service}
-    available_enrichemnts:
-    - spec.owner
-    - metadata.labels.slack_channel
-    desired_enrichments:
+    enrichments:
     - spec.owner
     - metadata.labels.slack_channel
 - name: Get relevant logs
   action: get_relevant_logs
   integration: opensearch
   config:
-    host: 20.127.192.216:9200
-    index: otel
     mappings:
       severity: severity.text
       service: resource.service.name
       timestamp: observedTimestamp
-    available_enrichemnts:
-    - ''
-    desired_enrichments:
+    enrichments:
     - body
     - resource:host.name
 - name: Inspect traces
   action: inspect_traces
   integration: jeager
   config:
-    host: 20.127.192.216:16686
     tags:
       error: 'true'
-    available_enrichments:
-    - tags
-    - processes
-    - logs
     desired_enrichments:
     - logs
     conditions:
@@ -56,9 +43,6 @@ steps:
   action: similarity_search
   integration: signal0ne
   config:
-    available_enrichments:
-    - alerts-ongoing
-    - alerts-past
     desired_enrichments:
     - alerts-ongoing
 - name: Summarize context
