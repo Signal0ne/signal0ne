@@ -1,0 +1,75 @@
+---
+name: ErrorRateByServiceMvp
+lookback: 15m
+steps:
+- name: Receive alert from Prometheus Alertmanager
+  action: receive_alert
+  type: webhook
+  config:
+    mappings:
+      job: service
+      span_name: span
+      startsAt: timestamp
+- name: Get ownership
+  action: get_ownership
+  type: backstage
+  config:
+    host: 20.127.192.216:7007
+    filter: kind=component,metadata.name={service}
+    available_enrichemnts:
+    - spec.owner
+    - metadata.labels.slack_channel
+    desired_enrichments:
+    - spec.owner
+    - metadata.labels.slack_channel
+- name: Get relevant logs
+  action: get_relevant_logs
+  type: opensearch
+  config:
+    host: 20.127.192.216:9200
+    index: otel
+    mappings:
+      severity: severity.text
+      service: resource.service.name
+      timestamp: observedTimestamp
+    available_enrichemnts:
+    - ''
+    desired_enrichments:
+    - body
+    - resource:host.name
+- name: Inspect traces
+  action: inspect_traces
+  type: jeager
+  config:
+    host: 20.127.192.216:16686
+    tags:
+      error: 'true'
+    available_enrichments:
+    - tags
+    - processes
+    - logs
+    desired_enrichments:
+    - logs
+    conditions:
+    - if_empty: additional_context.occured_error_logs
+- name: Correlate alerts
+  action: similarity_search
+  type: signal0ne
+  config:
+    available_enrichments:
+    - alerts-ongoing
+    - alerts-past
+    desired_enrichments:
+    - alerts-ongoing
+- name: Summarize context
+  action: summarize
+  type: openai
+  config: {}
+- name: Send to slack channel
+  action: send_to_slack
+  type: slack
+  config:
+    mappings:
+      channel: metadata.labels.slack_channel
+    ingore_context_keys:
+    - metadata.labels.slack_channel
