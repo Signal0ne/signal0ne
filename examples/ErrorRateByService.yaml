@@ -1,36 +1,36 @@
 ---
 name: ErrorRateByService
 lookback: 15m
-steps:
-- name: Receive alert from Prometheus Alertmanager
-  action: receive_alert
-  integration: webhook
-  config:
-    mappings:
+trigger:
+  webhook:
+    mappping:
       job: service
       span_name: span
       startsAt: timestamp
+# Available data fields {service,span,timestamp}
+steps:
 - name: Get ownership
-  action: get_ownership
   integration: backstage
-  config:
+  input:
     filter: kind=component,metadata.name={service}
-    enrichments:
-    - spec.owner
-    - metadata.labels.slack_channel
+  output:
+      spec.owner: string
+      metadata.labels.slack_channel: string
+  mapping:
+    "spec.owner": owner
+    "metadata.labels.slack_channel": channel
+# Available data fields {service,span,timestamp, owner, channel}
 - name: Get relevant logs
-  action: get_relevant_logs
   integration: opensearch
-  config:
-    mappings:
-      severity: severity.text
-      service: resource.service.name
-      timestamp: observedTimestamp
-    enrichments:
+  input:
+    query: "{'query': {'bool': {'must': [{'match': {resource.name: {service}}},{'range': {timestamp: {'gte': {timestamp - 15m},'lte': {timestamp}}}}],'must_not': [{'match': {'severity.text': 'INFO'}},{'match': {'severity.text': 'Information'}}]}}}"
+  output:
     - body
     - resource:host.name
+  mapping:
+    "resource:host.name": host
+# Available data fields {service,span,timestamp, owner, channel, body, host}
 - name: Inspect traces
-  action: inspect_traces
   integration: jeager
   config:
     tags:
@@ -40,17 +40,14 @@ steps:
     conditions:
     - if_empty: additional_context.occured_error_logs
 - name: Correlate alerts
-  action: similarity_search
   integration: signal0ne
   config:
     desired_enrichments:
     - alerts-ongoing
 - name: Summarize context
-  action: summarize
   integration: openai
   config: {}
 - name: Send to slack channel
-  action: send_to_slack
   integration: slack
   config:
     mappings:

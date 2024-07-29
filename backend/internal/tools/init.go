@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"signal0ne/internal/models"
+	"signal0ne/pkg/integrations"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error {
+
+	// Info: Not guarded default namespace for development usage only
 	namespace := models.Namespace{
 		Name:      "default",
 		Workflows: make([]string, 0),
@@ -21,6 +24,14 @@ func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error
 	}
 
 	fmt.Printf("Inserted default namespace: %v\n", res.InsertedID)
+
+	// Loading installable integrations
+	_, err = integrations.GetInstallableIntegrationsLib()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Installable integrations loaded from assets.")
 
 	return nil
 }

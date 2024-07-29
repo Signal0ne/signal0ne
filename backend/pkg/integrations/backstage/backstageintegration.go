@@ -1,32 +1,32 @@
 package backstage
 
-type BackstageIntegartion struct {
-	Host                string `json:"host"`
-	Port                string `json:"port"`
-	ApiKey              string `json:"apiKey"`
-	ConditionExpression string `json:"conditionExpression"`
+import (
+	"encoding/json"
+	"signal0ne/internal/models"
+)
+
+type BackstageIntegration struct {
+	models.Integration
+	Config Config
 }
 
-type GetOwnershipStepConfig struct {
-	Filter string
+func NewBackstageIntegration(integrationTemplate models.Integration) BackstageIntegration {
+	var config Config
+	jsonString, err := json.Marshal(integrationTemplate.GetConfig())
+	if err != nil {
+		return BackstageIntegration{}
+	}
+	json.Unmarshal(jsonString, &config)
+	return BackstageIntegration{
+		Integration: integrationTemplate,
+		Config:      config,
+	}
 }
 
-type GetOwnershipStepResult struct {
-	Ownership string
-}
+func (i *BackstageIntegration) Execute(
+	input map[string]string,
+	output map[string]string,
+	mapping map[string]string) map[string]string {
 
-type CustomQueryStepConfig struct {
-	Query string
-}
-
-type CustomQueryStepResult struct {
-	Data interface{}
-}
-
-func (b *BackstageIntegartion) GetOwnership(config GetOwnershipStepConfig) (result GetOwnershipStepResult) {
-	return result
-}
-
-func (b *BackstageIntegartion) CustomQuery(config CustomQueryStepConfig) (result GetOwnershipStepResult) {
-	return result
+	return make(map[string]string)
 }

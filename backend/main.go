@@ -38,7 +38,7 @@ func main() {
 
 	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
 	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
-	_ = mongoConn.Database("signalone").Collection("users")
+	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
 
 	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
 	if err != nil {
@@ -69,8 +69,21 @@ func main() {
 
 	mainController := controllers.NewMainController()
 	namespaceController := controllers.NewNamespaceController()
-	workflowController := controllers.NewWorkflowController(workflowsCollection, namespacesCollection, cfg.Server)
-	mainRouter := routers.NewMainRouter(mainController, namespaceController, workflowController)
+	workflowController := controllers.NewWorkflowController(
+		workflowsCollection,
+		namespacesCollection,
+		integrationsCollection,
+		cfg.Server)
+	integrationsController := controllers.NewIntegrationController(
+		integrationsCollection,
+		namespacesCollection,
+	)
+
+	mainRouter := routers.NewMainRouter(
+		mainController,
+		namespaceController,
+		workflowController,
+		integrationsController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	//==========REMOVE BEFORE RELEASE==========

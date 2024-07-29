@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
@@ -14,19 +15,22 @@ import (
 )
 
 type WorkflowController struct {
-	WebhookServerRef    config.Server
-	WorkflowsCollection *mongo.Collection
-	NamespaceCollection *mongo.Collection //Must be used as Readonly
+	WebhookServerRef       config.Server
+	WorkflowsCollection    *mongo.Collection
+	NamespaceCollection    *mongo.Collection //Must be used as Readonly
+	IntegrationsCollection *mongo.Collection //Must be used as Readonly
 }
 
 func NewWorkflowController(
 	workflowsCollection *mongo.Collection,
 	namespaceCollection *mongo.Collection,
+	integrationsCollection *mongo.Collection,
 	webhookServerRef config.Server) *WorkflowController {
 	return &WorkflowController{
-		WorkflowsCollection: workflowsCollection,
-		NamespaceCollection: namespaceCollection,
-		WebhookServerRef:    webhookServerRef,
+		WorkflowsCollection:    workflowsCollection,
+		NamespaceCollection:    namespaceCollection,
+		IntegrationsCollection: integrationsCollection,
+		WebhookServerRef:       webhookServerRef,
 	}
 }
 
@@ -88,6 +92,13 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 		return
 	}
 
+	if err = c.validate(*workflow); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		return
+	}
+
 	workflow.NamespaceId = namespaceId
 	workflow.WorkflowSalt, err = tools.GenerateWebhookSalt()
 	if err != nil {
@@ -121,4 +132,27 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 			workflow.WorkflowSalt,
 		),
 	})
+}
+
+func (c *WorkflowController) validate(workflow models.Workflow) error {
+
+	// Lookback format
+	pattern := `^(\d+)m$`
+	lookbackRegex := regexp.MustCompile(pattern)
+	matches := lookbackRegex.FindStringSubmatch(workflow.Lookback)
+	if len(matches) != 1 {
+		return fmt.Errorf("lookback invalid format, proper format example: '15m'")
+	}
+
+	// Trigger schema
+
+	// Steps schema
+	for i := 0; i < len(workflow.Steps); i++ {
+		step := workflow.Steps[i]
+		switch step.Integration {
+		case "":
+		}
+	}
+
+	return nil
 }

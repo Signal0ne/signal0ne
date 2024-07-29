@@ -7,20 +7,23 @@ import (
 )
 
 type MainRouter struct {
-	MainController      *controllers.MainController
-	NamespaceController *controllers.NamespaceController
-	WorkflowController  *controllers.WorkflowController
+	MainController        *controllers.MainController
+	NamespaceController   *controllers.NamespaceController
+	WorkflowController    *controllers.WorkflowController
+	IntegrationController *controllers.IntegrationController
 }
 
 func NewMainRouter(
 	MainController *controllers.MainController,
 	NamespaceController *controllers.NamespaceController,
 	WorkflowController *controllers.WorkflowController,
+	IntegrationController *controllers.IntegrationController,
 ) *MainRouter {
 	return &MainRouter{
-		MainController:      MainController,
-		NamespaceController: NamespaceController,
-		WorkflowController:  WorkflowController,
+		MainController:        MainController,
+		NamespaceController:   NamespaceController,
+		WorkflowController:    WorkflowController,
+		IntegrationController: IntegrationController,
 	}
 }
 
