@@ -30,3 +30,7 @@ func (i *BackstageIntegration) Execute(
 
 	return make(map[string]string)
 }
+
+func (i *BackstageIntegration) Validate() bool {
+	return false
+}

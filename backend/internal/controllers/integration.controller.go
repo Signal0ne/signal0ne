@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
+	"reflect"
 	"signal0ne/internal/models"
 	"signal0ne/pkg/integrations"
-	"signal0ne/pkg/integrations/backstage"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -33,15 +33,28 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 			"error": err,
 		})
 	}
-	var integration interface{}
-	switch integrationTemplate.Type {
-	case "backstage":
-		integration = backstage.NewBackstageIntegration(integrationTemplate)
-	default:
+
+	integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+	if !exists {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": fmt.Sprintf("No integration named %s found", integrationTemplate.Type),
+			"error": "Cannot find requested integartion",
 		})
-		return
+	}
+
+	body, err := ctx.GetRawData()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+	}
+
+	integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
+
+	err = json.Unmarshal(body, integration)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
 	}
 
 	_, err = ic.IntegrationCollection.InsertOne(ctx, integration)
@@ -51,7 +64,7 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 		})
 	}
 
-	ctx.JSON(http.StatusOK, nil)
+	ctx.JSON(http.StatusOK, integration)
 }
 
 func (ic *IntegrationController) ListInstalled(ctx *gin.Context) {

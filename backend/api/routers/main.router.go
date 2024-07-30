@@ -47,7 +47,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 
 	integrationGroup := rg.Group("/:namespaceid/integration")
 	{
-		integrationGroup.POST("/create")
+		integrationGroup.POST("/create", r.IntegrationController.Install)
 		integrationGroup.GET("/:integrationid/get")
 		integrationGroup.DELETE("/:integrationid/delete")
 		integrationGroup.PATCH("/:integrationid/update")

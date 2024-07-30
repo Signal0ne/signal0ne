@@ -1,11 +1,7 @@
 package backstage
 
 type Config struct {
-	Host   string `json:"host"`
-	Port   string `json:"port"`
-	ApiKey string `json:"apiKey"`
-}
-
-func (c *Config) Validate() {
-
+	Host   string `json:"host" bson:"host"`
+	Port   string `json:"port" bson:"port"`
+	ApiKey string `json:"apiKey" bson:"apiKey"`
 }

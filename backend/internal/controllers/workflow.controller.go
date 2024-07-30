@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -92,7 +93,7 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	if err = c.validate(*workflow); err != nil {
+	if err = c.validate(ctx, *workflow); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
@@ -134,7 +135,7 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 	})
 }
 
-func (c *WorkflowController) validate(workflow models.Workflow) error {
+func (c *WorkflowController) validate(ctx context.Context, workflow models.Workflow) error {
 
 	// Lookback format
 	pattern := `^(\d+)m$`
@@ -145,14 +146,28 @@ func (c *WorkflowController) validate(workflow models.Workflow) error {
 	}
 
 	// Trigger schema
-
-	// Steps schema
-	for i := 0; i < len(workflow.Steps); i++ {
-		step := workflow.Steps[i]
-		switch step.Integration {
-		case "":
+	var exists bool = false
+	data, exists := workflow.Trigger.Data["webhook"]
+	if exists {
+		_, ok := data.(models.WebhookTrigger)
+		if !ok {
+			return fmt.Errorf("failed to parse webhook trigger")
 		}
 	}
+
+	data, exists = workflow.Trigger.Data["scheduler"]
+	if exists {
+		_, ok := data.(models.SchedulerTrigger)
+		if !ok {
+			return fmt.Errorf("failed to parse scheduler trigger")
+		}
+	}
+
+	if !exists {
+		return fmt.Errorf("no recognizable trigger type scpecified")
+	}
+
+	// Steps
 
 	return nil
 }

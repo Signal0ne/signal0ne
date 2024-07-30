@@ -3,6 +3,8 @@ package integrations
 import (
 	"embed"
 	"fmt"
+	"reflect"
+	"signal0ne/pkg/integrations/backstage"
 	"sync"
 
 	"gopkg.in/yaml.v3"
@@ -13,6 +15,10 @@ var integrationsMDFS embed.FS
 var once sync.Once
 var installableIntegrationsLib map[string]map[string]string
 var globalErrorHandle error = nil
+
+var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
+	"backstage": reflect.TypeOf(backstage.BackstageIntegration{}),
+}
 
 func GetInstallableIntegrationsLib() (map[string]map[string]string, error) {
 	once.Do(func() {

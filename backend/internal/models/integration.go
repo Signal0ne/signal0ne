@@ -1,9 +1,14 @@
 package models
 
+type IIntegration interface {
+	Execute() map[string]interface{}
+	Validate() bool
+}
+
 type Integration struct {
-	Name     string                 `json:"name"`
-	Type     string                 `json:"type"`
-	ImageURL string                 `json:"imageUrl"`
+	Name     string                 `json:"name" bson:"name"`
+	Type     string                 `json:"type" bson:"type"`
+	ImageURL string                 `json:"imageUrl" bson:"imageUrl"`
 	config   map[string]interface{} `json:"-"`
 }
 
