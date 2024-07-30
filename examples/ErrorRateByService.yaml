@@ -3,54 +3,91 @@ name: ErrorRateByService
 lookback: 15m
 trigger:
   webhook:
-    mappping:
-      job: service
-      span_name: span
-      startsAt: timestamp
-# Available data fields {service,span,timestamp}
+    output:
+      service: "job"
+      span: "span_name"
+      timestamp: "startsAt"
+# Available data fields {service: string,span: string,timestamp: string}
 steps:
 - name: Get ownership
   integration: backstage
+  function: get_properties_values
   input:
     filter: kind=component,metadata.name={service}
   output:
-      spec.owner: string
-      metadata.labels.slack_channel: string
-  mapping:
-    "spec.owner": owner
-    "metadata.labels.slack_channel": channel
-# Available data fields {service,span,timestamp, owner, channel}
+    components:
+      - owner: "spec.owner"
+        slack_channel: "metadata.labels.slack_channel"
+# Available data fields {service: string,span: string,timestamp: string, additional_context: {
+#     components: list[object]
+#   }
+# }
+
 - name: Get relevant logs
   integration: opensearch
+  function: get_log_occurances
   input:
     query: "{'query': {'bool': {'must': [{'match': {resource.name: {service}}},{'range': {timestamp: {'gte': {timestamp - 15m},'lte': {timestamp}}}}],'must_not': [{'match': {'severity.text': 'INFO'}},{'match': {'severity.text': 'Information'}}]}}}"
   output:
-    - body
-    - resource:host.name
-  mapping:
-    "resource:host.name": host
-# Available data fields {service,span,timestamp, owner, channel, body, host}
+    log_occurances:
+      - count: sum()
+        body: "body"
+        hostname: "resource:host.name"
+# Available data fields {service: string,span: string,timestamp: string, additional_context: {
+#     components: list[object],
+#     log_occurances: list[object]
+#   }
+# }
 - name: Inspect traces
   integration: jeager
-  config:
-    tags:
-      error: 'true'
-    desired_enrichments:
-    - logs
-    conditions:
-    - if_empty: additional_context.occured_error_logs
+  function: get_properties_values
+  input:
+    service: 
+    tags: "{'error': true}"
+  ouput:
+    log_occurances:
+      - count: sum()
+        log: "logs:exception.stacktrace | tags:grpc.error_message"
+  condition: empty(additional_context.log_occurances)
+# Available data fields {service: string,span: string,timestamp: string, additional_context: {
+#     components: list[object],
+#     log_occurances: list[object]
+#   }
+# }
 - name: Correlate alerts
   integration: signal0ne
-  config:
-    desired_enrichments:
-    - alerts-ongoing
+  function: correlate_ongoing_alerts
+  input: 
+    filter: timestamp>={timestamp - 15m}&timestamp<={timestamp + 15m}&semanticSimilarity=true
+  ouput:
+    alerts:
+      - alert: alert
+# Available data fields {service: string,span: string,timestamp: string, additional_context: {
+#     components: list[object],
+#     log_occurances: list[object]
+#   }, correlated_signals: {
+#     alerts: alerts
+#   }
+# }
 - name: Summarize context
   integration: openai
-  config: {}
+  function: summarize
+  input:
+    content_to_summarize: "{additional_context.log_occurances}"
+  output:
+    summarization: content
+# Available data fields {service: string,span: string,timestamp: string, additional_context: {
+#     components: list[object],
+#     log_occurances: list[object],
+#     summarization: stirng
+#   }, correlated_signals: {
+#     alerts: alerts
+#   }
+# }
 - name: Send to slack channel
   integration: slack
-  config:
-    mappings:
-      channel: metadata.labels.slack_channel
+  function: post_message
+  input:
+    parsable_context_object: "."
     ingore_context_keys:
-    - metadata.labels.slack_channel
+    - additional_context.components[].slack_channel
