@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"regexp"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
+	"signal0ne/pkg/integrations"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -168,6 +170,28 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 	}
 
 	// Steps
+
+	for _, step := range workflow.Steps {
+		var integrtionTemplate models.Integration
+		filter := bson.M{
+			"name": step.Integration,
+		}
+		result := c.IntegrationsCollection.FindOne(ctx, filter)
+		err := result.Decode(&integrtionTemplate)
+		if err != nil {
+			return fmt.Errorf("integration schema parsong error")
+		}
+
+		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrtionTemplate.Type]
+		if !exists {
+			return fmt.Errorf("cannot find interation type spoecified")
+		}
+
+		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
+
+		integration.ValidateStep()
+
+	}
 
 	return nil
 }

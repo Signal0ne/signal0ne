@@ -2,7 +2,8 @@ package models
 
 type IIntegration interface {
 	Execute() map[string]interface{}
-	Validate() bool
+	Validate() error
+	ValidateStep() error
 }
 
 type Integration struct {
