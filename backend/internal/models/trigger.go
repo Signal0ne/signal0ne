@@ -1,13 +1,23 @@
 package models
 
 type Trigger struct {
-	Data map[string]interface{} `json:"-"`
+	WebhookTrigger   `json:",inline"`
+	SchedulerTrigger `json:",inline"`
 }
 
 type WebhookTrigger struct {
-	Output map[string]interface{} `json:"-"`
+	Webhook Webhook `json:"webhook"`
+}
+
+type Webhook struct {
+	Output map[string]string `json:"output"`
 }
 
 type SchedulerTrigger struct {
-	Interval string `json:"interval"`
+	Scheduler Scheduler `json:"scheduler"`
+}
+
+type Scheduler struct {
+	IntervalInMinutes int64             `json:"interval"`
+	Output            map[string]string `json:"output"`
 }

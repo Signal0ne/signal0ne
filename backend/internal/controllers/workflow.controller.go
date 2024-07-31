@@ -81,32 +81,34 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 	err := ctx.ShouldBindJSON(&workflow)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
+			"error": fmt.Sprintf("cannot parse body, %s", err),
 		})
 		return
 	}
 
-	res := c.NamespaceCollection.FindOne(ctx, bson.M{"_id": namespaceId})
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := c.NamespaceCollection.FindOne(ctx, bson.M{"_id": nsID})
 	err = res.Decode(&namespace)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
+			"error": fmt.Sprintf("cannot find namespace, %s", err),
 		})
 		return
 	}
 
 	if err = c.validate(ctx, *workflow); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
+			"error": fmt.Sprintf("validation error, err: %s", err),
 		})
 		return
 	}
 
+	workflow.Id = primitive.NewObjectID()
 	workflow.NamespaceId = namespaceId
 	workflow.WorkflowSalt, err = tools.GenerateWebhookSalt()
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
+			"error": fmt.Sprintf("cannot initialize webhook, %s", err),
 		})
 		return
 	}
@@ -140,7 +142,7 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 func (c *WorkflowController) validate(ctx context.Context, workflow models.Workflow) error {
 
 	// Lookback format
-	pattern := `^(\d+)m$`
+	pattern := `^\d+m$`
 	lookbackRegex := regexp.MustCompile(pattern)
 	matches := lookbackRegex.FindStringSubmatch(workflow.Lookback)
 	if len(matches) != 1 {
@@ -148,25 +150,12 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 	}
 
 	// Trigger schema
-	var exists bool = false
-	data, exists := workflow.Trigger.Data["webhook"]
-	if exists {
-		_, ok := data.(models.WebhookTrigger)
-		if !ok {
-			return fmt.Errorf("failed to parse webhook trigger")
-		}
-	}
-
-	data, exists = workflow.Trigger.Data["scheduler"]
-	if exists {
-		_, ok := data.(models.SchedulerTrigger)
-		if !ok {
-			return fmt.Errorf("failed to parse scheduler trigger")
-		}
-	}
-
-	if !exists {
-		return fmt.Errorf("no recognizable trigger type scpecified")
+	if workflow.Trigger.Webhook.Output != nil {
+		fmt.Printf("Output Webhook Trigger: %s", workflow.Trigger.Webhook.Output)
+	} else if workflow.Trigger.Scheduler.Output != nil {
+		fmt.Printf("Output Scheduler Trigger: %s", workflow.Trigger.Scheduler.Output)
+	} else {
+		return fmt.Errorf("specified trigger type doesn't exist")
 	}
 
 	// Steps
@@ -179,7 +168,7 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 		result := c.IntegrationsCollection.FindOne(ctx, filter)
 		err := result.Decode(&integrtionTemplate)
 		if err != nil {
-			return fmt.Errorf("integration schema parsing error")
+			return fmt.Errorf("integration schema parsing error, %s", err)
 		}
 
 		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrtionTemplate.Type]
@@ -189,7 +178,7 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 
 		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
 
-		err = integration.ValidateStep(step.Input.Data, step.Output.Data, step.Function)
+		err = integration.ValidateStep(step.Input, step.Output.Data, step.Function)
 		if err != nil {
 			return err
 		}
