@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 	"signal0ne/internal/models"
@@ -26,42 +27,54 @@ func NewIntegrationController(
 }
 
 func (ic *IntegrationController) Install(ctx *gin.Context) {
-	var integrationTemplate models.Integration
-	err := ctx.ShouldBindJSON(&integrationTemplate)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
-		})
-	}
-
-	integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
-	if !exists {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "Cannot find requested integartion",
-		})
-	}
+	var integrationTemplate map[string]interface{}
 
 	body, err := ctx.GetRawData()
+	if err != nil || len(body) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("cannot get body %s", err),
+		})
+		return
+	}
+
+	err = json.Unmarshal(body, &integrationTemplate)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
+			"error": "cannot parse body",
 		})
 	}
 
-	integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
+	integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate["type"].(string)]
+	if !exists {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "cannot find requested integartion",
+		})
+		return
+	}
 
-	err = json.Unmarshal(body, integration)
+	integration := reflect.New(integType).Elem().Addr().Interface().(models.IIntegration)
+
+	err = json.Unmarshal(body, &integration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "cannot parse body",
+		})
+	}
+
+	err = integration.Validate()
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
+		return
 	}
 
 	_, err = ic.IntegrationCollection.InsertOne(ctx, integration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
+			"error": fmt.Sprintf("cannot save intergation config: %v", err),
 		})
+		return
 	}
 
 	ctx.JSON(http.StatusOK, integration)

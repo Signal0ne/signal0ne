@@ -179,17 +179,20 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 		result := c.IntegrationsCollection.FindOne(ctx, filter)
 		err := result.Decode(&integrtionTemplate)
 		if err != nil {
-			return fmt.Errorf("integration schema parsong error")
+			return fmt.Errorf("integration schema parsing error")
 		}
 
 		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrtionTemplate.Type]
 		if !exists {
-			return fmt.Errorf("cannot find interation type spoecified")
+			return fmt.Errorf("cannot find integration type specified")
 		}
 
 		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
 
-		integration.ValidateStep()
+		err = integration.ValidateStep(step.Input.Data, step.Output.Data, step.Function)
+		if err != nil {
+			return err
+		}
 
 	}
 

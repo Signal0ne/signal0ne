@@ -14,7 +14,7 @@ type Server struct {
 }
 
 type Config struct {
-	Server    Server
+	Server    Server `mapstructure:",squash"`
 	IPCSocket string `mapstructure:"IPC_SOCKET"`
 	MongoUri  string `mapstructure:"MONGO_URI"`
 }

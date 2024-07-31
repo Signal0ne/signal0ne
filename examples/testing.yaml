@@ -1,0 +1,24 @@
+---
+name: ErrorRateByService
+lookback: 15m
+trigger:
+  webhook:
+    output:
+      service: "job"
+      span: "span_name"
+      timestamp: "startsAt"
+# Available data fields {service: string,span: string,timestamp: string}
+steps:
+- name: Get ownership
+  integration: backstage
+  function: get_properties_values
+  input:
+    filter: kind=component,metadata.name={service}
+  output:
+    components:
+      - owner: "spec.owner"
+        slack_channel: "metadata.labels.slack_channel"
+# Available data fields {service: string,span: string,timestamp: string, additional_context: {
+#     components: list[object]
+#   }
+# }

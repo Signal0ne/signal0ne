@@ -10,11 +10,11 @@ type Step struct {
 }
 
 type StepInput struct {
-	Data map[string]interface{}
+	Data map[string]interface{} `json:"-" bson:"-"`
 }
 
 type StepOutput struct {
-	Data map[string]interface{}
+	Data map[string]interface{} `json:"-" bson:"-"`
 }
 
 func (s *Step) ParseCondition() {

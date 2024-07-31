@@ -22,7 +22,6 @@ steps:
 #     components: list[object]
 #   }
 # }
-
 - name: Get relevant logs
   integration: opensearch
   function: get_log_occurances
