@@ -1,12 +1,108 @@
 .workflows-main-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   height: 100%;
-  padding: 24px;
+  padding: 12px 24px 24px;
   width: 100%;
+
+  .workflows-breadcrumbs {
+    font-size: 14px;
+  }
 
   .workflows-main-panel--empty {
     align-items: center;
     display: flex;
     font-size: 18px;
     justify-content: center;
+  }
+
+  .workflows-workflow {
+    border-radius: 8px;
+    box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.1); 
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+
+    .workflow-details {
+      background-color: #343434;
+      box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2); 
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+      padding: 16px;
+      width: 280px;
+
+      &::-webkit-scrollbar {
+        width: 2px;
+      }
+    
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+    
+      &::-webkit-scrollbar-thumb {
+        background: #CACACA;
+        border-radius: 1px;
+      }
+
+      .workflow-details-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .workflow-details-group-header {
+          color: #fff;
+          font-size: 20px;
+          font-weight: 600;
+          line-height: 24px;
+          margin: 0;
+        }
+
+        .workflow-input-container {
+          background-color: #424242;
+          border-radius: 8px;
+          box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1); 
+          display: flex;
+          flex-wrap: wrap;
+          min-height: 80px;
+          padding: 8px;
+        }
+
+        .workflow-condition-container,
+        .workflow-output-container {
+          background-color: #424242;
+          border-radius: 8px;
+          box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1); 
+          display: flex;
+          flex-wrap: wrap;
+          min-height: 80px;
+          padding: 8px;
+        }
+
+        .workflow-input {
+          background-color: #424242;
+          border: none;
+          border-radius: 8px;
+          box-shadow: 0 3px 4px rgba(0, 0, 0, 0.1);
+          color: #fff;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 8px;
+          text-overflow: ellipsis;
+
+          &:read-only {
+            cursor: default;
+            opacity: 0.7;
+          }
+        }
+      }
+    }
+
+    .workflow-steps-container {
+      background-color: #424242;
+      width: 100%;
+    }
   }
 }
