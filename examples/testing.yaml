@@ -36,3 +36,4 @@ steps:
     parsable_context_object: "."
     ingore_context_keys:
     - additional_context.components[].slack_channel
+    

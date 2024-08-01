@@ -3,3 +3,4 @@ imageUri: ../logos/jaeger.svg
 config:
   host: string
   port: string
+  
