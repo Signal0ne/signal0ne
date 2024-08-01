@@ -37,8 +37,8 @@ func main() {
 	defer mongoConn.Disconnect(ctx)
 
 	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
-	_ = mongoConn.Database("signalone").Collection("workflows")
-	_ = mongoConn.Database("signalone").Collection("users")
+	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
+	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
 
 	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
 	if err != nil {
@@ -69,8 +69,21 @@ func main() {
 
 	mainController := controllers.NewMainController()
 	namespaceController := controllers.NewNamespaceController()
-	workflowController := controllers.NewWorkflowController()
-	mainRouter := routers.NewMainRouter(mainController, namespaceController, workflowController)
+	workflowController := controllers.NewWorkflowController(
+		workflowsCollection,
+		namespacesCollection,
+		integrationsCollection,
+		cfg.Server)
+	integrationsController := controllers.NewIntegrationController(
+		integrationsCollection,
+		namespacesCollection,
+	)
+
+	mainRouter := routers.NewMainRouter(
+		mainController,
+		namespaceController,
+		workflowController,
+		integrationsController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	//==========REMOVE BEFORE RELEASE==========
@@ -89,5 +102,5 @@ func main() {
 	fmt.Printf("%s\n", buffer[:n])
 	//===================
 
-	server.Run(":" + cfg.ServerPort)
+	server.Run(":" + cfg.Server.ServerPort)
 }
