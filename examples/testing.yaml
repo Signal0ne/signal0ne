@@ -18,7 +18,22 @@ steps:
     components:
       - owner: "spec.owner"
         slack_channel: "metadata.labels.slack_channel"
-# Available data fields {service: string,span: string,timestamp: string, additional_context: {
-#     components: list[object]
-#   }
-# }
+# - name: Inspect traces
+#   integration: jeager
+#   function: get_properties_values
+#   input:
+#     service: "{service}"
+#     tags: "{'error': true}"
+#   ouput:
+#     log_occurances:
+#       - count: sum()
+#         log: "logs:exception.stacktrace | tags:grpc.error_message"
+#   condition: empty(additional_context.log_occurances)
+- name: Send to slack channel
+  integration: slack
+  function: post_message
+  input:
+    parsable_context_object: "."
+    ingore_context_keys:
+    - additional_context.components[].slack_channel
+    

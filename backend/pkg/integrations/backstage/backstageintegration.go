@@ -6,31 +6,6 @@ import (
 	"signal0ne/internal/models"
 )
 
-type GetPropertiesValuesInput struct {
-	Filter string `json:"filter"`
-}
-
-func getPropertiesValues(T any, dryRun bool) (any, error) {
-	var input GetPropertiesValuesInput
-	data, err := json.Marshal(T)
-	if err != nil {
-		return nil, fmt.Errorf("invalid input for get_properties_values function")
-	}
-
-	err = json.Unmarshal(data, &input)
-	if err != nil {
-		return nil, fmt.Errorf("invalid input for get_properties_values function")
-	}
-
-	if dryRun {
-		return nil, nil
-	} else {
-		// [TBD]: Execute
-	}
-
-	return input.Filter, nil
-}
-
 var functions = map[string]func(T any, dryRun bool) (any, error){
 	"get_properties_values": getPropertiesValues,
 }
@@ -78,4 +53,29 @@ func (i BackstageIntegration) ValidateStep(
 	}
 
 	return nil
+}
+
+type GetPropertiesValuesInput struct {
+	Filter string `json:"filter"`
+}
+
+func getPropertiesValues(T any, dryRun bool) (any, error) {
+	var input GetPropertiesValuesInput
+	data, err := json.Marshal(T)
+	if err != nil {
+		return nil, fmt.Errorf("invalid input for get_properties_values function")
+	}
+
+	err = json.Unmarshal(data, &input)
+	if err != nil {
+		return nil, fmt.Errorf("invalid input for get_properties_values function")
+	}
+
+	if dryRun {
+		return nil, nil
+	} else {
+		// [TBD]: Execute
+	}
+
+	return input.Filter, nil
 }
