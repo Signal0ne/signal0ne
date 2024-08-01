@@ -1,4 +1,4 @@
-package jaeger
+package opensearch
 
 import (
 	"fmt"
@@ -7,41 +7,43 @@ import (
 
 var functions = map[string]func(T any, dryRun bool) (any, error){}
 
-type JaegerIntegration struct {
+type OpenSearchIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:",inline" bson:",inline"`
 }
 
-func (i JaegerIntegration) Execute(
+func (integration OpenSearchIntegration) Execute(
 	input interface{},
 	output interface{},
 	functionName string) (map[string]interface{}, error) {
 
 	var result map[string]interface{}
 
-	// [TBD]: execute funtion
+	// [TBD]: execute function
 
 	return result, nil
 }
 
-func (i JaegerIntegration) Validate() error {
-	if i.Config.Host == "" {
+func (integration OpenSearchIntegration) Validate() error {
+	if integration.Config.Host == "" {
 		return fmt.Errorf("host cannot be empty")
 	}
-	if i.Config.Port == "" {
+
+	if integration.Config.Port == "" {
 		return fmt.Errorf("port cannot be empty")
 	}
+
 	return nil
 }
 
-func (i JaegerIntegration) ValidateStep(
+func (integration OpenSearchIntegration) ValidateStep(
 	input interface{},
 	output interface{},
 	functionName string,
 ) error {
 	function, exists := functions[functionName]
 	if !exists {
-		return fmt.Errorf("cannot find selected funtion")
+		return fmt.Errorf("cannot find selected function")
 	}
 
 	_, err := function(input, true)
