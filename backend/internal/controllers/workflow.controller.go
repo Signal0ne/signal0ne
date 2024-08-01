@@ -161,17 +161,17 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 	// Steps
 
 	for _, step := range workflow.Steps {
-		var integrtionTemplate models.Integration
+		var integrationTemplate models.Integration
 		filter := bson.M{
 			"name": step.Integration,
 		}
 		result := c.IntegrationsCollection.FindOne(ctx, filter)
-		err := result.Decode(&integrtionTemplate)
+		err := result.Decode(&integrationTemplate)
 		if err != nil {
 			return fmt.Errorf("integration schema parsing error, %s", err)
 		}
 
-		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrtionTemplate.Type]
+		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
 			return fmt.Errorf("cannot find integration type specified")
 		}

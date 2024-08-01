@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/jaeger"
+	"signal0ne/pkg/integrations/opensearch"
 	"signal0ne/pkg/integrations/slack"
 	"sync"
 
@@ -18,8 +20,10 @@ var installableIntegrationsLib map[string]map[string]string
 var globalErrorHandle error = nil
 
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
-	"backstage": reflect.TypeOf(backstage.BackstageIntegration{}),
-	"slack":     reflect.TypeOf(slack.SlackIntegartion{}),
+	"backstage":  reflect.TypeOf(backstage.BackstageIntegration{}),
+	"jaeger":     reflect.TypeOf(jaeger.JaegerIntegration{}),
+	"opensearch": reflect.TypeOf(opensearch.OpenSearchIntegration{}),
+	"slack":      reflect.TypeOf(slack.SlackIntegration{}),
 }
 
 func GetInstallableIntegrationsLib() (map[string]map[string]string, error) {
@@ -34,11 +38,11 @@ func GetInstallableIntegrationsLib() (map[string]map[string]string, error) {
 			if !integrationMDFSObject.IsDir() {
 				rawBytes, err := integrationsMDFS.ReadFile(integrationMDFSObject.Name())
 				if err != nil {
-					fmt.Printf("Warning: failed to read integartion metadata from: %s", integrationMDFSObject.Name())
+					fmt.Printf("Warning: failed to read integration metadata from: %s", integrationMDFSObject.Name())
 				}
 				err = yaml.Unmarshal(rawBytes, integration)
 				if err != nil {
-					fmt.Printf("Warning: failed to read integartion metadata from: %s", integrationMDFSObject.Name())
+					fmt.Printf("Warning: failed to read integration metadata from: %s", integrationMDFSObject.Name())
 				}
 				installableIntegrationsLib[integration["typeName"]] = integration
 			}

@@ -1,4 +1,4 @@
-package backstage
+package slack
 
 import (
 	"encoding/json"
@@ -7,44 +7,41 @@ import (
 )
 
 var functions = map[string]func(T any, dryRun bool) (any, error){
-	"get_properties_values": getPropertiesValues,
+	"post_message": postMessage,
 }
 
-type BackstageIntegration struct {
+type SlackIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:",inline" bson:",inline"`
 }
 
-func (i BackstageIntegration) Execute(
+func (integration SlackIntegration) Execute(
 	input interface{},
 	output interface{},
 	functionName string) (map[string]interface{}, error) {
 
 	var result map[string]interface{}
 
-	// [TBD]: execute funtion
+	// [TBD]: execute function
 
 	return result, nil
 }
 
-func (i BackstageIntegration) Validate() error {
-	if i.Config.Host == "" {
+func (integration SlackIntegration) Validate() error {
+	if integration.Config.WorkspaceID == "" {
 		return fmt.Errorf("host cannot be empty")
-	}
-	if i.Config.Port == "" {
-		return fmt.Errorf("port cannot be empty")
 	}
 	return nil
 }
 
-func (i BackstageIntegration) ValidateStep(
+func (integration SlackIntegration) ValidateStep(
 	input interface{},
 	output interface{},
 	functionName string,
 ) error {
 	function, exists := functions[functionName]
 	if !exists {
-		return fmt.Errorf("cannot find selected funtion")
+		return fmt.Errorf("cannot find selected function")
 	}
 
 	_, err := function(input, true)
@@ -55,20 +52,21 @@ func (i BackstageIntegration) ValidateStep(
 	return nil
 }
 
-type GetPropertiesValuesInput struct {
-	Filter string `json:"filter"`
+type PostMessageInput struct {
+	ParsableContextObject string   `json:"parsable_context_object"`
+	IgnoreContextKeys     []string `json:"ignore_context_keys"`
 }
 
-func getPropertiesValues(T any, dryRun bool) (any, error) {
-	var input GetPropertiesValuesInput
+func postMessage(T any, dryRun bool) (any, error) {
+	var input PostMessageInput
 	data, err := json.Marshal(T)
 	if err != nil {
-		return nil, fmt.Errorf("invalid input for get_properties_values function")
+		return nil, fmt.Errorf("invalid input for post_message function")
 	}
 
 	err = json.Unmarshal(data, &input)
 	if err != nil {
-		return nil, fmt.Errorf("invalid input for get_properties_values function")
+		return nil, fmt.Errorf("invalid input for post_message function")
 	}
 
 	if dryRun {
@@ -77,5 +75,5 @@ func getPropertiesValues(T any, dryRun bool) (any, error) {
 		// [TBD]: Execute
 	}
 
-	return input.Filter, nil
+	return nil, nil
 }
