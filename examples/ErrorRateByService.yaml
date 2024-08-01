@@ -41,7 +41,7 @@ steps:
   integration: jeager
   function: get_properties_values
   input:
-    service: 
+    service: "{service}"
     tags: "{'error': true}"
   ouput:
     log_occurances:

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/slack"
 	"sync"
 
 	"gopkg.in/yaml.v3"
@@ -18,6 +19,7 @@ var globalErrorHandle error = nil
 
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"backstage": reflect.TypeOf(backstage.BackstageIntegration{}),
+	"slack":     reflect.TypeOf(slack.SlackIntegartion{}),
 }
 
 func GetInstallableIntegrationsLib() (map[string]map[string]string, error) {
