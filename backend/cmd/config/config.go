@@ -6,11 +6,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Server struct {
+	Mode           string `mapstructure:"MODE"`
+	ServerPort     string `mapstructure:"SERVER_PORT"`
+	ServerDomain   string `mapstructure:"SERVER_DOMAIN"`
+	ServerIsSecure bool   `mapstructure:"SERVER_IS_SECURE"`
+}
+
 type Config struct {
-	Mode       string `mapstructure:"MODE"`
-	ServerPort string `mapstructure:"SERVER_PORT"`
-	IPCSocket  string `mapstructure:"IPC_SOCKET"`
-	MongoUri   string `mapstructure:"MONGO_URI"`
+	Server    Server `mapstructure:",squash"`
+	IPCSocket string `mapstructure:"IPC_SOCKET"`
+	MongoUri  string `mapstructure:"MONGO_URI"`
 }
 
 var (

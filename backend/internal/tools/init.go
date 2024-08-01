@@ -3,17 +3,20 @@ package tools
 import (
 	"context"
 	"fmt"
+	"signal0ne/internal/models"
+	"signal0ne/pkg/integrations"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error {
-	namespace := bson.M{
-		"name":      "default",
-		"workflows": make([]string, 0),
-		"users":     make([]string, 0),
+
+	// Info: Not guarded default namespace for development usage only
+	namespace := models.Namespace{
+		Name:      "default",
+		Workflows: make([]string, 0),
+		Users:     make([]string, 0),
 	}
 	res, err := mongoNamespaceColl.InsertOne(ctx, namespace)
 	if err != nil {
@@ -21,6 +24,14 @@ func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error
 	}
 
 	fmt.Printf("Inserted default namespace: %v\n", res.InsertedID)
+
+	// Loading installable integrations
+	_, err = integrations.GetInstallableIntegrationsLib()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Installable integrations loaded from assets.")
 
 	return nil
 }

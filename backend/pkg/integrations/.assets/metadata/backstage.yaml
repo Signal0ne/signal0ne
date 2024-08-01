@@ -1,0 +1,7 @@
+typeName: backstage
+imageUri: ../logos/backstage.svg
+config:
+  host: string
+  port: string
+  apiKey: string
+  
