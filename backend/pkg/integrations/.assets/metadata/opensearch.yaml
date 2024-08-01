@@ -1,0 +1,6 @@
+typeName: opensearch,
+imageUri: '../logos/opensearch.svg',
+config: 
+  host: string
+  port: string
+  ssl: boolean
