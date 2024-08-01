@@ -10,12 +10,12 @@ var functions = map[string]func(T any, dryRun bool) (any, error){
 	"post_message": postMessage,
 }
 
-type SlackIntegartion struct {
+type SlackIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:",inline" bson:",inline"`
 }
 
-func (i SlackIntegartion) Execute(
+func (i SlackIntegration) Execute(
 	input interface{},
 	output interface{},
 	functionName string) (map[string]interface{}, error) {
@@ -27,21 +27,21 @@ func (i SlackIntegartion) Execute(
 	return result, nil
 }
 
-func (i SlackIntegartion) Validate() error {
+func (i SlackIntegration) Validate() error {
 	if i.Config.WorkspaceID == "" {
 		return fmt.Errorf("host cannot be empty")
 	}
 	return nil
 }
 
-func (i SlackIntegartion) ValidateStep(
+func (i SlackIntegration) ValidateStep(
 	input interface{},
 	output interface{},
 	functionName string,
 ) error {
 	function, exists := functions[functionName]
 	if !exists {
-		return fmt.Errorf("cannot find selected funtion")
+		return fmt.Errorf("cannot find selected function")
 	}
 
 	_, err := function(input, true)
@@ -54,7 +54,7 @@ func (i SlackIntegartion) ValidateStep(
 
 type PostMessageInput struct {
 	ParsableContextObject string   `json:"parsable_context_object"`
-	IngoreContextKeys     []string `json:"ingore_context_keys"`
+	IgnoreContextKeys     []string `json:"ignore_context_keys"`
 }
 
 func postMessage(T any, dryRun bool) (any, error) {

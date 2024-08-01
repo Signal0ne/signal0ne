@@ -19,7 +19,7 @@ var globalErrorHandle error = nil
 
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"backstage": reflect.TypeOf(backstage.BackstageIntegration{}),
-	"slack":     reflect.TypeOf(slack.SlackIntegartion{}),
+	"slack":     reflect.TypeOf(slack.SlackIntegration{}),
 }
 
 func GetInstallableIntegrationsLib() (map[string]map[string]string, error) {
