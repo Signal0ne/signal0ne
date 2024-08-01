@@ -1,23 +1,36 @@
 # Signal0ne integrations - Contribution Guide
 
-## Integartion metadata file
+## Integration metadata file
 
-Create yaml file with following format `<integartion_name>.yaml` in the `pkg/integrations/.assets/metadata` directory 
+Create yaml file with following format `<integration_name>.yaml` in the
+`pkg/integrations/.assets/metadata` directory
 
-File should contain fields `typeName`(unique), `imageUri` with uri to the integrated tool logo and `config` with demanded config field for integartin to work
+File should contain fields `typeName`(unique), `imageUri` with uri to the
+integrated tool logo and `config` with demanded config field for integration to
+work
 
 ## Integration root creation
-1. Create directory with the name of your integration in `pkg/integrations/` path for example: `pkg/integrations/backstage`
-2. Create main integration file within your created directory with name having following format `<integration_name>integration.go` for example `backstageintegration.go`
-3. Create config file within your created directory with following name `config.go`
 
-## Integration structure definiton
+1. Create directory with the name of your integration in `pkg/integrations/`
+   path for example: `pkg/integrations/backstage`
+2. Create main integration file within your created directory with name having
+   following format `<integration_name>_integration.go` for example
+   `backstage_integration.go`
+3. Create config file within your created directory with following name
+   `config.go`
 
-In the `<integartion_name>integration.go` create struct which implements `IIntegartion` interface and contains fields defined `models.Integartion` + custom integarion fields defined in `pkg/integrations/<integartion_name>/config.go`
+## Integration structure definition
 
-Add integration type to types dictionary `InstallableIntegrationTypesLibrary` located in `pkg/integartions/load.go`
+In the `<integration_name>_integration.go` create struct which implements
+`IIntegration` interface and contains fields defined `models.Integration` +
+custom integration fields defined in
+`pkg/integrations/<integration_name>/config.go`
 
+Add integration type to types dictionary `InstallableIntegrationTypesLibrary`
+located in `pkg/integrations/load.go`
 
-## Integartion functions
+## Integration functions
 
-Implement functions provided by integartion. Insert them to the `functions map[string]func(T any, dryRun bool) (any, error)` with proper function name as key.
+Implement functions provided by integration. Insert them to the
+`functions map[string]func(T any, dryRun bool) (any, error)` with proper
+function name as key.
