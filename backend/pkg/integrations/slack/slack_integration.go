@@ -54,7 +54,7 @@ func (integration SlackIntegration) ValidateStep(
 		return fmt.Errorf("cannot find selected function")
 	}
 
-	err := helpers.ValidateInputParameters(input, function.Input)
+	err := helpers.ValidateInputParameters(input, function.Input, functionName)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ type PostMessageInput struct {
 func postMessage(input any) (output []any, err error) {
 	var parsedInput PostMessageInput
 
-	err = helpers.ValidateInputParameters(input, parsedInput)
+	err = helpers.ValidateInputParameters(input, parsedInput, "post_message")
 	if err != nil {
 		return output, err
 	}

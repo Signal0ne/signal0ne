@@ -52,7 +52,7 @@ func (integration JaegerIntegration) ValidateStep(
 		return fmt.Errorf("cannot find selected function")
 	}
 
-	err := helpers.ValidateInputParameters(input, function.Input)
+	err := helpers.ValidateInputParameters(input, function.Input, functionName)
 	if err != nil {
 		return err
 	}

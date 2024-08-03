@@ -57,7 +57,7 @@ func (integration BackstageIntegration) ValidateStep(
 		return fmt.Errorf("cannot find selected function")
 	}
 
-	err := helpers.ValidateInputParameters(input, function.Input)
+	err := helpers.ValidateInputParameters(input, function.Input, functionName)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ type GetPropertiesValuesInput struct {
 func getPropertiesValues(input any) (output []any, err error) {
 	var parsedInput GetPropertiesValuesInput
 
-	err = helpers.ValidateInputParameters(input, parsedInput)
+	err = helpers.ValidateInputParameters(input, parsedInput, "get_properties_values")
 	if err != nil {
 		return output, err
 	}

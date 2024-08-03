@@ -53,8 +53,8 @@ func (integration TemplateIntegration) ValidateStep(
 		return fmt.Errorf("cannot find selected function")
 	}
 
-	//Valiudate input parameters for the chosen fucntion
-	err := helpers.ValidateInputParameters(input, function.Input)
+	//Validate input parameters for the chosen function
+	err := helpers.ValidateInputParameters(input, function.Input, functionName)
 	if err != nil {
 		return err
 	}
