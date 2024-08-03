@@ -19,7 +19,7 @@ work
 3. Create config file within your created directory with following name
    `config.go`
 
-## Integration structure definition
+## Integration structure definition(Use pkg/integrations/.template integration as reference)
 
 In the `<integration_name>_integration.go` create struct which implements
 `IIntegration` interface and contains fields defined `models.Integration` +
@@ -29,8 +29,8 @@ custom integration fields defined in
 Add integration type to types dictionary `InstallableIntegrationTypesLibrary`
 located in `pkg/integrations/load.go`
 
-## Integration functions
+## Integration functions(Use pkg/integrations/.template integration as reference)
 
 Implement functions provided by integration. Insert them to the
-`functions map[string]func(T any, dryRun bool) (any, error)` with proper
+`functions map[string]models.WorkflowFunctionDefinition` with proper
 function name as key.
