@@ -1,14 +1,13 @@
 package models
 
 type IIntegration interface {
-	Execute(input interface{},
-		output interface{},
-		functionName string) (map[string]interface{}, error)
+	Execute(input any,
+		output map[string]string,
+		functionName string) ([]any, error)
 
 	Validate() error
 
-	ValidateStep(input interface{},
-		output interface{},
+	ValidateStep(input any,
 		functionName string) error
 }
 

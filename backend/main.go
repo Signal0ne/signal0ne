@@ -51,7 +51,10 @@ func main() {
 		defer conn.Close()
 	}
 
-	tools.Initialize(ctx, namespacesCollection)
+	err = tools.Initialize(ctx, namespacesCollection)
+	if err != nil {
+		panic(err)
+	}
 
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"*"}

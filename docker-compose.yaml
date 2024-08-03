@@ -17,7 +17,8 @@ services:
     volumes:
       - ./mongo-data:/data/db
 
-  # frontend:
-  #     container_name: frontend
-  #     image: 
-  #     ports:
+  frontend:
+      container_name: frontend
+      image: 322456/s0frontend:latest 
+      ports:
+        - 80:80 

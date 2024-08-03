@@ -10,47 +10,45 @@ trigger:
 # Available data fields {service: string,span: string,timestamp: string}
 steps:
 - name: Get ownership
-  integration: backstage
+  integration: backstage1
   function: get_properties_values
   input:
     filter: kind=component,metadata.name={service}
   output:
-    components:
-      - owner: "spec.owner"
-        slack_channel: "metadata.labels.slack_channel"
+    owner: "spec.owner"
+    slack_channel: "metadata.labels.slack_channel"
 # Available data fields {service: string,span: string,timestamp: string, additional_context: {
-#     components: list[object]
+#     backstage1.get_properties_values.output: list[object]
 #   }
 # }
 - name: Get relevant logs
-  integration: opensearch
-  function: get_log_occurances
+  integration: opensearch_prod
+  function: get_log_occurrences
   input:
     query: "{'query': {'bool': {'must': [{'match': {resource.name: {service}}},{'range': {timestamp: {'gte': {timestamp - 15m},'lte': {timestamp}}}}],'must_not': [{'match': {'severity.text': 'INFO'}},{'match': {'severity.text': 'Information'}}]}}}"
   output:
-    log_occurances:
-      - count: sum()
-        body: "body"
-        hostname: "resource:host.name"
+    count: sum()
+    body: "body"
+    hostname: "resource:host.name"
 # Available data fields {service: string,span: string,timestamp: string, additional_context: {
-#     components: list[object],
-#     log_occurances: list[object]
+#     backstage1.get_properties_values.output: list[object],
+#     opensearch_prod.get_log_occurrences.output: list[object]
 #   }
 # }
 - name: Inspect traces
-  integration: jeager
+  integration: jaeger1
   function: get_properties_values
   input:
     service: "{service}"
     tags: "{'error': true}"
-  ouput:
-    log_occurances:
-      - count: sum()
-        log: "logs:exception.stacktrace | tags:grpc.error_message"
-  condition: empty(additional_context.log_occurances)
+  output:
+    count: sum()
+    log: "logs:exception.stacktrace | tags:grpc.error_message"
+  condition: empty(opensearch_prod.get_log_occurrences.output)
 # Available data fields {service: string,span: string,timestamp: string, additional_context: {
-#     components: list[object],
-#     log_occurances: list[object]
+#     backstage1.get_properties_values.output: list[object],
+#     opensearch_prod.get_log_occurrences.output: list[object],
+#     jaeger1.get_properties_values.output: list[object],
 #   }
 # }
 - name: Correlate alerts
@@ -58,12 +56,13 @@ steps:
   function: correlate_ongoing_alerts
   input: 
     filter: timestamp>={timestamp - 15m}&timestamp<={timestamp + 15m}&semanticSimilarity=true
-  ouput:
-    alerts:
-      - alert: alert
+  output:
+    alert: alert
 # Available data fields {service: string,span: string,timestamp: string, additional_context: {
-#     components: list[object],
-#     log_occurances: list[object]
+#     backstage1.get_properties_values.output: list[object],
+#     opensearch_prod.get_log_occurrences.output: list[object],
+#     jaeger1.get_properties_values.output: list[object],
+#     
 #   }, correlated_signals: {
 #     alerts: alerts
 #   }
@@ -72,13 +71,15 @@ steps:
   integration: openai
   function: summarize
   input:
-    content_to_summarize: "{additional_context.log_occurances}"
+    content_to_summarize: "{get_log_occurrences.output | get_properties_values.output}"
   output:
     summarization: content
 # Available data fields {service: string,span: string,timestamp: string, additional_context: {
-#     components: list[object],
-#     log_occurances: list[object],
-#     summarization: stirng
+#     backstage1.get_properties_values.output: list[object],
+#     opensearch_prod.get_log_occurrences.output: list[object],
+#     jaeger1.get_properties_values.output: list[object],
+#     openai.summarize.output: list[object]
+#     
 #   }, correlated_signals: {
 #     alerts: alerts
 #   }
@@ -88,5 +89,14 @@ steps:
   function: post_message
   input:
     parsable_context_object: "."
-    ingore_context_keys:
-    - additional_context.components[].slack_channel
+    ignore_context_keys: "backstage1.get_properties_values.output[].slack_channel"
+# Available data fields {service: string,span: string,timestamp: string, additional_context: {
+#     backstage1.get_properties_values.output: list[object],
+#     opensearch_prod.get_log_occurrences.output: list[object],
+#     jaeger1.get_properties_values.output: list[object],
+#     openai.summarize.output: list[object]
+#     
+#   }, correlated_signals: {
+#     alerts: alerts
+#   }
+# }

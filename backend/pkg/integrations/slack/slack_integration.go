@@ -1,13 +1,16 @@
 package slack
 
 import (
-	"encoding/json"
 	"fmt"
 	"signal0ne/internal/models"
+	"signal0ne/pkg/integrations/helpers"
 )
 
-var functions = map[string]func(T any, dryRun bool) (any, error){
-	"post_message": postMessage,
+var functions = map[string]models.WorkflowFunctionDefinition{
+	"post_message": models.WorkflowFunctionDefinition{
+		Function: postMessage,
+		Input:    PostMessageInput{},
+	},
 }
 
 type SlackIntegration struct {
@@ -16,13 +19,21 @@ type SlackIntegration struct {
 }
 
 func (integration SlackIntegration) Execute(
-	input interface{},
-	output interface{},
-	functionName string) (map[string]interface{}, error) {
+	input any,
+	output map[string]string,
+	functionName string) ([]any, error) {
 
-	var result map[string]interface{}
+	var result []any
 
-	// [TBD]: execute function
+	function, ok := functions[functionName]
+	if !ok {
+		return result, fmt.Errorf("cannot find requested function")
+	}
+
+	result, err := function.Function(input)
+	if err != nil {
+		return make([]any, 0), err
+	}
 
 	return result, nil
 }
@@ -35,8 +46,7 @@ func (integration SlackIntegration) Validate() error {
 }
 
 func (integration SlackIntegration) ValidateStep(
-	input interface{},
-	output interface{},
+	input any,
 	functionName string,
 ) error {
 	function, exists := functions[functionName]
@@ -44,7 +54,7 @@ func (integration SlackIntegration) ValidateStep(
 		return fmt.Errorf("cannot find selected function")
 	}
 
-	_, err := function(input, true)
+	err := helpers.ValidateInputParameters(input, function.Input, functionName)
 	if err != nil {
 		return err
 	}
@@ -53,27 +63,17 @@ func (integration SlackIntegration) ValidateStep(
 }
 
 type PostMessageInput struct {
-	ParsableContextObject string   `json:"parsable_context_object"`
-	IgnoreContextKeys     []string `json:"ignore_context_keys"`
+	ParsableContextObject string `json:"parsable_context_object"`
+	IgnoreContextKeys     string `json:"ignore_context_keys"`
 }
 
-func postMessage(T any, dryRun bool) (any, error) {
-	var input PostMessageInput
-	data, err := json.Marshal(T)
+func postMessage(input any) (output []any, err error) {
+	var parsedInput PostMessageInput
+
+	err = helpers.ValidateInputParameters(input, parsedInput, "post_message")
 	if err != nil {
-		return nil, fmt.Errorf("invalid input for post_message function")
+		return output, err
 	}
 
-	err = json.Unmarshal(data, &input)
-	if err != nil {
-		return nil, fmt.Errorf("invalid input for post_message function")
-	}
-
-	if dryRun {
-		return nil, nil
-	} else {
-		// [TBD]: Execute
-	}
-
-	return nil, nil
+	return output, err
 }

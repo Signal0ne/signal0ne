@@ -3,9 +3,10 @@ package jaeger
 import (
 	"fmt"
 	"signal0ne/internal/models"
+	"signal0ne/pkg/integrations/helpers"
 )
 
-var functions = map[string]func(T any, dryRun bool) (any, error){}
+var functions = map[string]models.WorkflowFunctionDefinition{}
 
 type JaegerIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
@@ -13,13 +14,21 @@ type JaegerIntegration struct {
 }
 
 func (integration JaegerIntegration) Execute(
-	input interface{},
-	output interface{},
-	functionName string) (map[string]interface{}, error) {
+	input any,
+	output map[string]string,
+	functionName string) ([]any, error) {
 
-	var result map[string]interface{}
+	var result []any
 
-	// [TBD]: execute function
+	function, ok := functions[functionName]
+	if !ok {
+		return result, fmt.Errorf("cannot find requested function")
+	}
+
+	result, err := function.Function(input)
+	if err != nil {
+		return make([]any, 0), err
+	}
 
 	return result, nil
 }
@@ -35,8 +44,7 @@ func (integration JaegerIntegration) Validate() error {
 }
 
 func (integration JaegerIntegration) ValidateStep(
-	input interface{},
-	output interface{},
+	input any,
 	functionName string,
 ) error {
 	function, exists := functions[functionName]
@@ -44,7 +52,7 @@ func (integration JaegerIntegration) ValidateStep(
 		return fmt.Errorf("cannot find selected function")
 	}
 
-	_, err := function(input, true)
+	err := helpers.ValidateInputParameters(input, function.Input, functionName)
 	if err != nil {
 		return err
 	}
