@@ -165,7 +165,6 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 		filter := bson.M{
 			"name": step.Integration,
 		}
-		fmt.Printf("Filter %v", filter)
 		result := c.IntegrationsCollection.FindOne(ctx, filter)
 		err := result.Decode(&integrationTemplate)
 		if err != nil {
