@@ -1,13 +1,16 @@
 package backstage
 
 import (
-	"encoding/json"
 	"fmt"
 	"signal0ne/internal/models"
+	"signal0ne/pkg/integrations/helpers"
 )
 
-var functions = map[string]func(T any, dryRun bool) (any, error){
-	"get_properties_values": getPropertiesValues,
+var functions = map[string]models.WorkflowFunctionDefinition{
+	"get_properties_values": models.WorkflowFunctionDefinition{
+		Function: getPropertiesValues,
+		Input:    GetPropertiesValuesInput{},
+	},
 }
 
 type BackstageIntegration struct {
@@ -16,13 +19,21 @@ type BackstageIntegration struct {
 }
 
 func (integration BackstageIntegration) Execute(
-	input interface{},
-	output interface{},
-	functionName string) (map[string]interface{}, error) {
+	input any,
+	output map[string]string,
+	functionName string) ([]any, error) {
 
-	var result map[string]interface{}
+	var result []any
 
-	// [TBD]: execute function
+	function, ok := functions[functionName]
+	if !ok {
+		return result, fmt.Errorf("cannot find requested function")
+	}
+
+	result, err := function.Function(input)
+	if err != nil {
+		return make([]any, 0), err
+	}
 
 	return result, nil
 }
@@ -38,8 +49,7 @@ func (integration BackstageIntegration) Validate() error {
 }
 
 func (integration BackstageIntegration) ValidateStep(
-	input interface{},
-	output interface{},
+	input any,
 	functionName string,
 ) error {
 	function, exists := functions[functionName]
@@ -47,7 +57,7 @@ func (integration BackstageIntegration) ValidateStep(
 		return fmt.Errorf("cannot find selected function")
 	}
 
-	_, err := function(input, true)
+	err := helpers.ValidateInputParameters(input, function.Input)
 	if err != nil {
 		return err
 	}
@@ -59,23 +69,13 @@ type GetPropertiesValuesInput struct {
 	Filter string `json:"filter"`
 }
 
-func getPropertiesValues(T any, dryRun bool) (any, error) {
-	var input GetPropertiesValuesInput
-	data, err := json.Marshal(T)
+func getPropertiesValues(input any) (output []any, err error) {
+	var parsedInput GetPropertiesValuesInput
+
+	err = helpers.ValidateInputParameters(input, parsedInput)
 	if err != nil {
-		return nil, fmt.Errorf("invalid input for get_properties_values function")
+		return output, err
 	}
 
-	err = json.Unmarshal(data, &input)
-	if err != nil {
-		return nil, fmt.Errorf("invalid input for get_properties_values function")
-	}
-
-	if dryRun {
-		return nil, nil
-	} else {
-		// [TBD]: Execute
-	}
-
-	return input.Filter, nil
+	return output, err
 }

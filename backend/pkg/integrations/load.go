@@ -16,7 +16,7 @@ import (
 //go:embed .assets/metadata/*
 var integrationsMDFS embed.FS
 var once sync.Once
-var installableIntegrationsLib map[string]map[string]string
+var installableIntegrationsLib = map[string]map[string]any{}
 var globalErrorHandle error = nil
 
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
@@ -26,25 +26,25 @@ var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"slack":      reflect.TypeOf(slack.SlackIntegration{}),
 }
 
-func GetInstallableIntegrationsLib() (map[string]map[string]string, error) {
+func GetInstallableIntegrationsLib() (map[string]map[string]any, error) {
 	once.Do(func() {
-		entries, err := integrationsMDFS.ReadDir("metadata")
+		entries, err := integrationsMDFS.ReadDir(".assets/metadata")
 		if err != nil {
-			globalErrorHandle = fmt.Errorf("FATAL: %s", err)
+			globalErrorHandle = fmt.Errorf("FATAL: while reading directory, error: %s", err)
 			return
 		}
 		for _, integrationMDFSObject := range entries {
-			var integration map[string]string
+			var integration map[string]any
 			if !integrationMDFSObject.IsDir() {
-				rawBytes, err := integrationsMDFS.ReadFile(integrationMDFSObject.Name())
+				rawBytes, err := integrationsMDFS.ReadFile(fmt.Sprintf(".assets/metadata/%s", integrationMDFSObject.Name()))
 				if err != nil {
-					fmt.Printf("Warning: failed to read integration metadata from: %s", integrationMDFSObject.Name())
+					fmt.Printf("Warning: failed to read integration metadata from: %s, error: %s", integrationMDFSObject.Name(), err)
 				}
-				err = yaml.Unmarshal(rawBytes, integration)
+				err = yaml.Unmarshal(rawBytes, &integration)
 				if err != nil {
-					fmt.Printf("Warning: failed to read integration metadata from: %s", integrationMDFSObject.Name())
+					fmt.Printf("Warning: failed to read integration metadata from: %s, error: %s", integrationMDFSObject.Name(), err)
 				}
-				installableIntegrationsLib[integration["typeName"]] = integration
+				installableIntegrationsLib[integration["typeName"].(string)] = integration
 			}
 		}
 	})

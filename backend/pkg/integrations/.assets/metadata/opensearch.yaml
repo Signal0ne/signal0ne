@@ -1,5 +1,5 @@
-typeName: opensearch,
-imageUri: '../logos/opensearch.svg',
+typeName: opensearch
+imageUri: '../logos/opensearch.svg'
 config: 
   host: string
   port: string

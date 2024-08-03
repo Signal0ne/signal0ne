@@ -179,7 +179,7 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 
 		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
 
-		err = integration.ValidateStep(step.Input, step.Output.Data, step.Function)
+		err = integration.ValidateStep(step.Input, step.Function)
 		if err != nil {
 			return err
 		}

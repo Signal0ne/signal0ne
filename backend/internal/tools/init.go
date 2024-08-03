@@ -28,10 +28,8 @@ func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error
 	// Loading installable integrations
 	_, err = integrations.GetInstallableIntegrationsLib()
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot parse installable error: %s", err)
 	}
-
-	fmt.Printf("Installable integrations loaded from assets.")
 
 	return nil
 }
