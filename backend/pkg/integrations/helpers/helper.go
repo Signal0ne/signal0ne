@@ -8,12 +8,12 @@ import (
 func ValidateInputParameters(input any, parsedInput any, functionName string) error {
 	data, err := json.Marshal(input)
 	if err != nil {
-		return fmt.Errorf("invalid input for %s function")
+		return fmt.Errorf("invalid input for %s function", functionName)
 	}
 
 	err = json.Unmarshal(data, &parsedInput)
 	if err != nil {
-		return fmt.Errorf("invalid input for %s function")
+		return fmt.Errorf("invalid input for %s function", functionName)
 	}
 
 	return nil

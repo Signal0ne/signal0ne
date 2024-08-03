@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -37,15 +38,25 @@ func NewWorkflowController(
 	}
 }
 
-func (c *WorkflowController) ReceiveAlert(ctx *gin.Context) {
+func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var workflow *models.Workflow
 
 	namespaceId := ctx.Param("namespaceid")
 	workflowId := ctx.Param("workflowid")
 	salt := ctx.Param("salt")
 
-	searchRes := c.WorkflowsCollection.FindOne(ctx, bson.M{"_id": workflowId})
-	err := searchRes.Decode(&workflow)
+	ID, err := primitive.ObjectIDFromHex(workflowId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	filter := bson.M{"_id": ID}
+
+	searchRes := c.WorkflowsCollection.FindOne(ctx, filter)
+	err = searchRes.Decode(&workflow)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
@@ -67,7 +78,60 @@ func (c *WorkflowController) ReceiveAlert(ctx *gin.Context) {
 		return
 	}
 
-	// TBD: Execute workflow
+	//Trigger execution
+	var incomingTriggerPayload map[string]any
+	var desiredPropertiesWithValues = map[string]any{}
+
+	body, err := ctx.GetRawData()
+	if err != nil || len(body) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("cannot get body %s", err),
+		})
+		return
+	}
+
+	err = json.Unmarshal(body, &incomingTriggerPayload)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("cannot decode body %s", err),
+		})
+		return
+	}
+
+	for k, m := range workflow.Trigger.WebhookTrigger.Webhook.Output {
+		desiredPropertiesWithValues[k] = c.traverseOutput(incomingTriggerPayload, k, m)
+	}
+
+	fmt.Printf("Webhook incoming payload cheery-picked %v", desiredPropertiesWithValues)
+
+	// Steps execution
+	for _, step := range workflow.Steps {
+		var integrationTemplate models.Integration
+
+		// 1. Get integration
+		filter := bson.M{
+			"name": step.Integration,
+		}
+		result := c.IntegrationsCollection.FindOne(ctx, filter)
+		err := result.Decode(&integrationTemplate)
+		if err != nil {
+			fmt.Printf("integration schema parsing error, %s", err)
+		}
+
+		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+		if !exists {
+			fmt.Printf("cannot find integration type specified")
+		}
+
+		// 2. Parse integration
+		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
+
+		// 3. execute
+		_, err = integration.Execute(step.Input, step.Output, step.Function)
+		if err != nil {
+			fmt.Printf("failed to execute %s", step.Function)
+		}
+	}
 
 	ctx.JSON(http.StatusOK, nil)
 }
@@ -129,9 +193,10 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"webhook": fmt.Sprintf("%s%s/webhook/%s/%s/%s",
+		"webhook": fmt.Sprintf("%s%s:%s/webhook/%s/%s/%s",
 			httpPrefix,
 			c.WebhookServerRef.ServerDomain,
+			c.WebhookServerRef.ServerPort,
 			workflow.NamespaceId,
 			workflowID.Hex(),
 			workflow.WorkflowSalt,
@@ -185,5 +250,28 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 
 	}
 
+	return nil
+}
+
+func (c *WorkflowController) traverseOutput(
+	payload any,
+	desiredKey string,
+	mapping string) any {
+
+	switch v := payload.(type) {
+	case map[string]any:
+		for key, value := range v {
+			if key == mapping {
+				return value
+			}
+			c.traverseOutput(value, desiredKey, mapping)
+		}
+	case []any:
+		for _, value := range v {
+			c.traverseOutput(value, desiredKey, mapping)
+		}
+	default:
+		return v
+	}
 	return nil
 }

@@ -77,5 +77,7 @@ func getPropertiesValues(input any) (output []any, err error) {
 		return output, err
 	}
 
+	fmt.Printf("Executing backstage getPropertiesValues")
+
 	return output, err
 }
