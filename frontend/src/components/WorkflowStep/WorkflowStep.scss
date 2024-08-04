@@ -63,7 +63,13 @@
       min-width: 35%;
       word-break: break-all;
 
-      span {
+      .more-dots {
+        background-color: transparent;
+        color: #fff;
+        font-size: 16px;
+      }
+
+      .output-content {
         background-color: white;
         border-radius: 6px;
         color: black;

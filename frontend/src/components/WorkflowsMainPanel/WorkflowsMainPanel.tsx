@@ -1,18 +1,16 @@
 import { useEffect } from 'react';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import './WorkflowsMainPanel.scss';
-import WorkflowStepDetails from '../WorkflowStepDetails/WorkflowStepDetails';
 import WorkflowSteps from '../WorkflowSteps/WorkflowSteps';
+import WorkflowStepDetails from '../WorkflowStepDetails/WorkflowStepDetails';
 
 const WorkflowsMainPanel = () => {
-  const { activeWorkflow, activeStep, setActiveStep } = useWorkflowsContext();
+  const { activeWorkflow, setActiveStep } = useWorkflowsContext();
 
   useEffect(() => {
     if (!activeWorkflow?.steps[1]) return;
     setActiveStep(activeWorkflow?.steps[1]);
   }, [activeWorkflow, setActiveStep]);
-
-  console.log(activeWorkflow, activeStep);
 
   return (
     <main className="workflows-main-panel">
