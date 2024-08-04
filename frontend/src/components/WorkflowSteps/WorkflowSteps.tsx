@@ -35,7 +35,7 @@ const WorkflowSteps = () => {
       >
         {activeWorkflow.steps.map((step, index) => (
           <>
-            <WorkflowStep step={step} />
+            <WorkflowStep index={index} step={step} />
             {index !== activeWorkflow.steps.length - 1 && (
               <ArrowDown
                 className="workflow-step-separator"

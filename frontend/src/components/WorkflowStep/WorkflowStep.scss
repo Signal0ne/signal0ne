@@ -1,63 +1,97 @@
-.workflow-step {
-  align-items: center;
-  border: 1px solid #888;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-  cursor: pointer;
+.workflow-step-container {
   display: flex;
   gap: 12px;
-  max-width: 500px;
-  padding: 12px;
+  justify-content: center;
   width: 100%;
 
-  &:hover {
-    background-color: #383838;
+  @media screen and (min-width: 1280px) {
+    gap: 32px;
   }
 
-  &.active {
-    background-color: #383838;
-    border-color: #ccc;
-  }
-
-  .workflow-step-icon {
-    height: 40px;
-    width: 40px;
-
-    svg {
-      height: 40px;
-      width: 40px;
-    }
-  }
-
-  .workflow-step-info-container {
+  .workflow-step-content {
+    align-items: center;
+    border: 1px solid #888;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
     display: flex;
-    flex-direction: column;
+    gap: 12px;
+    max-width: 500px;
+    padding: 12px;
     width: 100%;
 
-    .workflow-step-info-function {
-      font-size: 12px;
+    &:hover {
+      background-color: #383838;
     }
 
-    .workflow-step-info-name {
-      font-size: 16px;
-      font-weight: 600;
+    &.active {
+      background-color: #383838;
+      border-color: #ccc;
+      box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+    }
+
+    .workflow-step-icon {
+      height: 40px;
+      width: 40px;
+
+      svg {
+        height: 40px;
+        width: 40px;
+      }
+    }
+
+    .workflow-step-info-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+
+      .workflow-step-info-function {
+        font-size: 12px;
+      }
+
+      .workflow-step-info-name {
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    .workflow-step-output {
+      display: flex;
+      flex-wrap: wrap;
+      font-size: 10px;
+      gap: 4px;
+      min-width: 35%;
+      word-break: break-all;
+
+      span {
+        background-color: white;
+        border-radius: 6px;
+        color: black;
+        display: inline-block;
+        padding: 4px 6px;
+      }
     }
   }
 
-  .workflow-step-output {
-    display: flex;
-    flex-wrap: wrap;
-    font-size: 10px;
-    gap: 4px;
-    min-width: 35%;
-    word-break: break-all;
+  .workflow-step-index {
+    border-right: 3px solid #fff;
+    font-size: 14px;
+    margin: 0;
+    min-width: fit-content;
+    padding-right: 8px;
 
-    span {
-      background-color: white;
-      border-radius: 6px;
-      color: black;
-      display: inline-block;
-      padding: 4px 6px;
+    @media screen and (min-width: 1280px) {
+      font-size: 16px;
+      padding-right: 16px;
+    }
+
+    @media screen and (min-width: 1366px) {
+      padding-right: 24px;
+    }
+    
+    &.active {
+      font-weight: 600;
+      text-shadow: 0 3px 4px rgba(255, 255, 255, 0.15);
     }
   }
 }
