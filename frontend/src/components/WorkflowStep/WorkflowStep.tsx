@@ -1,4 +1,4 @@
-import { getIntegrationIcon } from '../../utils/utils';
+import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
 import { Step } from '../../data/dummyWorkflows';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import './WorkflowStep.scss';
@@ -19,6 +19,8 @@ const WorkflowStep = ({ step }: WorkflowStepProps) => {
       }`}
       key={step.name + step.function}
       onClick={handleStepClick}
+      onKeyDown={handleKeyDown(handleStepClick)}
+      tabIndex={0}
     >
       <div className="workflow-step-icon">
         {getIntegrationIcon(step.integration)}

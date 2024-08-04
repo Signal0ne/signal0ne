@@ -6,7 +6,9 @@
   cursor: pointer;
   display: flex;
   gap: 12px;
+  max-width: 500px;
   padding: 12px;
+  width: 100%;
 
   &:hover {
     background-color: #383838;

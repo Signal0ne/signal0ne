@@ -3,22 +3,21 @@ import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import WorkflowStep from '../WorkflowStep/WorkflowStep';
 import './WorkflowSteps.scss';
 
+const calcStepsListHeight = () => {
+  const workflowsContainer =
+    document.querySelector('.workflows-workflow')?.getBoundingClientRect()
+      .height ?? 0;
+  const workflowInfoContainer =
+    document.querySelector('.workflow-info-container')?.getBoundingClientRect()
+      .height ?? 0;
+
+  if (!workflowsContainer) return '100%';
+
+  return workflowsContainer - workflowInfoContainer;
+};
+
 const WorkflowSteps = () => {
   const { activeWorkflow } = useWorkflowsContext();
-
-  const calcStepsListHeight = () => {
-    const workflowsContainer =
-      document.querySelector('.workflows-workflow')?.getBoundingClientRect()
-        .height ?? 0;
-    const workflowInfoContainer =
-      document
-        .querySelector('.workflow-info-container')
-        ?.getBoundingClientRect().height ?? 0;
-
-    if (!workflowsContainer) return '100%';
-
-    return workflowsContainer - workflowInfoContainer;
-  };
 
   if (!activeWorkflow) return null;
 

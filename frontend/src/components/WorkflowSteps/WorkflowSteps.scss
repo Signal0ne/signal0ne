@@ -21,10 +21,12 @@
       font-size: 20px;
       margin: 0;
       text-align: center;
+      text-shadow: 0 3px 4px rgba(0, 0, 0, 0.2);
     }
   }
 
   .workflow-steps-list {
+    align-items: center;
     display: flex;
     flex-direction: column;
     gap: 8px;

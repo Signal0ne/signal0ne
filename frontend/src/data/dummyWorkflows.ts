@@ -61,9 +61,9 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'greater(additional_context.log_occurrences.count'
       },
       {
-        name: 'Send to slack channel',
+        name: 'Send to slack channel2',
         integration: 'slack',
-        function: 'post_message',
+        function: 'post_message2',
         input: {
           parsable_context_object: '.',
           ignore_context_keys: 'additional_context.components[].slack_channel'
