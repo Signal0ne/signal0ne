@@ -1,0 +1,84 @@
+.workflow-step-details {
+  background-color: #343434;
+  box-shadow: 4px 0 8px rgba(0, 0, 0, 0.2); 
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 16px;
+  width: 320px;
+  @include customScrollbar;
+
+  .workflow-step-details-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .workflow-step-details-group-header {
+      color: #fff;
+      display: flex;
+      font-size: 20px;
+      font-weight: 600;
+      justify-content: space-between;
+      line-height: 24px;
+      margin: 0;
+
+      .workflow-step-details-group-header-icon {
+        height: 28px;
+        width: 28px;
+
+        svg {
+          height: 100%;
+          width: 100%;
+        }
+      }
+    }
+
+    .workflow-step-details-group-content {
+      background-color: #424242;
+      border-radius: 8px;
+      box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1); 
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 80px;
+      overflow-x: auto;
+      padding: 8px;
+      @include customScrollbar;
+
+      .workflow-step-group-item {
+        align-items: center;
+        background-color: #fff;
+        border-radius: 6px;
+        color: #000;
+        display: flex;
+        font-size: 12px;
+        height: 24px;
+        line-height: 16px;
+        padding: 4px 6px;
+
+        span {
+          white-space: nowrap;
+        }
+      }
+    }
+
+    .workflow-step-input {
+      background-color: #424242;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 3px 4px rgba(0, 0, 0, 0.1);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px;
+      text-overflow: ellipsis;
+
+      &:read-only {
+        cursor: default;
+        opacity: 0.7;
+      }
+    }
+  }
+}

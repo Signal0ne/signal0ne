@@ -1,0 +1,61 @@
+.workflow-step {
+  align-items: center;
+  border: 1px solid #888;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+
+  &:hover {
+    background-color: #383838;
+  }
+
+  &.active {
+    background-color: #383838;
+    border-color: #ccc;
+  }
+
+  .workflow-step-icon {
+    height: 40px;
+    width: 40px;
+
+    svg {
+      height: 40px;
+      width: 40px;
+    }
+  }
+
+  .workflow-step-info-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    .workflow-step-info-function {
+      font-size: 12px;
+    }
+
+    .workflow-step-info-name {
+      font-size: 16px;
+      font-weight: 600;
+    }
+  }
+
+  .workflow-step-output {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 10px;
+    gap: 4px;
+    min-width: 35%;
+    word-break: break-all;
+
+    span {
+      background-color: white;
+      border-radius: 6px;
+      color: black;
+      display: inline-block;
+      padding: 4px 6px;
+    }
+  }
+}

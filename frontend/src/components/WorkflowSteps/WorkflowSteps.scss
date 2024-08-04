@@ -1,0 +1,43 @@
+.workflow-steps-container {
+  background-color: #424242;
+  height: 100%;
+  width: 100%;
+
+  .workflow-info-container {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+
+    .workflow-info-description {
+      font-size: 13px;
+      font-weight: 500;
+      margin: 0;
+      text-align: center;
+    }
+
+    .workflow-info-name {
+      font-size: 20px;
+      margin: 0;
+      text-align: center;
+    }
+  }
+
+  .workflow-steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    padding: 16px;
+    max-height: 500px;
+    overflow-y: scroll;
+    @include customScrollbar;
+  }
+
+  .workflow-step-separator {
+    margin: 0 auto;
+    min-height: 36px;
+    min-width: 36px;
+  }
+}

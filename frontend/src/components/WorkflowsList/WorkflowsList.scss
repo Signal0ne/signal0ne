@@ -8,19 +8,7 @@
   overflow-y: scroll;
   padding: 0;
   padding-right: 8px;
-
-  &::-webkit-scrollbar {
-    width: 2px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #CACACA;
-    border-radius: 1px;
-  }
+  @include customScrollbar;
 
   .workflows-list--empty {
     align-items: center;
