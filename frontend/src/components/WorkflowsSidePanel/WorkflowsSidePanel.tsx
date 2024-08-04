@@ -1,18 +1,24 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import { DUMMY_WORKFLOWS } from '../../data/dummyWorkflows';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
+import FileUploadButton from '../FileUploadButton/FileUploadButton';
 import SearchInput from '../SearchInput/SearchInput';
 import WorkflowsList from '../WorkflowsList/WorkflowsList';
 import './WorkflowsSidePanel.scss';
 
 const WorkflowsSidePanel = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
 
   const { setWorkflows, workflows } = useWorkflowsContext();
 
   useEffect(() => {
+    setIsLoading(true);
     //TODO: Fetch workflows from API
-    setTimeout(() => setWorkflows(DUMMY_WORKFLOWS), 1000);
+    setTimeout(() => {
+      setWorkflows(DUMMY_WORKFLOWS);
+      setIsLoading(false);
+    }, 1000);
   }, [setWorkflows]);
 
   const handleSearch = (e: ChangeEvent) => {
@@ -39,7 +45,8 @@ const WorkflowsSidePanel = () => {
           placeholder="Search for Workflows..."
           value={search}
         />
-        <WorkflowsList workflows={FILTERED_WORKFLOWS} />
+        <FileUploadButton />
+        <WorkflowsList isLoading={isLoading} workflows={FILTERED_WORKFLOWS} />
       </div>
     </aside>
   );

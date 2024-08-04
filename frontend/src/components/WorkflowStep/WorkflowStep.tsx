@@ -27,7 +27,6 @@ const WorkflowStep = ({ index, step }: WorkflowStepProps) => {
         className={classNames('workflow-step-content', {
           active: step.name === activeStep?.name
         })}
-        key={step.name + index}
         onClick={handleStepClick}
         onKeyDown={handleKeyDown(handleStepClick)}
         tabIndex={0}
@@ -44,7 +43,20 @@ const WorkflowStep = ({ index, step }: WorkflowStepProps) => {
         <div className="workflow-step-output">
           {step?.output &&
             Object.entries(step.output).map((output, index) => {
-              return <span key={index}>{`${output[0]}:{{${output[1]}}}`}</span>;
+              if (index === 3)
+                return (
+                  <span className="more-dots" key={index}>
+                    ...
+                  </span>
+                );
+              if (index > 3) return null;
+
+              return (
+                <span
+                  className="output-content"
+                  key={index}
+                >{`${output[0]}:{{${output[1]}}}`}</span>
+              );
             })}
         </div>
       </div>

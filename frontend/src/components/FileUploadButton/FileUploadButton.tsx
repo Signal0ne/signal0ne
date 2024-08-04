@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, memo, useState } from 'react';
 import { UploadIcon } from '../Icons/Icons';
 import yaml from 'js-yaml';
 import './FileUploadButton.scss';
@@ -55,4 +55,4 @@ const FileUploadButton = () => {
   );
 };
 
-export default FileUploadButton;
+export default memo(FileUploadButton);

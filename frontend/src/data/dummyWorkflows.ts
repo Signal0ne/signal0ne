@@ -33,7 +33,9 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         output: {
           owner: 'spec.owner',
-          slack_channel: 'metadata.labels.slack_channel'
+          slack_channel: 'metadata.labels.slack_channel',
+          slack_channel2: 'metadata.labels.slack_channel',
+          slack_channel3: 'metadata.labels.slack_channel'
         }
       },
       {
