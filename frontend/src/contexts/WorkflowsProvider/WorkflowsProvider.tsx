@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, ReactNode, useState } from 'react';
 import { Step, Workflow } from '../../data/dummyWorkflows';
 
 export interface WorkflowsContextType {
@@ -10,15 +10,15 @@ export interface WorkflowsContextType {
   workflows: Workflow[];
 }
 
+interface WorkflowsProviderProps {
+  children: ReactNode;
+}
+
 export const WorkflowsContext = createContext<WorkflowsContextType | undefined>(
   undefined
 );
 
-export const WorkflowsProvider = ({
-  children
-}: {
-  children: React.ReactNode;
-}) => {
+export const WorkflowsProvider = ({ children }: WorkflowsProviderProps) => {
   const [activeStep, setActiveStep] = useState<Step | null>(null);
   const [activeWorkflow, setActiveWorkflow] = useState<Workflow | null>(null);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);

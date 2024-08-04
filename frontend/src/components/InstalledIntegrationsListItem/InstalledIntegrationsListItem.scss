@@ -1,0 +1,31 @@
+.installed-integrations-list-item {
+  align-items: center;
+  background-color: #424242;
+  border: 1px solid #888;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex; 
+  gap: 16px;
+  padding: 12px;
+  width: 100%;
+
+  &:hover {
+    background-color: #383838;
+  }
+
+  .integration-icon {
+    height: 32px;
+    min-height: 32px;
+    min-width: 32px;
+    width: 32px;
+
+    svg {
+      height: 100%;
+      width: 100%;
+    }
+  }
+
+  .integration-name {
+    font-weight: 500;
+  }
+}
