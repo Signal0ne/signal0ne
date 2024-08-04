@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"encoding/json"
 	"fmt"
 	"signal0ne/internal/models"
 	"signal0ne/pkg/integrations/helpers"
@@ -69,13 +70,23 @@ type PostMessageInput struct {
 
 func postMessage(input any) (output []any, err error) {
 	var parsedInput PostMessageInput
+	var parsedAlert map[string]any
 
-	err = helpers.ValidateInputParameters(input, parsedInput, "post_message")
+	err = helpers.ValidateInputParameters(input, &parsedInput, "post_message")
 	if err != nil {
 		return output, err
 	}
 
-	fmt.Printf("Executing slack postMessage")
+	fmt.Printf("Executing slack postMessage\n")
+	err = json.Unmarshal([]byte(parsedInput.ParsableContextObject), &parsedAlert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
+	}
+	prettyJSON, err := json.MarshalIndent(parsedAlert, "", "    ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+	fmt.Print(string(prettyJSON))
 
 	return output, err
 }

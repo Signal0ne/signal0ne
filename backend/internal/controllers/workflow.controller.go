@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
+	"text/template"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -40,6 +42,10 @@ func NewWorkflowController(
 
 func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var workflow *models.Workflow
+	var alert = models.EnrichedAlert{
+		TriggerProperties: map[string]any{},
+		AdditionalContext: map[string]models.Outputs{},
+	}
 
 	namespaceId := ctx.Param("namespaceid")
 	workflowId := ctx.Param("workflowid")
@@ -99,10 +105,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	}
 
 	for k, m := range workflow.Trigger.WebhookTrigger.Webhook.Output {
-		desiredPropertiesWithValues[k] = c.traverseOutput(incomingTriggerPayload, k, m)
+		desiredPropertiesWithValues[k] = tools.TraverseOutput(incomingTriggerPayload, k, m)
 	}
 
-	fmt.Printf("Webhook incoming payload cheery-picked %v", desiredPropertiesWithValues)
+	alert.TriggerProperties = desiredPropertiesWithValues
 
 	// Steps execution
 	for _, step := range workflow.Steps {
@@ -126,10 +132,43 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		// 2. Parse integration
 		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
 
-		// 3. execute
-		_, err = integration.Execute(step.Input, step.Output, step.Function)
+		// 3. Prepare input
+		var alertEnrichmentsMap = make(map[string]any)
+		for k, v := range alert.TriggerProperties {
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				continue
+			}
+			alertEnrichmentsMap[k] = string(bytes)
+		}
+		for k, v := range alert.AdditionalContext {
+			bytes, err := json.Marshal(v)
+			if err != nil {
+				continue
+			}
+			alertEnrichmentsMap[k] = string(bytes)
+		}
+
+		for key, value := range step.Input {
+			buf := new(bytes.Buffer)
+			t := template.Must(template.New("").Funcs(template.FuncMap{
+				"index": func() string {
+					bytes, _ := json.Marshal(alertEnrichmentsMap)
+					return string(bytes)
+				},
+			}).Parse(value))
+			t.Execute(buf, alertEnrichmentsMap)
+			step.Input[key] = buf.String()
+		}
+
+		// 4. Execute
+		execResult, err := integration.Execute(step.Input, step.Output, step.Function)
 		if err != nil {
-			fmt.Printf("failed to execute %s", step.Function)
+			fmt.Printf("failed to execute %s, error: %s", step.Function, err)
+		}
+
+		alert.AdditionalContext[step.Function] = models.Outputs{
+			Output: execResult,
 		}
 	}
 
@@ -224,7 +263,6 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 	}
 
 	// Steps
-
 	for _, step := range workflow.Steps {
 		var integrationTemplate models.Integration
 		filter := bson.M{
@@ -250,28 +288,5 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 
 	}
 
-	return nil
-}
-
-func (c *WorkflowController) traverseOutput(
-	payload any,
-	desiredKey string,
-	mapping string) any {
-
-	switch v := payload.(type) {
-	case map[string]any:
-		for key, value := range v {
-			if key == mapping {
-				return value
-			}
-			c.traverseOutput(value, desiredKey, mapping)
-		}
-	case []any:
-		for _, value := range v {
-			c.traverseOutput(value, desiredKey, mapping)
-		}
-	default:
-		return v
-	}
 	return nil
 }
