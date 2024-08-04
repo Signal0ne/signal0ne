@@ -42,6 +42,7 @@ func NewWorkflowController(
 
 func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var workflow *models.Workflow
+	var localErrorMessage = ""
 	var alert = models.EnrichedAlert{
 		TriggerProperties: map[string]any{},
 		AdditionalContext: map[string]models.Outputs{},
@@ -67,6 +68,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 		return
 	}
 
@@ -74,6 +77,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 		return
 	}
 
@@ -81,34 +86,19 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 		return
 	}
 
 	//Trigger execution
-	var incomingTriggerPayload map[string]any
-	var desiredPropertiesWithValues = map[string]any{}
-
-	body, err := ctx.GetRawData()
-	if err != nil || len(body) == 0 {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": fmt.Sprintf("cannot get body %s", err),
-		})
-		return
-	}
-
-	err = json.Unmarshal(body, &incomingTriggerPayload)
+	alert.TriggerProperties, err = tools.WebhookTriggerExec(ctx, workflow)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": fmt.Sprintf("cannot decode body %s", err),
-		})
+		ctx.JSON(http.StatusInternalServerError, err)
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 		return
 	}
-
-	for k, m := range workflow.Trigger.WebhookTrigger.Webhook.Output {
-		desiredPropertiesWithValues[k] = tools.TraverseOutput(incomingTriggerPayload, k, m)
-	}
-
-	alert.TriggerProperties = desiredPropertiesWithValues
 
 	// Steps execution
 	for _, step := range workflow.Steps {
@@ -122,11 +112,15 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		err := result.Decode(&integrationTemplate)
 		if err != nil {
 			fmt.Printf("integration schema parsing error, %s", err)
+			localErrorMessage = fmt.Sprintf("%v", err)
+			continue
 		}
 
 		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
 			fmt.Printf("cannot find integration type specified")
+			localErrorMessage = fmt.Sprintf("%v", err)
+			continue
 		}
 
 		// 2. Parse integration
@@ -137,6 +131,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		for k, v := range alert.TriggerProperties {
 			bytes, err := json.Marshal(v)
 			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
 			alertEnrichmentsMap[k] = string(bytes)
@@ -144,6 +139,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		for k, v := range alert.AdditionalContext {
 			bytes, err := json.Marshal(v)
 			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
 			alertEnrichmentsMap[k] = string(bytes)
@@ -151,12 +147,16 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 		for key, value := range step.Input {
 			buf := new(bytes.Buffer)
-			t := template.Must(template.New("").Funcs(template.FuncMap{
+			t, err := template.New("").Funcs(template.FuncMap{
 				"index": func() string {
 					bytes, _ := json.Marshal(alertEnrichmentsMap)
 					return string(bytes)
 				},
-			}).Parse(value))
+			}).Parse(value)
+			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
+				continue
+			}
 			t.Execute(buf, alertEnrichmentsMap)
 			step.Input[key] = buf.String()
 		}
@@ -165,12 +165,15 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		execResult, err := integration.Execute(step.Input, step.Output, step.Function)
 		if err != nil {
 			fmt.Printf("failed to execute %s, error: %s", step.Function, err)
+			localErrorMessage = fmt.Sprintf("%v", err)
 		}
 
 		alert.AdditionalContext[step.Function] = models.Outputs{
 			Output: execResult,
 		}
 	}
+
+	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 
 	ctx.JSON(http.StatusOK, nil)
 }
