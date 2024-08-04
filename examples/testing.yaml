@@ -23,3 +23,4 @@ steps:
     parsable_context_object: "{{index}}"
     ignore_context_keys: "backstage1.get_properties_values.output[].slack_channel"
     
+    
