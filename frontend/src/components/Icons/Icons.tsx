@@ -1,5 +1,21 @@
 import { SVGProps } from 'react';
 
+export const ArrowDown = (props: SVGProps<SVGSVGElement>) => (
+  <svg
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      clipRule="evenodd"
+      d="M12 3.25C12.4142 3.25 12.75 3.58579 12.75 4L12.75 18.1893L17.4697 13.4697C17.7626 13.1768 18.2374 13.1768 18.5303 13.4697C18.8232 13.7626 18.8232 14.2374 18.5303 14.5303L12.5303 20.5303C12.3897 20.671 12.1989 20.75 12 20.75C11.8011 20.75 11.6103 20.671 11.4697 20.5303L5.46967 14.5303C5.17678 14.2374 5.17678 13.7626 5.46967 13.4697C5.76256 13.1768 6.23744 13.1768 6.53033 13.4697L11.25 18.1893L11.25 4C11.25 3.58579 11.5858 3.25 12 3.25Z"
+      fill="currentColor"
+      fillRule="evenodd"
+    />
+  </svg>
+);
+
 export const AccountIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
     fill="none"
@@ -58,9 +74,7 @@ export const GearIcon = (props: SVGProps<SVGSVGElement>) => (
 
 export const JaegerIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
-    height="64"
     viewBox="-113.76 -96.84 64 64"
-    width="64"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
@@ -140,11 +154,9 @@ export const JaegerIcon = (props: SVGProps<SVGSVGElement>) => (
 
 export const PrometheusIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="64"
-    height="64"
-    viewBox="-4.649 -0.667 64 64"
     overflow="visible"
+    viewBox="-4.649 -0.667 64 64"
+    xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
     <path
@@ -182,7 +194,7 @@ export const Signal0neLogo = (props: SVGProps<SVGSVGElement>) => (
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
-    <g clip-path="url(#clip0_71_156)">
+    <g clipPath="url(#clip0_71_156)">
       <path
         d="M27.8547 0.478394H0L4.14976 6.1538L6.22365 8.9929L8.29955 11.8292L10.3734 14.6683L13.9283 19.5275L15.3954 17.5212L13.3094 14.6683H17.4652L19.5431 11.8292H11.2335L9.15964 8.9929H21.621L23.6989 6.1538H7.08374L5.00985 3.31748H25.7768L27.8547 0.478394Z"
         fill="#ffffff"
@@ -197,6 +209,56 @@ export const Signal0neLogo = (props: SVGProps<SVGSVGElement>) => (
         <rect width="34" height="20" fill="white" />
       </clipPath>
     </defs>
+  </svg>
+);
+
+export const SlackIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <path
+      d="m 17.777788,40.309957 c 0,-3.728276 2.81916,-6.729717 6.320986,-6.729717 3.501827,0 6.320986,3.001441 6.320986,6.729717 v 16.56525 c 0,3.728197 -2.819159,6.729717 -6.320986,6.729717 -3.501826,0 -6.320986,-3.00152 -6.320986,-6.729717 z"
+      fill="#e01e5a"
+      stroke="#e01e5a"
+    />
+    <path
+      d="m 40.309891,46.222212 c -3.728196,0 -6.729638,-2.81916 -6.729638,-6.320986 0,-3.501826 3.001442,-6.320986 6.729638,-6.320986 H 56.8753 c 3.728197,0 6.729638,2.81916 6.729638,6.320986 0,3.501826 -3.001441,6.320986 -6.729638,6.320986 z"
+      fill="#ecb22d"
+      stroke="#ecb22d"
+    />
+    <path
+      d="m 33.580253,7.1246997 c 0,-3.7281963 2.81916,-6.72963758 6.320987,-6.72963758 3.501826,0 6.320986,3.00144128 6.320986,6.72963758 V 23.69003 c 0,3.728275 -2.81916,6.729717 -6.320986,6.729717 -3.501827,0 -6.320987,-3.001442 -6.320987,-6.729717 z"
+      fill="#2fb67c"
+      stroke="#2fb67c"
+    />
+    <path
+      d="m 7.1247142,30.419747 c -3.7281967,0 -6.72963796,-2.81916 -6.72963796,-6.320987 0,-3.501826 3.00144126,-6.320986 6.72963796,-6.320986 H 23.690043 c 3.728276,0 6.729717,2.81916 6.729717,6.320986 0,3.501827 -3.001441,6.320987 -6.729717,6.320987 z"
+      fill="#36c5f1"
+      stroke="#36c5f1"
+    />
+    <g
+      strokeLinejoin="miter"
+      transform="matrix(0.79012328,0,0,0.79012328,-0.39504704,-0.39506116)"
+    >
+      <path
+        d="m 43,73 a 7.983,7.983 0 0 0 8,8 c 4.432,0 8,-3.568 8,-8 a 7.983,7.983 0 0 0 -8,-8 h -8 z"
+        fill="#ecb22d"
+        stroke="#ecb22d"
+      />
+      <path
+        d="m 73,39 h -8 v -8 c 0,-4.432 3.568,-8 8,-8 4.432,0 8,3.568 8,8 0,4.432 -3.568,8 -8,8 z"
+        fill="#2fb67c"
+        stroke="#2fb67c"
+      />
+      <path
+        d="m 9,43 h 8 v 8 c 0,4.432 -3.568,8 -8,8 A 7.983,7.983 0 0 1 1,51 c 0,-4.432 3.568,-8 8,-8 z"
+        fill="#e01e5a"
+        stroke="#e01e5a"
+      />
+      <path
+        d="m 39,9 v 8 H 31 A 7.983,7.983 0 0 1 23,9 c 0,-4.432 3.568,-8 8,-8 a 7.983,7.983 0 0 1 8,8 z"
+        fill="#36c5f1"
+        stroke="#36c5f1"
+      />
+    </g>
   </svg>
 );
 

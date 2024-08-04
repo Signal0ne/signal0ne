@@ -12,6 +12,10 @@
   padding: 16px;
   position: relative;
   width: 100%;
+
+  &:focus-within {
+    outline: 1px solid #4A90E2;
+  }
   
   &:hover {
     opacity: 0.8;
