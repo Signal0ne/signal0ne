@@ -116,7 +116,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			continue
 		}
 
-		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+		integrationType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
 			fmt.Printf("cannot find integration type specified")
 			localErrorMessage = fmt.Sprintf("%v", err)
@@ -124,25 +124,25 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 
 		// 2. Parse integration
-		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
+		integration := reflect.New(integrationType).Elem().Interface().(models.IIntegration)
 
 		// 3. Prepare input
 		var alertEnrichmentsMap = make(map[string]any)
-		for k, v := range alert.TriggerProperties {
-			bytes, err := json.Marshal(v)
+		for key, value := range alert.TriggerProperties {
+			bytes, err := json.Marshal(value)
 			if err != nil {
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
-			alertEnrichmentsMap[k] = string(bytes)
+			alertEnrichmentsMap[key] = string(bytes)
 		}
-		for k, v := range alert.AdditionalContext {
-			bytes, err := json.Marshal(v)
+		for key, value := range alert.AdditionalContext {
+			bytes, err := json.Marshal(value)
 			if err != nil {
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
-			alertEnrichmentsMap[k] = string(bytes)
+			alertEnrichmentsMap[key] = string(bytes)
 		}
 
 		for key, value := range step.Input {
@@ -277,12 +277,12 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 			return fmt.Errorf("integration schema parsing error, %s", err)
 		}
 
-		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+		integrationType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
 			return fmt.Errorf("cannot find integration type specified")
 		}
 
-		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
+		integration := reflect.New(integrationType).Elem().Interface().(models.IIntegration)
 
 		err = integration.ValidateStep(step.Input, step.Function)
 		if err != nil {
