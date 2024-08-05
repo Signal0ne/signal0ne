@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"encoding/json"
 	"fmt"
 	"signal0ne/internal/models"
 	"signal0ne/pkg/integrations/helpers"
@@ -27,12 +28,12 @@ func (integration SlackIntegration) Execute(
 
 	function, ok := functions[functionName]
 	if !ok {
-		return result, fmt.Errorf("cannot find requested function")
+		return result, fmt.Errorf("%s.%s: cannot find requested function", integration.Name, functionName)
 	}
 
 	result, err := function.Function(input)
 	if err != nil {
-		return make([]any, 0), err
+		return make([]any, 0), fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
 	return result, nil
@@ -69,11 +70,23 @@ type PostMessageInput struct {
 
 func postMessage(input any) (output []any, err error) {
 	var parsedInput PostMessageInput
+	var parsedAlert map[string]any
 
-	err = helpers.ValidateInputParameters(input, parsedInput, "post_message")
+	err = helpers.ValidateInputParameters(input, &parsedInput, "post_message")
 	if err != nil {
 		return output, err
 	}
+
+	fmt.Printf("Executing slack postMessage\n")
+	err = json.Unmarshal([]byte(parsedInput.ParsableContextObject), &parsedAlert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
+	}
+	prettyJSON, err := json.MarshalIndent(parsedAlert, "", "    ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+	fmt.Print(string(prettyJSON))
 
 	return output, err
 }

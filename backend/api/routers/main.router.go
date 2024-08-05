@@ -55,6 +55,6 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 
 	webhookGroup := rg.Group("/webhook")
 	{
-		webhookGroup.POST("/:namespaceid/:workflowid/:salt", r.WorkflowController.ReceiveAlert)
+		webhookGroup.POST("/:namespaceid/:workflowid/:salt", r.WorkflowController.WebhookTriggerHandler)
 	}
 }

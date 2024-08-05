@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -10,6 +12,7 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
+	"text/template"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -37,15 +40,19 @@ func NewWorkflowController(
 	}
 }
 
-func (c *WorkflowController) ReceiveAlert(ctx *gin.Context) {
+func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var workflow *models.Workflow
+	var localErrorMessage = ""
+	var alert = models.EnrichedAlert{
+		TriggerProperties: map[string]any{},
+		AdditionalContext: map[string]models.Outputs{},
+	}
 
 	namespaceId := ctx.Param("namespaceid")
 	workflowId := ctx.Param("workflowid")
 	salt := ctx.Param("salt")
 
-	searchRes := c.WorkflowsCollection.FindOne(ctx, bson.M{"_id": workflowId})
-	err := searchRes.Decode(&workflow)
+	ID, err := primitive.ObjectIDFromHex(workflowId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
@@ -53,10 +60,25 @@ func (c *WorkflowController) ReceiveAlert(ctx *gin.Context) {
 		return
 	}
 
+	filter := bson.M{"_id": ID}
+
+	searchRes := c.WorkflowsCollection.FindOne(ctx, filter)
+	err = searchRes.Decode(&workflow)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		return
+	}
+
 	if workflow.NamespaceId != namespaceId {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 		return
 	}
 
@@ -64,10 +86,94 @@ func (c *WorkflowController) ReceiveAlert(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err,
 		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 		return
 	}
 
-	// TBD: Execute workflow
+	//Trigger execution
+	alert.TriggerProperties, err = tools.WebhookTriggerExec(ctx, workflow)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		return
+	}
+
+	// Steps execution
+	for _, step := range workflow.Steps {
+		var integrationTemplate models.Integration
+
+		// 1. Get integration
+		filter := bson.M{
+			"name": step.Integration,
+		}
+		result := c.IntegrationsCollection.FindOne(ctx, filter)
+		err := result.Decode(&integrationTemplate)
+		if err != nil {
+			fmt.Printf("integration schema parsing error, %s", err)
+			localErrorMessage = fmt.Sprintf("%v", err)
+			continue
+		}
+
+		integrationType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+		if !exists {
+			fmt.Printf("cannot find integration type specified")
+			localErrorMessage = fmt.Sprintf("%v", err)
+			continue
+		}
+
+		// 2. Parse integration
+		integration := reflect.New(integrationType).Elem().Interface().(models.IIntegration)
+
+		// 3. Prepare input
+		var alertEnrichmentsMap = make(map[string]any)
+		for key, value := range alert.TriggerProperties {
+			bytes, err := json.Marshal(value)
+			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
+				continue
+			}
+			alertEnrichmentsMap[key] = string(bytes)
+		}
+		for key, value := range alert.AdditionalContext {
+			bytes, err := json.Marshal(value)
+			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
+				continue
+			}
+			alertEnrichmentsMap[key] = string(bytes)
+		}
+
+		for key, value := range step.Input {
+			buf := new(bytes.Buffer)
+			t, err := template.New("").Funcs(template.FuncMap{
+				"index": func() string {
+					bytes, _ := json.Marshal(alertEnrichmentsMap)
+					return string(bytes)
+				},
+			}).Parse(value)
+			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
+				continue
+			}
+			t.Execute(buf, alertEnrichmentsMap)
+			step.Input[key] = buf.String()
+		}
+
+		// 4. Execute
+		execResult, err := integration.Execute(step.Input, step.Output, step.Function)
+		if err != nil {
+			fmt.Printf("failed to execute %s, error: %s", step.Function, err)
+			localErrorMessage = fmt.Sprintf("%v", err)
+		}
+
+		alert.AdditionalContext[step.Function] = models.Outputs{
+			Output: execResult,
+		}
+	}
+
+	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 
 	ctx.JSON(http.StatusOK, nil)
 }
@@ -129,9 +235,10 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"webhook": fmt.Sprintf("%s%s/webhook/%s/%s/%s",
+		"webhook": fmt.Sprintf("%s%s:%s/webhook/%s/%s/%s",
 			httpPrefix,
 			c.WebhookServerRef.ServerDomain,
+			c.WebhookServerRef.ServerPort,
 			workflow.NamespaceId,
 			workflowID.Hex(),
 			workflow.WorkflowSalt,
@@ -159,7 +266,6 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 	}
 
 	// Steps
-
 	for _, step := range workflow.Steps {
 		var integrationTemplate models.Integration
 		filter := bson.M{
@@ -171,12 +277,12 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 			return fmt.Errorf("integration schema parsing error, %s", err)
 		}
 
-		integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+		integrationType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
 			return fmt.Errorf("cannot find integration type specified")
 		}
 
-		integration := reflect.New(integType).Elem().Interface().(models.IIntegration)
+		integration := reflect.New(integrationType).Elem().Interface().(models.IIntegration)
 
 		err = integration.ValidateStep(step.Input, step.Function)
 		if err != nil {

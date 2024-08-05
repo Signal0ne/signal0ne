@@ -43,7 +43,7 @@ func main() {
 	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
 	if err != nil {
 		panic(
-			fmt.Sprintf("Failed to establish connectiom to %s, error: %s",
+			fmt.Sprintf("Failed to establish connection to %s, error: %s",
 				cfg.IPCSocket,
 				err),
 		)

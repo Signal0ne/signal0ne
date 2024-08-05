@@ -9,17 +9,18 @@ trigger:
       timestamp: "startsAt"
 steps:
 - name: Get ownership
-  integration: backstage1
+  integration: backstage_lab01
   function: get_properties_values
   input:
-    filter: kind=component,metadata.name={service}
+    filter: kind=component,metadata.name={{.service}}
   output:
     owner: "spec.owner"
     slack_channel: "metadata.labels.slack_channel"
 - name: Send to slack channel
-  integration: slack
+  integration: slack_lab01
   function: post_message
   input:
-    parsable_context_object: "."
+    parsable_context_object: "{{index}}"
     ignore_context_keys: "backstage1.get_properties_values.output[].slack_channel"
+    
     

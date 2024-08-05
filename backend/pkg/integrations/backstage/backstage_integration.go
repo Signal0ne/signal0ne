@@ -27,12 +27,12 @@ func (integration BackstageIntegration) Execute(
 
 	function, ok := functions[functionName]
 	if !ok {
-		return result, fmt.Errorf("cannot find requested function")
+		return result, fmt.Errorf("%s.%s: cannot find requested function", integration.Name, functionName)
 	}
 
 	result, err := function.Function(input)
 	if err != nil {
-		return make([]any, 0), err
+		return make([]any, 0), fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
 	return result, nil
@@ -76,6 +76,8 @@ func getPropertiesValues(input any) (output []any, err error) {
 	if err != nil {
 		return output, err
 	}
+
+	fmt.Printf("Executing backstage getPropertiesValues\n")
 
 	return output, err
 }
