@@ -3,8 +3,7 @@ package tools
 import (
 	"context"
 	"fmt"
-	"signal0ne/internal/models"
-	"signal0ne/pkg/integrations"
+	"signal0ne/internal/models" //only internal import allowed
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,12 +36,6 @@ func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error
 		}
 
 		fmt.Printf("Default namespace already exists %s\n", namespace.Id)
-	}
-
-	// Loading installable integrations
-	_, err := integrations.GetInstallableIntegrationsLib()
-	if err != nil {
-		return fmt.Errorf("cannot parse installable error: %s", err)
 	}
 
 	return nil

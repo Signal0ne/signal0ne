@@ -8,6 +8,7 @@ import (
 	"signal0ne/cmd/config"
 	"signal0ne/internal/controllers"
 	"signal0ne/internal/tools"
+	"signal0ne/pkg/integrations"
 	"strings"
 	"time"
 
@@ -52,6 +53,12 @@ func main() {
 	}
 
 	err = tools.Initialize(ctx, namespacesCollection)
+	if err != nil {
+		panic(err)
+	}
+
+	// Loading installable integrations
+	_, err = integrations.GetInstallableIntegrationsLib()
 	if err != nil {
 		panic(err)
 	}

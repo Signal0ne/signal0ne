@@ -3,7 +3,7 @@ package models
 type IIntegration interface {
 	Execute(input any,
 		output map[string]string,
-		functionName string) ([]any, error)
+		functionName string) ([]map[string]any, error)
 
 	Validate() error
 

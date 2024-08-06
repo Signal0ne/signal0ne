@@ -6,7 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"signal0ne/internal/models"
+	"signal0ne/internal/models" //only internal import allowed
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -31,22 +32,25 @@ func TraverseOutput(
 	desiredKey string,
 	mapping string) any {
 
+	mappings := strings.Split(mapping, ".")
+	currentMapping := mappings[0]
+
 	switch v := payload.(type) {
 	case map[string]any:
 		for key, value := range v {
-			if key == mapping {
-				return value
+			if key == currentMapping {
+				if len(mappings) > 1 {
+					mapping = strings.Join(mappings[1:], ".")
+					return TraverseOutput(value, desiredKey, mapping)
+				} else {
+					return value
+				}
 			}
-			TraverseOutput(value, desiredKey, mapping)
 		}
-	case []any:
-		for _, value := range v {
-			TraverseOutput(value, desiredKey, mapping)
-		}
+		return nil
 	default:
-		return v
+		return nil
 	}
-	return nil
 }
 
 func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string]any, error) {
@@ -101,4 +105,19 @@ func RecordExecution(
 	}
 
 	return nil
+}
+
+func ExecutionResultWrapper(intermediateResults []any, output map[string]string) []map[string]any {
+	var results []map[string]any
+
+	for _, result := range intermediateResults {
+		for key, mapping := range output {
+			var traverseResult = map[string]any{}
+			traverseResult[key] = TraverseOutput(result, key, mapping)
+			fmt.Printf("RESULTS: %v\n", traverseResult[key])
+			results = append(results, traverseResult)
+		}
+	}
+
+	return results
 }

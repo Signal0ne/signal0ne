@@ -21,21 +21,23 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 func (integration TemplateIntegration) Execute(
 	input any,
 	output map[string]string,
-	functionName string) ([]any, error) {
+	functionName string) ([]map[string]any, error) {
 
-	var result []any
+	var results []map[string]any
 
 	function, ok := functions[functionName]
 	if !ok {
-		return result, fmt.Errorf("%s.%s: cannot find requested function", integration.Name, functionName)
+		return results, fmt.Errorf("%s.%s: cannot find requested function", integration.Name, functionName)
 	}
 
-	result, err := function.Function(input)
+	intermediateResults, err := function.Function(input, integration)
 	if err != nil {
-		return make([]any, 0), fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
+		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	return result, nil
+	results = tools.ExecutionResultWrapper(intermediateResults, output)
+
+	return results, nil
 }
 
 func (integration TemplateIntegration) Validate() error {

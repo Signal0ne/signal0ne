@@ -12,6 +12,8 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
+	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/slack"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -116,7 +118,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			continue
 		}
 
-		integrationType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+		_, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
 			fmt.Printf("cannot find integration type specified")
 			localErrorMessage = fmt.Sprintf("%v", err)
@@ -124,17 +126,41 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 
 		// 2. Parse integration
-		integration := reflect.New(integrationType).Elem().Interface().(models.IIntegration)
+		var integration any
+		switch integrationTemplate.Type {
+		case "backstage":
+			integration = &backstage.BackstageIntegration{}
+		case "slack":
+			integration = &slack.SlackIntegration{}
+		default:
+			integration = &models.Integration{}
+		}
+
+		err = result.Decode(integration)
+		if err != nil {
+			fmt.Printf("integration schema parsing error, %s", err)
+			localErrorMessage = fmt.Sprintf("%v", err)
+			continue
+		}
 
 		// 3. Prepare input
 		var alertEnrichmentsMap = make(map[string]any)
 		for key, value := range alert.TriggerProperties {
-			bytes, err := json.Marshal(value)
-			if err != nil {
-				localErrorMessage = fmt.Sprintf("%v", err)
-				continue
+			switch value.(type) {
+			case string:
+				alertEnrichmentsMap[key] = value
+			case int64:
+				alertEnrichmentsMap[key] = value
+			case float64:
+				alertEnrichmentsMap[key] = value
+			default:
+				bytes, err := json.Marshal(value)
+				if err != nil {
+					localErrorMessage = fmt.Sprintf("%v", err)
+					continue
+				}
+				alertEnrichmentsMap[key] = string(bytes)
 			}
-			alertEnrichmentsMap[key] = string(bytes)
 		}
 		for key, value := range alert.AdditionalContext {
 			bytes, err := json.Marshal(value)
@@ -162,13 +188,21 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 
 		// 4. Execute
-		execResult, err := integration.Execute(step.Input, step.Output, step.Function)
+		execResult := []map[string]any{}
+		switch i := integration.(type) {
+		case *backstage.BackstageIntegration:
+			execResult, err = i.Execute(step.Input, step.Output, step.Function)
+		case *slack.SlackIntegration:
+			execResult, err = i.Execute(step.Input, step.Output, step.Function)
+		default:
+			err = fmt.Errorf("unknown integration type")
+		}
 		if err != nil {
 			fmt.Printf("failed to execute %s, error: %s", step.Function, err)
 			localErrorMessage = fmt.Sprintf("%v", err)
 		}
 
-		alert.AdditionalContext[step.Function] = models.Outputs{
+		alert.AdditionalContext[fmt.Sprintf("%s.%s", integrationTemplate.Name, step.Function)] = models.Outputs{
 			Output: execResult,
 		}
 	}
