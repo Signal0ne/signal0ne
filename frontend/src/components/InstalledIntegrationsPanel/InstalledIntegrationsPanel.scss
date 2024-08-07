@@ -7,6 +7,21 @@
   min-width: 320px;
   padding: 24px;
   width: 320px;
+  
+  .install-integration-btn {
+    appearance: none;
+    align-items: center;
+    background-color: #424242;
+    border: 1px solid #888;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    gap: 8px;
+    justify-content: center;
+    margin: 0;
+    padding: 16px;
+  }
 
   .installed-integrations-title { 
     font-size: 24px;

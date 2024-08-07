@@ -9,21 +9,21 @@ const InstalledIntegrationsList = () => {
     <ul className="installed-integrations-list">
       {installedIntegrations.map(integration => (
         <InstalledIntegrationsListItem
-          key={integration.name}
           integration={integration}
+          key={integration.name}
         />
       ))}
       {/* TODO: remove after connecting the Backend */}
       {installedIntegrations.map(integration => (
         <InstalledIntegrationsListItem
-          key={integration.name}
           integration={integration}
+          key={integration.name}
         />
       ))}
       {installedIntegrations.map(integration => (
         <InstalledIntegrationsListItem
-          key={integration.name}
           integration={integration}
+          key={integration.name}
         />
       ))}
     </ul>

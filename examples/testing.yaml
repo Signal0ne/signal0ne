@@ -4,6 +4,7 @@ lookback: 15m
 trigger:
   webhook:
     output:
+<<<<<<< Updated upstream
       service: "job"
       span: "span_name"
       timestamp: "startsAt"
@@ -23,3 +24,36 @@ steps:
     parsable_context_object: "."
     ignore_context_keys: "backstage1.get_properties_values.output[].slack_channel"
     
+=======
+      service: 'job'
+      span: 'span_name'
+      timestamp: 'startsAt'
+# Available data fields {service: string,span: string,timestamp: string}
+steps:
+  - name: Get ownership
+    integration: backstage
+    function: get_properties_values
+    input:
+      filter: kind=component,metadata.name={service}
+    output:
+      owner: 'spec.owner'
+      slack_channel: 'metadata.labels.slack_channel'
+  # - name: Inspect traces
+  #   integration: jeager
+  #   function: get_properties_values
+  #   input:
+  #     service: "{service}"
+  #     tags: "{'error': true}"
+  #   ouput:
+  #     log_occurances:
+  #       - count: sum()
+  #         log: "logs:exception.stacktrace | tags:grpc.error_message"
+  #   condition: empty(additional_context.log_occurances)
+  - name: Send to slack channel
+    integration: slack
+    function: post_message
+    input:
+      parsable_context_object: '.'
+      ingore_context_keys:
+        - additional_context.components[].slack_channel
+>>>>>>> Stashed changes

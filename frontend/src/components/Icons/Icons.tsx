@@ -152,6 +152,23 @@ export const JaegerIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const PlusIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg
+    fill="none"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M4 12H20M12 4V20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+  </svg>
+);
+
 export const PrometheusIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
     overflow="visible"
