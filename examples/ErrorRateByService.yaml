@@ -27,9 +27,9 @@ steps:
   input:
     query: "{'query': {'bool': {'must': [{'match': {resource.name: {service}}},{'range': {timestamp: {'gte': {timestamp - 15m},'lte': {timestamp}}}}],'must_not': [{'match': {'severity.text': 'INFO'}},{'match': {'severity.text': 'Information'}}]}}}"
   output:
-    count: sum()
+    count: "{sum}"
     body: "body"
-    hostname: "resource:host.name"
+    hostname: "resource.host.name"
 # Available data fields {service: string,span: string,timestamp: string, additional_context: {
 #     backstage1.get_properties_values.output: list[object],
 #     opensearch_prod.get_log_occurrences.output: list[object]

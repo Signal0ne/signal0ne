@@ -1,13 +1,25 @@
 package opensearch
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
+
+	"github.com/opensearch-project/opensearch-go"
+	"github.com/opensearch-project/opensearch-go/opensearchapi"
+	"github.com/opensearch-project/opensearch-go/opensearchutil"
 )
 
-var functions = map[string]models.WorkflowFunctionDefinition{}
+var functions = map[string]models.WorkflowFunctionDefinition{
+	"get_log_occurrences": models.WorkflowFunctionDefinition{
+		Function: getLogOccurrences,
+		Input:    GetLogOccurrencesInput{},
+	},
+}
 
 type OpenSearchIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
@@ -63,4 +75,56 @@ func (integration OpenSearchIntegration) ValidateStep(
 	}
 
 	return nil
+}
+
+type GetLogOccurrencesInput struct {
+	Query string `json:"query"`
+}
+
+func getLogOccurrences(input any, integration any) ([]any, error) {
+	var parsedInput GetLogOccurrencesInput
+	var output []any
+
+	assertedIntegration := integration.(OpenSearchIntegration)
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "get_log_occurrences")
+	if err != nil {
+		return output, err
+	}
+
+	client, err := opensearch.NewClient(opensearch.Config{
+		Addresses: []string{
+			fmt.Sprintf("http://%s:%s", assertedIntegration.Host, assertedIntegration.Port),
+		},
+	})
+
+	var query map[string]any
+	err = json.Unmarshal([]byte(parsedInput.Query), &query)
+	if err != nil {
+		return output, err
+	}
+
+	searchReq := opensearchapi.SearchRequest{
+		Index: []string{assertedIntegration.Index},
+		Body:  opensearchutil.NewJSONReader(query),
+	}
+
+	searchResp, err := searchReq.Do(context.Background(), client)
+	if err != nil {
+		return output, fmt.Errorf("error performing search: %s", err)
+	}
+	defer searchResp.Body.Close()
+
+	var hits map[string]any
+	querySearchResults, err := io.ReadAll(searchReq.Body)
+	if err != nil {
+		return output, err
+	}
+
+	json.Unmarshal(querySearchResults, &hits)
+
+	output = hits["hits"]
+
+	return output, nil
+
 }
