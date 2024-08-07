@@ -1,4 +1,4 @@
-import { WorkflowsProvider } from '../../contexts/WorkflowsContext/WorkflowsContext';
+import { WorkflowsProvider } from '../../contexts/WorkflowsProvider/WorkflowsProvider';
 import WorkflowsMainPanel from '../../components/WorkflowsMainPanel/WorkflowsMainPanel';
 import WorkflowsSidePanel from '../../components/WorkflowsSidePanel/WorkflowsSidePanel';
 import './WorkflowsPage.scss';

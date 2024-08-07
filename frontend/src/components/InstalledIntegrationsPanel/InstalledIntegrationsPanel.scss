@@ -1,0 +1,32 @@
+.installed-integrations-container {
+  border-right: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+  min-width: 320px;
+  padding: 24px;
+  width: 320px;
+  
+  .install-integration-btn {
+    appearance: none;
+    align-items: center;
+    background-color: #424242;
+    border: 1px solid #888;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    font-size: 16px;
+    gap: 8px;
+    justify-content: center;
+    margin: 0;
+    padding: 16px;
+  }
+
+  .installed-integrations-title { 
+    font-size: 24px;
+    margin: 0;
+    text-align: center;
+    text-shadow: 0 3px 4px rgba(0, 0, 0, 0.15);
+  }
+}

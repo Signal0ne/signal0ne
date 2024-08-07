@@ -1,0 +1,35 @@
+.available-integrations-list-item {
+  align-items: center;
+  background-color: #383838;
+  border: 1px solid #888;
+  border-radius: 8px;
+  box-shadow: 0 3px 4px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 150px;
+  padding: 24px;
+  width: 150px;
+
+  &:hover {
+    background-color: #424242;
+    border: 1px solid #ccc;
+  }
+
+  .available-integration-icon {
+    height: 64px;
+    min-height: 64px;
+    min-width: 64px;
+    width: 64px;
+
+    svg {
+      height: 100%;
+      width: 100%;
+    }
+  }
+
+  .available-integration-name {
+    font-size: 18px;
+  }
+}

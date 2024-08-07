@@ -1,0 +1,15 @@
+.available-integrations-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  height: 100%;
+  padding: 24px;
+  width: 100%;
+
+  .available-integrations-title {
+    font-size: 28px;
+    margin: 0;
+    text-align: center;
+    text-shadow: 0 3px 4px rgba(0, 0, 0, 0.15);
+  }
+}

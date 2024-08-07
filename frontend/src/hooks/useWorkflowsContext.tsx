@@ -1,13 +1,8 @@
 import { useContext } from 'react';
-import {
-  WorkflowsContext,
-  WorkflowsContextType
-} from '../contexts/WorkflowsContext/WorkflowsContext';
+import { WorkflowsContext } from '../contexts/WorkflowsProvider/WorkflowsProvider';
 
 export const useWorkflowsContext = () => {
-  const context = useContext<WorkflowsContextType | undefined>(
-    WorkflowsContext
-  );
+  const context = useContext(WorkflowsContext);
 
   if (!context) {
     throw new Error(

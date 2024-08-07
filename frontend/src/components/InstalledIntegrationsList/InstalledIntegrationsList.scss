@@ -1,0 +1,12 @@
+.installed-integrations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  overflow-y: scroll;
+  padding: 0;
+  padding-right: 8px;
+  width: 100%;
+  @include customScrollbar;
+}
