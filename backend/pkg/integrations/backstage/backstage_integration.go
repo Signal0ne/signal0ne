@@ -128,8 +128,6 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	fmt.Printf("%v", items)
-
 	output = items.([]any)
 
 	return output, err

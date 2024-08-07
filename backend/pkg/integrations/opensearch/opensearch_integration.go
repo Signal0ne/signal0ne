@@ -84,6 +84,7 @@ type GetLogOccurrencesInput struct {
 func getLogOccurrences(input any, integration any) ([]any, error) {
 	var parsedInput GetLogOccurrencesInput
 	var output []any
+	var allLogObjects []any
 
 	assertedIntegration := integration.(OpenSearchIntegration)
 
@@ -97,6 +98,9 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 			fmt.Sprintf("http://%s:%s", assertedIntegration.Host, assertedIntegration.Port),
 		},
 	})
+	if err != nil {
+		return output, err
+	}
 
 	var query map[string]any
 	err = json.Unmarshal([]byte(parsedInput.Query), &query)
@@ -104,6 +108,7 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
+	fmt.Printf("QUERY: %s\n", parsedInput.Query)
 	searchReq := opensearchapi.SearchRequest{
 		Index: []string{assertedIntegration.Index},
 		Body:  opensearchutil.NewJSONReader(query),
@@ -116,14 +121,27 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 	defer searchResp.Body.Close()
 
 	var hits map[string]any
-	querySearchResults, err := io.ReadAll(searchReq.Body)
+	querySearchResults, err := io.ReadAll(searchResp.Body)
 	if err != nil {
 		return output, err
 	}
 
-	json.Unmarshal(querySearchResults, &hits)
+	err = json.Unmarshal(querySearchResults, &hits)
+	if err != nil {
+		return output, err
+	}
+	parsedHits, ok := hits["hits"].(map[string]any)["hits"].([]any)
+	if !ok {
+		return output, fmt.Errorf("cannot parse output")
+	}
 
-	output = hits["hits"]
+	for _, hit := range parsedHits {
+		intermediateHit, exists := hit.(map[string]any)["_source"]
+		if !exists {
+			return output, err
+		}
+		allLogObjects = append(allLogObjects, intermediateHit)
+	}
 
 	return output, nil
 

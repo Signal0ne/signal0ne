@@ -39,11 +39,12 @@ func TraverseOutput(
 	case map[string]any:
 		for key, value := range v {
 			if key == currentMapping {
-				if len(mappings) > 1 {
+				_, isMap := value.(map[string]any)
+				if len(mappings) <= 1 || !isMap {
+					return value
+				} else {
 					mapping = strings.Join(mappings[1:], ".")
 					return TraverseOutput(value, desiredKey, mapping)
-				} else {
-					return value
 				}
 			}
 		}
@@ -114,7 +115,6 @@ func ExecutionResultWrapper(intermediateResults []any, output map[string]string)
 		for key, mapping := range output {
 			var traverseResult = map[string]any{}
 			traverseResult[key] = TraverseOutput(result, key, mapping)
-			fmt.Printf("RESULTS: %v\n", traverseResult[key])
 			results = append(results, traverseResult)
 		}
 	}

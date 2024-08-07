@@ -16,6 +16,15 @@ steps:
   output:
     owner: "spec.owner"
     slack_channel: "metadata.labels.slack_channel"
+- name: Get relevant logs
+  integration: opensearch_prod
+  function: get_log_occurrences
+  input:
+    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .timestamp \"-15m\"}}\",\"lte\": \"{{date .timestamp \"+15m\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
+  output:
+    count: "{{sum}}"
+    body: "body"
+    hostname: "resource.host.name"
 - name: Send to slack channel
   integration: slack_lab01
   function: post_message

@@ -1,6 +1,15 @@
 from dotenv import load_dotenv
 import socket
+import logging
 import os
+
+logging.basicConfig(
+    filename="python_interface.log",
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 def main():
 

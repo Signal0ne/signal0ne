@@ -13,8 +13,11 @@ import (
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/opensearch"
 	"signal0ne/pkg/integrations/slack"
+	"strconv"
 	"text/template"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -132,6 +135,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &backstage.BackstageIntegration{}
 		case "slack":
 			integration = &slack.SlackIntegration{}
+		case "opensearch":
+			integration = &opensearch.OpenSearchIntegration{}
 		default:
 			integration = &models.Integration{}
 		}
@@ -178,12 +183,38 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 					bytes, _ := json.Marshal(alertEnrichmentsMap)
 					return string(bytes)
 				},
+				"date": func(timestamp float64, shift string) string {
+					unit := string(shift[len(shift)-1])
+					value, _ := strconv.Atoi(shift[1 : len(shift)-2])
+					sign := string(shift[0])
+					multiplier := int64(0)
+					if sign == "+" {
+						multiplier = 1
+					} else if sign == "-" {
+						multiplier = -1
+					}
+
+					if unit == "m" {
+						multiplier = multiplier * 60
+					} else if unit == "h" {
+						multiplier = multiplier * 3600
+					}
+
+					resultTimestamp := int64(timestamp) + int64(value)*multiplier
+					resultTime := time.Unix(resultTimestamp, 0)
+
+					return resultTime.Format(time.RFC3339)
+				},
 			}).Parse(value)
 			if err != nil {
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
-			t.Execute(buf, alertEnrichmentsMap)
+			err = t.Execute(buf, alertEnrichmentsMap)
+			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
+				continue
+			}
 			step.Input[key] = buf.String()
 		}
 
@@ -193,6 +224,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		case *backstage.BackstageIntegration:
 			execResult, err = i.Execute(step.Input, step.Output, step.Function)
 		case *slack.SlackIntegration:
+			execResult, err = i.Execute(step.Input, step.Output, step.Function)
+		case *opensearch.OpenSearchIntegration:
 			execResult, err = i.Execute(step.Input, step.Output, step.Function)
 		default:
 			err = fmt.Errorf("unknown integration type")
