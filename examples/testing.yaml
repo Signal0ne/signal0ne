@@ -7,31 +7,18 @@ trigger:
       service: 'job'
       span: 'span_name'
       timestamp: 'startsAt'
-# Available data fields {service: string,span: string,timestamp: string}
 steps:
   - name: Get ownership
-    integration: backstage
+    integration: backstage_lab01
     function: get_properties_values
     input:
-      filter: kind=component,metadata.name={service}
+      filter: kind=component,metadata.name={{.service}}
     output:
       owner: 'spec.owner'
       slack_channel: 'metadata.labels.slack_channel'
-  # - name: Inspect traces
-  #   integration: jeager
-  #   function: get_properties_values
-  #   input:
-  #     service: "{service}"
-  #     tags: "{'error': true}"
-  #   ouput:
-  #     log_occurances:
-  #       - count: sum()
-  #         log: "logs:exception.stacktrace | tags:grpc.error_message"
-  #   condition: empty(additional_context.log_occurances)
   - name: Send to slack channel
-    integration: slack
+    integration: slack_lab01
     function: post_message
     input:
-      parsable_context_object: '.'
-      ingore_context_keys:
-        - additional_context.components[].slack_channel
+      parsable_context_object: '{{index}}'
+      ignore_context_keys: 'backstage1.get_properties_values.output[].slack_channel'
