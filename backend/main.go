@@ -83,7 +83,8 @@ func main() {
 		workflowsCollection,
 		namespacesCollection,
 		integrationsCollection,
-		cfg.Server)
+		cfg.Server,
+		conn)
 	integrationsController := controllers.NewIntegrationController(
 		integrationsCollection,
 		namespacesCollection,

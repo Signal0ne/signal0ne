@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -26,22 +27,27 @@ import (
 )
 
 type WorkflowController struct {
-	WebhookServerRef       config.Server
-	WorkflowsCollection    *mongo.Collection
-	NamespaceCollection    *mongo.Collection //Must be used as Readonly
-	IntegrationsCollection *mongo.Collection //Must be used as Readonly
+	WebhookServerRef    config.Server
+	WorkflowsCollection *mongo.Collection
+	PyInterface         net.Conn
+	// ==== Use as readonly ====
+	NamespaceCollection    *mongo.Collection
+	IntegrationsCollection *mongo.Collection
+	// =========================
 }
 
 func NewWorkflowController(
 	workflowsCollection *mongo.Collection,
 	namespaceCollection *mongo.Collection,
 	integrationsCollection *mongo.Collection,
-	webhookServerRef config.Server) *WorkflowController {
+	webhookServerRef config.Server,
+	pyInterface net.Conn) *WorkflowController {
 	return &WorkflowController{
 		WorkflowsCollection:    workflowsCollection,
 		NamespaceCollection:    namespaceCollection,
 		IntegrationsCollection: integrationsCollection,
 		WebhookServerRef:       webhookServerRef,
+		PyInterface:            pyInterface,
 	}
 }
 

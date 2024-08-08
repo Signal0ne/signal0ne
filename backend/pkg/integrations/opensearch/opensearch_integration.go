@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
+	"strconv"
 
 	"github.com/opensearch-project/opensearch-go"
 	"github.com/opensearch-project/opensearch-go/opensearchapi"
@@ -21,7 +23,18 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 	},
 }
 
+type OpenSearchIntegrationInventory struct {
+	PyInterface net.Conn
+}
+
+func NewOpenSearchIntegrationInventory(pyInterface net.Conn) OpenSearchIntegrationInventory {
+	return OpenSearchIntegrationInventory{
+		PyInterface: pyInterface,
+	}
+}
+
 type OpenSearchIntegration struct {
+	Inventory          OpenSearchIntegrationInventory
 	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:",inline" bson:",inline"`
 }
@@ -78,7 +91,8 @@ func (integration OpenSearchIntegration) ValidateStep(
 }
 
 type GetLogOccurrencesInput struct {
-	Query string `json:"query"`
+	Query     string `json:"query"`
+	CompareBy string `json:"compare_by"`
 }
 
 func getLogOccurrences(input any, integration any) ([]any, error) {
@@ -108,7 +122,6 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	fmt.Printf("QUERY: %s\n", parsedInput.Query)
 	searchReq := opensearchapi.SearchRequest{
 		Index: []string{assertedIntegration.Index},
 		Body:  opensearchutil.NewJSONReader(query),
@@ -141,6 +154,44 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 			return output, err
 		}
 		allLogObjects = append(allLogObjects, intermediateHit)
+	}
+
+	pyInterfacePayload := map[string]any{
+		"command": "get_log_occurrences",
+		"params": map[string]any{
+			"collectedLogs":  allLogObjects,
+			"comparedFields": parsedInput.CompareBy,
+		},
+	}
+	payloadBytes, err := json.Marshal(pyInterfacePayload)
+	if err != nil {
+		return output, err
+	}
+
+	_, err = assertedIntegration.Inventory.PyInterface.Write(payloadBytes)
+	if err != nil {
+		return output, err
+	}
+
+	headerBuffer := make([]byte, 4)
+	n, err := assertedIntegration.Inventory.PyInterface.Read(headerBuffer)
+	if err != nil {
+		return output, err
+	}
+	size, err := strconv.Atoi(string(headerBuffer[:n]))
+	if err != nil {
+		return output, err
+	}
+
+	payloadBuffer := make([]byte, size)
+	n, err = assertedIntegration.Inventory.PyInterface.Read(payloadBuffer)
+	if err != nil {
+		return output, err
+	}
+
+	err = json.Unmarshal(headerBuffer[:n], &output)
+	if err != nil {
+		return output, err
 	}
 
 	return output, nil
