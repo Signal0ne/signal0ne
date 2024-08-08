@@ -6,7 +6,7 @@ from sentence_transformers import CrossEncoder
 logger = logging.getLogger(__name__)
 enc = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', default_activation_function=torch.nn.Sigmoid())
 
-def log_occurrences(collectedLogs: list):
+def log_occurrences(collectedLogs: list, comparedFields: list) -> list:
     # What are the fields that we should do the comparison by??? should user decide on that???
     unique_logs_list = []
 
@@ -19,7 +19,12 @@ def log_occurrences(collectedLogs: list):
             incoming_log_object[collectedLogKey] = log[collectedLogKey]
 
         for i, unique_log_object in enumerate(unique_logs_list):
-            cos_sim = enc.predict([(json.dumps(incoming_log_object), json.dumps(unique_log_object))])
+            incoming_log_object_copy = {}
+            unique_log_object_copy = {}
+            for compareField in comparedFields:
+                incoming_log_object_copy[compareField] = incoming_log_object[compareField]
+                unique_log_object_copy[compareField] = unique_log_object[compareField]
+            cos_sim = enc.predict([(json.dumps(incoming_log_object_copy), json.dumps(unique_log_object_copy))])
             if cos_sim[0] < 0.3:
                 new = True
             else:
@@ -30,4 +35,7 @@ def log_occurrences(collectedLogs: list):
 
         if new:
             unique_logs_list.append(incoming_log_object)
+
+    return unique_logs_list
+
     
