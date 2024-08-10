@@ -1,0 +1,98 @@
+.ReactModalPortal {
+  .webhook-modal-content {
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    color: #232323;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    inset: 50% auto auto 50%;
+    margin-right: -50%;
+    outline: none;
+    overflow: auto;
+    padding: 20px;
+    position: absolute;
+    transform: translate(-50%, -50%);
+
+    .modal-content-container {
+      align-items: center;
+      display: flex;
+      gap: 8px;
+
+      .modal-input {
+        background-color: #fff;
+        border: 0;
+        border-radius: 8px;
+        box-shadow: 0 3px 4px rgba(255, 255, 255 , 0.15);
+        color: #363636;
+        font-size: 14px;
+        padding: 8px;
+        width: 300px;
+      }  
+
+      .modal-copy-icon {
+        color: #fff;
+        cursor: pointer;
+
+        &:focus {
+          outline: none;
+        }
+
+        &:focus-visible {
+          border-radius: 4px;
+          outline: 1px solid #4A90E2;
+        }
+
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      margin: 0;
+      width: fit-content;
+    }
+  }
+}
+
+.react-tooltip {
+  &.copy-tooltip {
+    border-radius: 8px;
+    z-index: 1;
+  }
+}
+
+.Toastify {
+  .yaml-error-toast {
+    max-width: 440px;
+    overflow: hidden;
+    width: 100%;
+
+    .Toastify__toast-body {
+      overflow: hidden;
+
+      //TODO: Fix the overflow issue
+      .toast-code {
+        font-size: 11px;
+        max-width: 90%;
+        overflow-x: auto;
+        @include customScrollbar;
+      }
+  
+      .toast-info {
+        font-size: 13px;
+        margin-bottom: 0;
+        width: fit-content;
+      }
+  
+      .toast-title {
+        font-size: 14px;
+        margin-top: 0;
+        width: fit-content;
+      }
+    }
+  }
+}

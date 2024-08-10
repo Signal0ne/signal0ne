@@ -235,7 +235,7 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"webhook": fmt.Sprintf("%s%s:%s/webhook/%s/%s/%s",
+		"webhook": fmt.Sprintf("%s%s:%s/api/webhook/%s/%s/%s",
 			httpPrefix,
 			c.WebhookServerRef.ServerDomain,
 			c.WebhookServerRef.ServerPort,
