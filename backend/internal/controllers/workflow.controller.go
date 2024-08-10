@@ -142,7 +142,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		case "slack":
 			integration = &slack.SlackIntegration{}
 		case "opensearch":
-			integration = &opensearch.OpenSearchIntegration{}
+			inventory := opensearch.NewOpenSearchIntegrationInventory(
+				c.PyInterface,
+			)
+			integration = &opensearch.OpenSearchIntegration{
+				Inventory: inventory,
+			}
 		default:
 			integration = &models.Integration{}
 		}
@@ -191,7 +196,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				},
 				"date": func(timestamp float64, shift string) string {
 					unit := string(shift[len(shift)-1])
-					value, _ := strconv.Atoi(shift[1 : len(shift)-2])
+					value, _ := strconv.Atoi(shift[1 : len(shift)-1])
 					sign := string(shift[0])
 					multiplier := int64(0)
 					if sign == "+" {

@@ -4,6 +4,7 @@ import logging
 import struct
 import os
 import json
+import traceback
 
 from get_log_occurrences import log_occurrences
 
@@ -20,6 +21,7 @@ bufferSizePrefix = 4
 def main():
 
     load_dotenv(dotenv_path='.default.env')
+    print("loading...")
     socket_path = os.getenv('IPC_SOCKET')
 
     try:
@@ -39,30 +41,39 @@ def main():
 
     try:
 
-        logger.info('Connection from', str(connection).split(", ")[0][-4:])
+        print('Connection from', str(connection).split(", ")[0][-4:])
 
         while True:
             header = connection.recv(bufferSizePrefix)
             if not header:
                 break
+            print("Header", str(header))
             
             payloadSize = struct.unpack('>I', header)[0]
+            print("Payload size", str(payloadSize))
             payload = connection.recv(payloadSize)
-
-            data = json.loads(payload)
-
-            command = data["command"]
-            params = data["params"]
+            if payload != None:
+                data = json.loads(payload)
+                command = data["command"]
+                params = data["params"]
             
-            try:
-                if command == "get_log_occurrences":
-                    log_occurrences(params["collectedLogs"], params["comparedFields"])
-            except Exception as e:
-                    response = (1, str(e))
-                    connection.sendall(response.encode())
-        
-            response = 0
-            connection.sendall(response.encode())
+                try:
+                    if command == "get_log_occurrences":
+                        result = log_occurrences(params["collectedLogs"], params["comparedFields"])
+                        parsedResult = json.dumps(result)
+                        responseTemplate = json.dumps({"status":"0", "result":parsedResult})
+                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                        print("Success!!!")
+                        connection.sendall(response)         
+                except Exception:
+                        traceback.print_exc()
+                        responseTemplate = json.dumps({"status":"1", "error":traceback.format_exc()})
+                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                        connection.sendall(response)
+
+            responseTemplate = json.dumps({"status":"0"})
+            response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+            connection.sendall(response)
 
     finally:
 

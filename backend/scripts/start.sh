@@ -1,4 +1,4 @@
 #!/bin/bash
-python ./python_interface/main.py &
-sleep 1
+python -u ./python_interface/main.py &
+sleep 15
 ./s0backend

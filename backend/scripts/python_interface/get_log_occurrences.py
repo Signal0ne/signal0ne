@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 enc = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', default_activation_function=torch.nn.Sigmoid())
 
 def log_occurrences(collectedLogs: list, comparedFields: list) -> list:
-    # What are the fields that we should do the comparison by??? should user decide on that???
     unique_logs_list = []
 
     for log in collectedLogs:

@@ -1,1 +1,3 @@
 python-dotenv
+torch
+sentence_transformers

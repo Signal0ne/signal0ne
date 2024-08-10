@@ -2,6 +2,7 @@ package opensearch
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,7 +10,7 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
-	"strconv"
+	"strings"
 
 	"github.com/opensearch-project/opensearch-go"
 	"github.com/opensearch-project/opensearch-go/opensearchapi"
@@ -107,6 +108,11 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
+	comparedFieldParamSpliced := strings.Split(parsedInput.CompareBy, ",")
+	for idx, field := range comparedFieldParamSpliced {
+		comparedFieldParamSpliced[idx] = strings.Trim(field, " ")
+	}
+
 	client, err := opensearch.NewClient(opensearch.Config{
 		Addresses: []string{
 			fmt.Sprintf("http://%s:%s", assertedIntegration.Host, assertedIntegration.Port),
@@ -150,17 +156,21 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 
 	for _, hit := range parsedHits {
 		intermediateHit, exists := hit.(map[string]any)["_source"]
+		var parsedIntermediateHit = make(map[string]any)
 		if !exists {
 			return output, err
 		}
-		allLogObjects = append(allLogObjects, intermediateHit)
+		for _, mapping := range comparedFieldParamSpliced {
+			parsedIntermediateHit[mapping] = tools.TraverseOutput(intermediateHit, mapping, mapping)
+		}
+		allLogObjects = append(allLogObjects, parsedIntermediateHit)
 	}
 
 	pyInterfacePayload := map[string]any{
 		"command": "get_log_occurrences",
 		"params": map[string]any{
 			"collectedLogs":  allLogObjects,
-			"comparedFields": parsedInput.CompareBy,
+			"comparedFields": comparedFieldParamSpliced,
 		},
 	}
 	payloadBytes, err := json.Marshal(pyInterfacePayload)
@@ -168,28 +178,44 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	_, err = assertedIntegration.Inventory.PyInterface.Write(payloadBytes)
+	headers := make([]byte, 4)
+	binary.BigEndian.PutUint32(headers, uint32(len(payloadBytes)))
+	payloadBytesWithHeaders := append(headers, payloadBytes...)
+
+	_, err = assertedIntegration.Inventory.PyInterface.Write(payloadBytesWithHeaders)
 	if err != nil {
 		return output, err
 	}
 
 	headerBuffer := make([]byte, 4)
-	n, err := assertedIntegration.Inventory.PyInterface.Read(headerBuffer)
+	_, err = assertedIntegration.Inventory.PyInterface.Read(headerBuffer)
 	if err != nil {
 		return output, err
 	}
-	size, err := strconv.Atoi(string(headerBuffer[:n]))
-	if err != nil {
-		return output, err
-	}
+	size := binary.BigEndian.Uint32(headerBuffer)
 
 	payloadBuffer := make([]byte, size)
-	n, err = assertedIntegration.Inventory.PyInterface.Read(payloadBuffer)
+	n, err := assertedIntegration.Inventory.PyInterface.Read(payloadBuffer)
 	if err != nil {
 		return output, err
 	}
 
-	err = json.Unmarshal(headerBuffer[:n], &output)
+	var intermediateOutput map[string]any
+	err = json.Unmarshal(payloadBuffer[:n], &intermediateOutput)
+	if err != nil {
+		return output, err
+	}
+	statusCode, exists := intermediateOutput["status"].(string)
+	if !exists || statusCode != "0" {
+		errorMsg, _ := intermediateOutput["error"].(string)
+		return output, fmt.Errorf("cannot retrieve results %s", errorMsg)
+	}
+	resultsEncoded, exists := intermediateOutput["result"].(string)
+	if !exists {
+		return output, fmt.Errorf("cannot retrieve results")
+	}
+
+	err = json.Unmarshal([]byte(resultsEncoded), &output)
 	if err != nil {
 		return output, err
 	}

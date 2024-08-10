@@ -38,7 +38,7 @@ func TraverseOutput(
 	switch v := payload.(type) {
 	case map[string]any:
 		for key, value := range v {
-			if key == currentMapping {
+			if key == currentMapping || key == mapping {
 				_, isMap := value.(map[string]any)
 				if len(mappings) <= 1 || !isMap {
 					return value
@@ -112,11 +112,11 @@ func ExecutionResultWrapper(intermediateResults []any, output map[string]string)
 	var results []map[string]any
 
 	for _, result := range intermediateResults {
+		var traverseResult = map[string]any{}
 		for key, mapping := range output {
-			var traverseResult = map[string]any{}
 			traverseResult[key] = TraverseOutput(result, key, mapping)
-			results = append(results, traverseResult)
 		}
+		results = append(results, traverseResult)
 	}
 
 	return results

@@ -23,7 +23,7 @@ steps:
     query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .timestamp \"-15m\"}}\",\"lte\": \"{{date .timestamp \"+15m\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
     compare_by: "body, resource.host.name"
   output:
-    count: "{{sum}}"
+    count: "count"
     body: "body"
     hostname: "resource.host.name"
 - name: Send to slack channel

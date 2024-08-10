@@ -24,13 +24,13 @@ func main() {
 		panic("CRITICAL: unable to load config")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	mongoConn, err := tools.InitMongoClient(ctx, cfg.MongoUri)
 	if err != nil {
 		panic(
-			fmt.Sprintf("Failed to establish connectiom to %s, error: %s",
+			fmt.Sprintf("Failed to establish connection to %s, error: %s",
 				strings.Split(cfg.MongoUri, "/")[2],
 				err),
 		)
@@ -97,21 +97,21 @@ func main() {
 		integrationsController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
-	//==========REMOVE BEFORE RELEASE==========
-	_, err = conn.Write([]byte("Hello I am Go!"))
-	if err != nil {
-		fmt.Printf("Failed to send data: %s", err)
-	}
+	// //==========REMOVE BEFORE RELEASE==========
+	// _, err = conn.Write([]byte("Hello I am Go!"))
+	// if err != nil {
+	// 	fmt.Printf("Failed to send data: %s", err)
+	// }
 
-	// Receive response
-	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Printf("Failed to read response: %s", err)
-	}
+	// // Receive response
+	// buffer := make([]byte, 1024)
+	// n, err := conn.Read(buffer)
+	// if err != nil {
+	// 	fmt.Printf("Failed to read response: %s", err)
+	// }
 
-	fmt.Printf("%s\n", buffer[:n])
-	//===================
+	// fmt.Printf("%s\n", buffer[:n])
+	// //===================
 
 	server.Run(":" + cfg.Server.ServerPort)
 }
