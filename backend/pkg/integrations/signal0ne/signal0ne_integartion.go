@@ -13,7 +13,10 @@ type Signal0neIntegration struct {
 }
 
 var functions = map[string]models.WorkflowFunctionDefinition{
-	//Add functions provided by the integration
+	"correlate_ongoing_alerts": models.WorkflowFunctionDefinition{
+		Function: correlateOngoingAlerts,
+		Input:    CorrelateOngoingAlertsInput{},
+	},
 }
 
 func (integration Signal0neIntegration) Execute(
@@ -61,6 +64,24 @@ func (integration Signal0neIntegration) ValidateStep(
 	return nil
 }
 
-//Implement functions and it's input types below
+type CorrelateOngoingAlertsInput struct {
+	Filter string `json:"filter"`
+}
 
-//----------------------------------------------
+func correlateOngoingAlerts(input any, integration any) ([]any, error) {
+	var parsedInput CorrelateOngoingAlertsInput
+	var output []any
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "correlate_ongoing_alerts")
+	if err != nil {
+		return output, err
+	}
+
+	fmt.Printf("Executing backstage getPropertiesValues\n")
+	// 1.Get alerts by filter
+	// 2.Run semantic similarity
+	// 3.Return similar alert objects
+	// What do we do with resolved alerts
+
+	return output, nil
+}

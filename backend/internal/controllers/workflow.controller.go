@@ -14,6 +14,7 @@ import (
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/opensearch"
 	"signal0ne/pkg/integrations/slack"
 	"strconv"
@@ -148,6 +149,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &opensearch.OpenSearchIntegration{
 				Inventory: inventory,
 			}
+		case "jaeger":
+			integration = &jaeger.JaegerIntegration{}
 		default:
 			integration = &models.Integration{}
 		}
@@ -238,6 +241,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			execResult, err = i.Execute(step.Input, step.Output, step.Function)
 		case *opensearch.OpenSearchIntegration:
 			execResult, err = i.Execute(step.Input, step.Output, step.Function)
+		case *jaeger.JaegerIntegration:
+			if tools.EvaluateCondition(step.Condition, alertEnrichmentsMap) {
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			}
 		default:
 			err = fmt.Errorf("unknown integration type")
 		}

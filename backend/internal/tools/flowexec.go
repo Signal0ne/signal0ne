@@ -1,13 +1,16 @@
 package tools
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"signal0ne/internal/models" //only internal import allowed
+	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -120,4 +123,31 @@ func ExecutionResultWrapper(intermediateResults []any, output map[string]string)
 	}
 
 	return results
+}
+
+func EvaluateCondition(conditionExpression string, alertEnrichmentsMap map[string]any) bool {
+	var satisfied = false
+	buf := new(bytes.Buffer)
+
+	fmt.Printf("Executing condition evaluation...")
+
+	t, err := template.New("EvaluateCondition").Funcs(template.FuncMap{
+		"isempty": func(value string) bool {
+			return false
+		},
+	}).Parse(conditionExpression)
+	if err != nil {
+		return satisfied
+	}
+	err = t.Execute(buf, alertEnrichmentsMap)
+	if err != nil {
+		return satisfied
+	}
+
+	satisfied, err = strconv.ParseBool(buf.String())
+	if err != nil {
+		return satisfied
+	}
+
+	return satisfied
 }

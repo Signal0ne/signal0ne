@@ -7,7 +7,12 @@ import (
 	"signal0ne/pkg/integrations/helpers"
 )
 
-var functions = map[string]models.WorkflowFunctionDefinition{}
+var functions = map[string]models.WorkflowFunctionDefinition{
+	"get_properties_values": models.WorkflowFunctionDefinition{
+		Function: getPropertiesValues,
+		Input:    GetPropertiesValuesInput{},
+	},
+}
 
 type JaegerIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
@@ -61,4 +66,24 @@ func (integration JaegerIntegration) ValidateStep(
 	}
 
 	return nil
+}
+
+type GetPropertiesValuesInput struct {
+	Service string `json:"service"`
+	Tags    string `json:"tags"`
+}
+
+func getPropertiesValues(input any, integration any) ([]any, error) {
+	var parsedInput GetPropertiesValuesInput
+	var output []any
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "get_properties_values")
+	if err != nil {
+		return output, err
+	}
+
+	fmt.Printf("Executing Jaeger integration function...")
+
+	return output, nil
+
 }

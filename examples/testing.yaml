@@ -26,6 +26,23 @@ steps:
     count: "count"
     body: "body"
     hostname: "resource.host.name"
+- name: Inspect traces
+  integration: jaeger_prod
+  function: get_properties_values
+  input:
+    service: "{{.service}}"
+    tags: "{\"error\": \"true\"}"
+  output:
+    count: count
+    log: "logs.exception.stacktrace | tags.grpc.error_message"
+  condition: "{{isempty .opensearch_prod.get_log_occurrences.output }}"
+- name: Correlate alerts
+  integration: signal0ne
+  function: correlate_ongoing_alerts
+  input: 
+    filter: timestamp>={{date .timestamp \"-15m\"}}&timestamp<={{date .timestamp \"+15m\"}}&semanticSimilarity=true
+  output:
+    alert: alert
 - name: Send to slack channel
   integration: slack_lab01
   function: post_message
