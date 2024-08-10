@@ -1,6 +1,8 @@
+import { ToastContainer } from 'react-toastify';
 import { Tooltip } from 'react-tooltip';
 import AppRoutes from './components/AppRoutes/AppRoutes';
 import Navbar from './components/Navbar/Navbar';
+import 'react-toastify/dist/ReactToastify.css';
 import './App.scss';
 
 const App = () => {
@@ -14,6 +16,7 @@ const App = () => {
         openEvents={{ focus: true, mouseover: true }}
         variant="light"
       />
+      <ToastContainer />
     </>
   );
 };
