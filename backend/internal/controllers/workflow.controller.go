@@ -28,6 +28,7 @@ import (
 )
 
 type WorkflowController struct {
+	AlertsCollection    *mongo.Collection
 	WebhookServerRef    config.Server
 	WorkflowsCollection *mongo.Collection
 	PyInterface         net.Conn
@@ -41,12 +42,14 @@ func NewWorkflowController(
 	workflowsCollection *mongo.Collection,
 	namespaceCollection *mongo.Collection,
 	integrationsCollection *mongo.Collection,
+	alertsCollection *mongo.Collection,
 	webhookServerRef config.Server,
 	pyInterface net.Conn) *WorkflowController {
 	return &WorkflowController{
 		WorkflowsCollection:    workflowsCollection,
 		NamespaceCollection:    namespaceCollection,
 		IntegrationsCollection: integrationsCollection,
+		AlertsCollection:       alertsCollection,
 		WebhookServerRef:       webhookServerRef,
 		PyInterface:            pyInterface,
 	}
@@ -256,6 +259,11 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		alert.AdditionalContext[fmt.Sprintf("%s.%s", integrationTemplate.Name, step.Function)] = models.Outputs{
 			Output: execResult,
 		}
+	}
+
+	_, err = c.AlertsCollection.InsertOne(ctx, alert)
+	if err != nil {
+		localErrorMessage = fmt.Sprintf("cannot insert alert, error: %s", err)
 	}
 
 	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)

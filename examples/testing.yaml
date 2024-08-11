@@ -40,7 +40,7 @@ steps:
   integration: signal0ne
   function: correlate_ongoing_alerts
   input: 
-    filter: timestamp>={{date .timestamp \"-15m\"}}&timestamp<={{date .timestamp \"+15m\"}}&semanticSimilarity=true
+    filter: "startTimestamp>={{date .timestamp \"-15m\"}}&endTimestamp<={{date .timestamp \"+15m\"}}&semanticSimilarity=true"
   output:
     alert: alert
 - name: Send to slack channel

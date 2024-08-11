@@ -40,6 +40,7 @@ func main() {
 	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
 	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
 	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
+	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
 
 	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
 	if err != nil {
@@ -83,6 +84,7 @@ func main() {
 		workflowsCollection,
 		namespacesCollection,
 		integrationsCollection,
+		alertsCollection,
 		cfg.Server,
 		conn)
 	integrationsController := controllers.NewIntegrationController(
