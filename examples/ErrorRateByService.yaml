@@ -63,7 +63,7 @@ steps:
 #     opensearch_prod.get_log_occurrences.output: list[object],
 #     jaeger1.get_properties_values.output: list[object],
 #     
-#   }, correlated_signals: {
+#   }, correlated_signals: { #each correlated signal must have correlation score
 #     alerts: alerts
 #   }
 # }
