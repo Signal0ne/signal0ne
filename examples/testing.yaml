@@ -34,7 +34,7 @@ steps:
     tags: "{\"error\": \"true\"}"
   output:
     count: count
-    log: "logs.exception.stacktrace | tags.grpc.error_message"
+    log: "logs.exception.stacktrace, tags.grpc.error_message"
   condition: "{{isempty .opensearch_prod.get_log_occurrences.output }}"
 - name: Correlate alerts
   integration: signal0ne
@@ -43,7 +43,7 @@ steps:
     startTimestamp: "{{date .timestamp \"-15m\"}}"
     endTimestamp: "{{date .timestamp \"+15m\"}}"
     type: "semanticSimilarity"
-    compare_by: ""
+    compare_by: ".opensearch_prod.get_log_occurrences.output[].body, .jaeger_prod.get_properties_values.output[].log"
   output:
     alert: alert
 - name: Send to slack channel

@@ -7,6 +7,7 @@ import json
 import traceback
 
 from get_log_occurrences import log_occurrences
+from correlate_ongoing_alerts import correlate_ongoing_alerts
 
 logging.basicConfig(
     filename="python_interface.log",
@@ -64,7 +65,14 @@ def main():
                         responseTemplate = json.dumps({"status":"0", "result":parsedResult})
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         print("Success!!!")
-                        connection.sendall(response)         
+                        connection.sendall(response)
+                    if command == "correlate_ongoing_alerts":
+                        result = correlate_ongoing_alerts(params["collectedEntities"], params["comparedFields"])
+                        parsedResult = json.dumps(result)
+                        responseTemplate = json.dumps({"status":"0", "result":parsedResult})
+                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                        print("Success!!!")
+                        connection.sendall(response)    
                 except Exception:
                         traceback.print_exc()
                         responseTemplate = json.dumps({"status":"1", "error":traceback.format_exc()})

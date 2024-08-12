@@ -29,7 +29,7 @@ type Signal0neIntegrationInventory struct {
 	PyInterface      net.Conn
 }
 
-func NewOpenSearchIntegrationInventory(
+func NewSignal0neIntegrationInventory(
 	alertsCollection *mongo.Collection,
 	pyInterface net.Conn) Signal0neIntegrationInventory {
 	return Signal0neIntegrationInventory{
@@ -140,11 +140,15 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 	}
 	potentialCorrelationsResults.Decode(&alerts)
 
+	var entities = make([]any, 0)
+	for _, alert := range alerts {
+
+	}
+
 	pyInterfacePayload := map[string]any{
 		"command": "correlate_ongoing_alerts",
 		"params": map[string]any{
-			"collectedAlerts": alerts,
-			"comparedFields":  comparedFieldParamSpliced,
+			"collectedEntities": entities,
 		},
 	}
 	payloadBytes, err := json.Marshal(pyInterfacePayload)

@@ -7,6 +7,7 @@ import (
 	"signal0ne/pkg/integrations/backstage"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/opensearch"
+	"signal0ne/pkg/integrations/signal0ne"
 	"signal0ne/pkg/integrations/slack"
 	"sync"
 
@@ -23,6 +24,7 @@ var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"backstage":  reflect.TypeOf(backstage.BackstageIntegration{}),
 	"jaeger":     reflect.TypeOf(jaeger.JaegerIntegration{}),
 	"opensearch": reflect.TypeOf(opensearch.OpenSearchIntegration{}),
+	"signal0ne":  reflect.TypeOf(signal0ne.Signal0neIntegration{}),
 	"slack":      reflect.TypeOf(slack.SlackIntegration{}),
 }
 
