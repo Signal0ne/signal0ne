@@ -246,21 +246,21 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 		// 4. Execute
 		execResult := []map[string]any{}
-		switch i := integration.(type) {
-		case *backstage.BackstageIntegration:
-			execResult, err = i.Execute(step.Input, step.Output, step.Function)
-		case *slack.SlackIntegration:
-			execResult, err = i.Execute(step.Input, step.Output, step.Function)
-		case *opensearch.OpenSearchIntegration:
-			execResult, err = i.Execute(step.Input, step.Output, step.Function)
-		case *jaeger.JaegerIntegration:
-			if tools.EvaluateCondition(step.Condition, alertEnrichmentsMap) {
+		if tools.EvaluateCondition(step.Condition, alertEnrichmentsMap) {
+			switch i := integration.(type) {
+			case *backstage.BackstageIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *slack.SlackIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *opensearch.OpenSearchIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *jaeger.JaegerIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *signal0ne.Signal0neIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			default:
+				err = fmt.Errorf("unknown integration type")
 			}
-		case *signal0ne.Signal0neIntegration:
-			execResult, err = i.Execute(step.Input, step.Output, step.Function)
-		default:
-			err = fmt.Errorf("unknown integration type")
 		}
 		if err != nil {
 			fmt.Printf("failed to execute %s, error: %s", step.Function, err)

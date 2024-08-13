@@ -141,8 +141,8 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 	potentialCorrelationsResults.Decode(&alerts)
 
 	var entities = make([]any, 0)
-	for _, alert := range alerts {
-
+	for _, _ = range alerts {
+		// TBD
 	}
 
 	pyInterfacePayload := map[string]any{

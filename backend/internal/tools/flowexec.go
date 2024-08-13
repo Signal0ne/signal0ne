@@ -126,24 +126,37 @@ func ExecutionResultWrapper(intermediateResults []any, output map[string]string)
 }
 
 func EvaluateCondition(conditionExpression string, alertEnrichmentsMap map[string]any) bool {
-	var satisfied = false
+	var satisfied = true
 	buf := new(bytes.Buffer)
 
-	fmt.Printf("Executing condition evaluation...")
+	fmt.Printf("Executing condition evaluation...\n")
+
+	if conditionExpression == "" {
+		return satisfied
+	}
 
 	t, err := template.New("EvaluateCondition").Funcs(template.FuncMap{
-		"isempty": func(value string) bool {
-			return false
+		"isempty": func(rawValue any) bool {
+			switch value := rawValue.(type) {
+			case string:
+				return !(value == "")
+			case []any:
+				return !(value == nil)
+			default:
+				return !(value == nil)
+			}
+
 		},
 	}).Parse(conditionExpression)
 	if err != nil {
+		fmt.Printf("Error %v", err)
 		return satisfied
 	}
 	err = t.Execute(buf, alertEnrichmentsMap)
 	if err != nil {
+		fmt.Printf("Error %v", err)
 		return satisfied
 	}
-
 	satisfied, err = strconv.ParseBool(buf.String())
 	if err != nil {
 		return satisfied
