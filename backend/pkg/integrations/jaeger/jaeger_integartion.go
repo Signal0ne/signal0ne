@@ -176,10 +176,9 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	headers := make([]byte, 4)
-	binary.BigEndian.PutUint32(headers, uint32(len(payloadBytes)))
-	payloadBytesWithHeaders := append(headers, payloadBytes...)
-	fmt.Printf("SIZE: %s", string(headers))
+	batchSizeHeader := make([]byte, 4)
+	binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
+	payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
 
 	_, err = assertedIntegration.Inventory.PyInterface.Write(payloadBytesWithHeaders)
 	if err != nil {

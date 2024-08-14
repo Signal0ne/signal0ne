@@ -43,21 +43,29 @@ def main():
     try:
 
         print('Connection from', str(connection).split(", ")[0][-8:])
+        payload = b''
+        payloadBatchBuffer = float('-inf')
 
         while True:
-            header = connection.recv(bufferSizePrefix)
-            if not header:
-                break
-            print("Header", str(header))
+
+            if payloadBatchBuffer < 0 :
+                batchSizeHeader = connection.recv(bufferSizePrefix)
+                if not batchSizeHeader:
+                    break
             
-            payloadSize = struct.unpack('>I', header)[0]
-            print("Payload size", str(payloadSize))
-            payload = connection.recv(payloadSize)
-            if payload != None:
+                payloadSize = struct.unpack('>I', batchSizeHeader)[0]
+                payloadBatchBuffer = float(payloadSize)
+
+            payload += connection.recv(payloadSize)
+
+            print("Payload size", len(payload), "Overall payload size",str(payloadBatchBuffer))
+            if len(payload) >= int(payloadBatchBuffer):
                 print("PYTHON SIZE: ",len(payload))
                 data = json.loads(payload)
                 command = data["command"]
                 params = data["params"]
+                print(command)
+                print(params)
             
                 try:
                     if command == "get_log_occurrences":
@@ -80,6 +88,8 @@ def main():
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         connection.sendall(response)
 
+                payload = b''
+                payloadBatchBuffer = float('-inf')
             responseTemplate = json.dumps({"status":"0"})
             response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
             connection.sendall(response)
