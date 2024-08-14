@@ -162,7 +162,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				Inventory: inventory,
 			}
 		case "jaeger":
-			integration = &jaeger.JaegerIntegration{}
+			inventory := jaeger.NewJaegerIntegrationInventory(
+				c.PyInterface,
+			)
+			integration = &jaeger.JaegerIntegration{
+				Inventory: inventory,
+			}
 		default:
 			integration = &models.Integration{}
 		}
@@ -209,7 +214,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 					bytes, _ := json.Marshal(alertEnrichmentsMap)
 					return string(bytes)
 				},
-				"date": func(timestamp float64, shift string) string {
+				"date": func(timestamp float64, shift string, outputType string) string {
 					unit := string(shift[len(shift)-1])
 					value, _ := strconv.Atoi(shift[1 : len(shift)-1])
 					sign := string(shift[0])
@@ -228,8 +233,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 					resultTimestamp := int64(timestamp) + int64(value)*multiplier
 					resultTime := time.Unix(resultTimestamp, 0)
-
-					return resultTime.Format(time.RFC3339)
+					if outputType == "ts" {
+						return strconv.Itoa(int(resultTimestamp))
+					} else if outputType == "rfc" {
+						return resultTime.Format(time.RFC3339)
+					}
+					return strconv.Itoa(int(resultTimestamp))
 				},
 			}).Parse(value)
 			if err != nil {

@@ -42,7 +42,7 @@ def main():
 
     try:
 
-        print('Connection from', str(connection).split(", ")[0][-4:])
+        print('Connection from', str(connection).split(", ")[0][-8:])
 
         while True:
             header = connection.recv(bufferSizePrefix)
@@ -54,6 +54,7 @@ def main():
             print("Payload size", str(payloadSize))
             payload = connection.recv(payloadSize)
             if payload != None:
+                print("PYTHON SIZE: ",len(payload))
                 data = json.loads(payload)
                 command = data["command"]
                 params = data["params"]

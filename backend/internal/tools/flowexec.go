@@ -129,8 +129,6 @@ func EvaluateCondition(conditionExpression string, alertEnrichmentsMap map[strin
 	var satisfied = true
 	buf := new(bytes.Buffer)
 
-	fmt.Printf("Executing condition evaluation...\n")
-
 	if conditionExpression == "" {
 		return satisfied
 	}
