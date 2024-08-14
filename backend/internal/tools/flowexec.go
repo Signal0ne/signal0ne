@@ -43,7 +43,8 @@ func TraverseOutput(
 		for key, value := range v {
 			if key == currentMapping || key == mapping {
 				_, isMap := value.(map[string]any)
-				if len(mappings) <= 1 || !isMap {
+				_, isSlice := value.([]any)
+				if len(mappings) <= 1 || !isMap || !isSlice {
 					return value
 				} else {
 					mapping = strings.Join(mappings[1:], ".")

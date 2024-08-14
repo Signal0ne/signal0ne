@@ -14,6 +14,7 @@ def log_occurrences(collectedLogs: list, comparedFields: list) -> list:
         incoming_log_object = {
             "count": 1
         }
+        print("KEYS: ",dict(log).keys())
         for collectedLogKey in dict(log).keys():
             incoming_log_object[collectedLogKey] = log[collectedLogKey]
 

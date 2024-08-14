@@ -60,11 +60,9 @@ def main():
 
             print("Payload size", len(payload), "Overall payload size",str(payloadBatchBuffer))
             if len(payload) >= int(payloadBatchBuffer):
-                print("PYTHON SIZE: ",len(payload))
                 data = json.loads(payload)
                 command = data["command"]
                 params = data["params"]
-                print(command)
                 print(params)
             
                 try:
