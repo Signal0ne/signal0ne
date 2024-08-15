@@ -63,7 +63,7 @@ def main():
                 data = json.loads(payload)
                 command = data["command"]
                 params = data["params"]
-                print(params)
+                print("PARAMS: ", params)
             
                 try:
                     if command == "get_log_occurrences":

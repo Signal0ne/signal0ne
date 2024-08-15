@@ -163,6 +163,8 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
+	fmt.Printf("No of traces %d", len(intermediateTracesOutput))
+
 	var serviceProcess string
 	for _, trace := range intermediateTracesOutput {
 		for key, process := range trace.(map[string]any)["processes"].(map[string]any) {
@@ -206,6 +208,8 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		}
 	}
 
+	fmt.Printf("%v", spans[0])
+
 	pyInterfacePayload := map[string]any{
 		"command": "get_log_occurrences",
 		"params": map[string]any{
@@ -213,6 +217,7 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 			"comparedFields": comparedFieldParamSpliced,
 		},
 	}
+
 	payloadBytes, err := json.Marshal(pyInterfacePayload)
 	if err != nil {
 		return output, err
@@ -250,17 +255,12 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		errorMsg, _ := intermediateOutput["error"].(string)
 		return output, fmt.Errorf("cannot retrieve results %s", errorMsg)
 	}
-	resultsEncoded, exists := intermediateOutput["result"]
+	resultsEncoded, exists := intermediateOutput["result"].(string)
 	if !exists {
 		return output, fmt.Errorf("cannot retrieve results")
 	}
 
-	resultsEncoded, err = json.Marshal(resultsEncoded)
-	if err != nil {
-		return output, err
-	}
-
-	err = json.Unmarshal(resultsEncoded.([]byte), &output)
+	err = json.Unmarshal([]byte(resultsEncoded), &output)
 	if err != nil {
 		return output, err
 	}
