@@ -214,6 +214,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 					bytes, _ := json.Marshal(alertEnrichmentsMap)
 					return string(bytes)
 				},
+				"default": func(value string, defaultValue string) string {
+					if value == "" || value == "null" {
+						return defaultValue
+					}
+					return value
+				},
 				"date": func(timestamp float64, shift string, outputType string) string {
 					unit := string(shift[len(shift)-1])
 					value, _ := strconv.Atoi(shift[1 : len(shift)-1])

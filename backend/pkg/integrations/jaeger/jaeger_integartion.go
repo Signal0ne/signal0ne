@@ -97,11 +97,13 @@ type GetPropertiesValuesInput struct {
 }
 
 type CompareTracesInput struct {
-	Service        string `json:"service"`
-	Operation      string `json:"operation"`
-	Query          string `json:"query"`
-	Tags           string `json:"tags"`
-	ComparisonTags string `json:"comparisonTags"`
+	Service   string `json:"service"`
+	Operation string `json:"operation"`
+
+	BaseTraceTags      string `json:"baseTraceTags"`
+	ComparedTraceTags  string `json:"comparedTraceTags"`
+	BaseTraceQuery     string `json:"baseTraceQuery"`
+	ComparedTraceQuery string `json:"comparedTraceQuery"`
 }
 
 func getPropertiesValues(input any, integration any) ([]any, error) {
@@ -128,42 +130,10 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 
 	url := fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
 
-	client := &http.Client{}
-
-	req, err := http.NewRequest("GET", url, nil)
+	intermediateTracesOutput, err := getJaegerObjects(url)
 	if err != nil {
 		return output, err
 	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return output, err
-	}
-	defer resp.Body.Close()
-	var bodyHandler map[string]any
-
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("%s", resp.Status)
-		return output, err
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return output, err
-	}
-
-	err = json.Unmarshal(body, &bodyHandler)
-	if err != nil {
-		err = fmt.Errorf("cannot parse %s response body, error %v", assertedIntegration.Name, err)
-		return output, err
-	}
-	intermediateTracesOutput, exists := bodyHandler["data"].([]any)
-	if !exists {
-		err = fmt.Errorf("cannot parse %s response body", assertedIntegration.Name)
-		return output, err
-	}
-
-	fmt.Printf("No of traces %d", len(intermediateTracesOutput))
 
 	var serviceProcess string
 	for _, trace := range intermediateTracesOutput {
@@ -207,8 +177,6 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 			}
 		}
 	}
-
-	fmt.Printf("%v", spans[0])
 
 	pyInterfacePayload := map[string]any{
 		"command": "get_log_occurrences",
@@ -270,6 +238,11 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 }
 
 func compareTraces(input any, integration any) ([]any, error) {
+	type Diff struct {
+		Operation string `json:"operation"`
+		Processes string `json:"processes"`
+		Spans     string `json:"spans"`
+	}
 	var parsedInput CompareTracesInput
 	var output []any
 
@@ -280,6 +253,158 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 	fmt.Printf("Executing Jaeger integration function...")
 
+	assertedIntegration := integration.(JaegerIntegration)
+
+	host := assertedIntegration.Host
+	port := assertedIntegration.Port
+
+	var operations []any
+	var apiPath string
+	var url string
+	if parsedInput.Operation == "all" {
+		apiPath = fmt.Sprintf("/api/services/%s/operations", parsedInput.Service)
+		url = fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+
+		operations, err = getJaegerObjects(url)
+		if err != nil {
+			return output, err
+		}
+	} else {
+		operations = []any{parsedInput.Operation}
+	}
+
+	for _, operation := range operations {
+		var diff = Diff{}
+		var traces []any
+		var tracesToCompare []any
+
+		tracesTags := strings.Split(parsedInput.BaseTraceTags, ",")
+		tracesToCompareTags := strings.Split(parsedInput.ComparedTraceTags, ",")
+
+		//BaseTraces
+		for _, tag := range tracesTags {
+			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.BaseTraceQuery, operation, tag)
+
+			url = fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+
+			traces, err = getJaegerObjects(url)
+			if err != nil {
+				return output, err
+			}
+			if len(traces) > 0 {
+				break
+			}
+		}
+
+		//ComparedTraces
+		for _, tag := range tracesToCompareTags {
+			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.ComparedTraceQuery, operation, tag)
+
+			url = fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+
+			tracesToCompare, err = getJaegerObjects(url)
+			if err != nil {
+				return output, err
+			}
+			if len(tracesToCompare) > 0 {
+				break
+			}
+		}
+
+		if traces == nil || tracesToCompare == nil {
+			return output, nil
+		}
+
+		//Compare processes
+		baseProcesses := traces[0].(map[string]any)["processes"].([]any)
+		comparedProcesses := tracesToCompare[0].(map[string]any)["processes"].([]any)
+
+		baseProcessesSlice := make([]string, 0)
+		comparedProcessesSlice := make([]string, 0)
+
+		for _, process := range baseProcesses {
+			baseProcessesSlice = append(baseProcessesSlice, process.(map[string]any)["serviceName"].(string))
+		}
+
+		for _, process := range comparedProcesses {
+			comparedProcessesSlice = append(comparedProcessesSlice, process.(map[string]any)["serviceName"].(string))
+		}
+
+		processesDiffSlice := diffStringSlices(baseProcessesSlice, comparedProcessesSlice)
+		//Compare spans, errors, durations --- TBD
+
+		diff.Processes = strings.Join(processesDiffSlice, ",")
+
+		diff.Operation = operation.(string)
+		output = append(output, diff)
+	}
+
 	return output, nil
 
+}
+
+func getJaegerObjects(url string) ([]any, error) {
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var bodyHandler map[string]any
+
+	if resp.StatusCode != 200 {
+		fmt.Printf("URL %s", url)
+		err = fmt.Errorf("%s", resp.Status)
+		return nil, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(body, &bodyHandler)
+	if err != nil {
+		err = fmt.Errorf("cannot parse response body, error %v", err)
+		return nil, err
+	}
+	intermediateTracesOutput, exists := bodyHandler["data"].([]any)
+	if !exists {
+		err = fmt.Errorf("cannot parse response body")
+		return nil, err
+	}
+	return intermediateTracesOutput, nil
+}
+
+func diffStringSlices(old, new []string) []string {
+	var diff []string
+	i, j := 0, 0
+
+	for i < len(old) && j < len(new) {
+		if old[i] == new[j] {
+			continue
+		} else if i+1 < len(old) && old[i+1] == new[j] {
+			diff = append(diff, "-"+old[i])
+			i++
+		} else {
+			diff = append(diff, "+"+new[j])
+			j++
+		}
+	}
+
+	for ; i < len(old); i++ {
+		diff = append(diff, "-"+old[i])
+	}
+
+	for ; j < len(new); j++ {
+		diff = append(diff, "+"+new[j])
+	}
+
+	return diff
 }

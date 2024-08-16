@@ -37,18 +37,31 @@ steps:
   output:
     count: "count"
     log: "logs.exception.stacktrace, tags.grpc.error_message"
-  # condition: "{{isempty .opensearch_prod.get_log_occurrences.output }}"
-# - name: Compare traces
-#   integration: jaeger_prod
-#   function: compare_traces
-#   input:
-#     service: "{{.service}}"
-#     operation: "{{ .span | default "all" }}"
-#     tags: "{\"error\": \"true\"}"
-#     comparisonTags: "{\"error\": \"false\"}"
-#     query: "&start={{.timestamp}}&lookback=15m&maxDuration&minDuration"
+  condition: "{{isempty .opensearch_prod.get_log_occurrences.output }}"
+- name: Compare traces
+  integration: jaeger_prod
+  function: compare_traces
+  input:
+    service: "{{.service}}"
+    operation: "{{ default .span \"all\"}}"
+    baseTraceTags: "{\"rpc.grpc.status_code\": \"0\"},{\"http.status_code\":\"200\"}"
+    comparedTraceTags: "{\"error\": \"true\"}"
+    baseTraceQuery: "&start={{date .timestamp \"-0m\" \"ts\"}}&lookback=30m&maxDuration&minDuration"
+    comparedTraceQuery: "&start={{date .timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
+  output:
+    operation: "operation"
+    processes_diff: "processes"
+    # TBD - 
+    # spans_diff:
+    # errors_diff:
+    # duration_diff: 
+
+# - name: Get containers status
+#   integration: alertmanager_prod
+#   function: get_relevant_alerts
+#   input:    
 #   output:
-#     diff: "diff"
+
 # - name: Correlate alerts
 #   integration: signal0ne
 #   function: correlate_ongoing_alerts
@@ -59,6 +72,7 @@ steps:
 #     compare_by: ".opensearch_prod.get_log_occurrences.output[].body, .jaeger_prod.get_properties_values.output[].log"
 #   output:
 #     alert: alert
+
 - name: Send to slack channel
   integration: slack_lab01
   function: post_message
