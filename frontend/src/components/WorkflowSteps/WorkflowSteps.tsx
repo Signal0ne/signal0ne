@@ -1,6 +1,7 @@
 import { ArrowDown } from '../Icons/Icons';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import WorkflowStep from '../WorkflowStep/WorkflowStep';
+import WorkflowStepTrigger from '../WorkflowStepTrigger/WorkflowStepTrigger';
 import './WorkflowSteps.scss';
 
 const calcStepsListHeight = () => {
@@ -33,6 +34,8 @@ const WorkflowSteps = () => {
         className="workflow-steps-list"
         style={{ height: calcStepsListHeight() }}
       >
+        <WorkflowStepTrigger step={activeWorkflow.trigger} />
+        <ArrowDown className="workflow-step-separator" height={36} width={36} />
         {activeWorkflow.steps.map((step, index) => (
           <>
             <WorkflowStep index={index} key={step.name} step={step} />
