@@ -58,12 +58,11 @@ def main():
 
             payload += connection.recv(payloadSize)
 
-            print("Payload size", len(payload), "Overall payload size",str(payloadBatchBuffer))
             if len(payload) >= int(payloadBatchBuffer):
                 data = json.loads(payload)
                 command = data["command"]
                 params = data["params"]
-                print("PARAMS: ", params)
+
             
                 try:
                     if command == "get_log_occurrences":

@@ -289,7 +289,7 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 			traces, err = getJaegerObjects(url)
 			if err != nil {
-				return output, err
+				break
 			}
 			if len(traces) > 0 {
 				break
@@ -304,20 +304,20 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 			tracesToCompare, err = getJaegerObjects(url)
 			if err != nil {
-				return output, err
+				break
 			}
 			if len(tracesToCompare) > 0 {
 				break
 			}
 		}
 
-		if traces == nil || tracesToCompare == nil {
-			return output, nil
+		if len(traces) == 0 || len(tracesToCompare) == 0 {
+			continue
 		}
 
 		//Compare processes
-		baseProcesses := traces[0].(map[string]any)["processes"].([]any)
-		comparedProcesses := tracesToCompare[0].(map[string]any)["processes"].([]any)
+		baseProcesses := traces[0].(map[string]any)["processes"].(map[string]any)
+		comparedProcesses := tracesToCompare[0].(map[string]any)["processes"].(map[string]any)
 
 		baseProcessesSlice := make([]string, 0)
 		comparedProcessesSlice := make([]string, 0)
@@ -336,7 +336,11 @@ func compareTraces(input any, integration any) ([]any, error) {
 		diff.Processes = strings.Join(processesDiffSlice, ",")
 
 		diff.Operation = operation.(string)
-		output = append(output, diff)
+		translatedMap := map[string]any{
+			"processes": diff.Processes,
+			"operation": diff.Operation,
+		}
+		output = append(output, translatedMap)
 	}
 
 	return output, nil
@@ -350,7 +354,6 @@ func getJaegerObjects(url string) ([]any, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -359,7 +362,6 @@ func getJaegerObjects(url string) ([]any, error) {
 	var bodyHandler map[string]any
 
 	if resp.StatusCode != 200 {
-		fmt.Printf("URL %s", url)
 		err = fmt.Errorf("%s", resp.Status)
 		return nil, err
 	}
@@ -385,25 +387,18 @@ func getJaegerObjects(url string) ([]any, error) {
 func diffStringSlices(old, new []string) []string {
 	var diff []string
 	i, j := 0, 0
-
-	for i < len(old) && j < len(new) {
-		if old[i] == new[j] {
-			continue
-		} else if i+1 < len(old) && old[i+1] == new[j] {
-			diff = append(diff, "-"+old[i])
-			i++
-		} else {
-			diff = append(diff, "+"+new[j])
-			j++
-		}
-	}
-
 	for ; i < len(old); i++ {
-		diff = append(diff, "-"+old[i])
-	}
-
-	for ; j < len(new); j++ {
-		diff = append(diff, "+"+new[j])
+		present := false
+		j = 0
+		for ; j < len(new); j++ {
+			if old[i] == new[j] {
+				present = true
+				break
+			}
+		}
+		if !present {
+			diff = append(diff, "-"+old[i])
+		}
 	}
 
 	return diff
