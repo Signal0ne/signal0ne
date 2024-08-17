@@ -1,13 +1,14 @@
 import { Route, Routes } from 'react-router-dom';
 import { ROUTES } from '../../data/routes';
+import NotFoundPage from '../../pages/NotFoundPage/NotFoundPage';
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
 const AppRoutes = () => (
   <Routes>
-    {ROUTES.map(({ Component, path, unAuthed }) => (
+    {ROUTES.map(({ Component, path, redirectTo, unAuthed }) => (
       <Route
         element={
-          <ProtectedRoute unAuthed={unAuthed}>
+          <ProtectedRoute redirectTo={redirectTo} unAuthed={unAuthed}>
             <Component />
           </ProtectedRoute>
         }
@@ -15,6 +16,7 @@ const AppRoutes = () => (
         path={path}
       />
     ))}
+    <Route element={<NotFoundPage />} path="*" />
   </Routes>
 );
 
