@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"reflect"
+	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/opensearch"
@@ -21,11 +22,12 @@ var installableIntegrationsLib = map[string]map[string]any{}
 var globalErrorHandle error = nil
 
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
-	"backstage":  reflect.TypeOf(backstage.BackstageIntegration{}),
-	"jaeger":     reflect.TypeOf(jaeger.JaegerIntegration{}),
-	"opensearch": reflect.TypeOf(opensearch.OpenSearchIntegration{}),
-	"signal0ne":  reflect.TypeOf(signal0ne.Signal0neIntegration{}),
-	"slack":      reflect.TypeOf(slack.SlackIntegration{}),
+	"backstage":    reflect.TypeOf(backstage.BackstageIntegration{}),
+	"jaeger":       reflect.TypeOf(jaeger.JaegerIntegration{}),
+	"opensearch":   reflect.TypeOf(opensearch.OpenSearchIntegration{}),
+	"signal0ne":    reflect.TypeOf(signal0ne.Signal0neIntegration{}),
+	"slack":        reflect.TypeOf(slack.SlackIntegration{}),
+	"alertmanager": reflect.TypeOf(alertmanager.AlertmanagerIntegration{}),
 }
 
 func GetInstallableIntegrationsLib() (map[string]map[string]any, error) {

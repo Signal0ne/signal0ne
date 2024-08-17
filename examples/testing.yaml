@@ -56,22 +56,12 @@ steps:
     # errors_diff:
     # duration_diff: 
 
-# - name: Get containers status
-#   integration: alertmanager_prod
-#   function: get_relevant_alerts
-#   input:    
-#   output:
-
-# - name: Correlate alerts
-#   integration: signal0ne
-#   function: correlate_ongoing_alerts
-#   input: 
-#     startTimestamp: "{{date .timestamp \"-15m\"}}"
-#     endTimestamp: "{{date .timestamp \"+15m\"}}"
-#     type: "semanticSimilarity"
-#     compare_by: ".opensearch_prod.get_log_occurrences.output[].body, .jaeger_prod.get_properties_values.output[].log"
-#   output:
-#     alert: alert
+- name: Get containers status
+  integration: alertmanager_prod
+  function: get_relevant_alerts
+  input:
+    filter: "{{range toArray .jaeger_prod.compare_traces}}name={{unique_parsed .processes_diff}},{{end}}"
+  output:
 
 - name: Send to slack channel
   integration: slack_lab01

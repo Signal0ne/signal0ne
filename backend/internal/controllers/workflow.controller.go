@@ -13,6 +13,7 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
+	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/opensearch"
@@ -142,6 +143,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		// 2. Parse integration
 		var integration any
 		switch integrationTemplate.Type {
+		case "alertmanager":
+			integration = &alertmanager.AlertmanagerIntegration{}
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
 		case "slack":
@@ -272,6 +275,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			case *jaeger.JaegerIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *signal0ne.Signal0neIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *alertmanager.AlertmanagerIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			default:
 				err = fmt.Errorf("unknown integration type")
