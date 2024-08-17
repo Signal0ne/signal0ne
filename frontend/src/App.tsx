@@ -1,3 +1,4 @@
+import { AuthContextProvider } from './contexts/AuthProvider/AuthProvider';
 import { ToastContainer } from 'react-toastify';
 import { Tooltip } from 'react-tooltip';
 import AppRoutes from './components/AppRoutes/AppRoutes';
@@ -8,8 +9,10 @@ import './App.scss';
 const App = () => {
   return (
     <>
-      <Navbar />
-      <AppRoutes />
+      <AuthContextProvider>
+        <Navbar />
+        <AppRoutes />
+      </AuthContextProvider>
       <Tooltip
         delayShow={50}
         id="global"

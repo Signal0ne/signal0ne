@@ -7,17 +7,20 @@ export const ROUTES = [
     Component: AlertsPage,
     isDisabled: true,
     path: '/alerts',
-    title: 'Alerts'
+    title: 'Alerts',
+    unAuthed: false
   },
   {
     Component: IntegrationsPage,
     path: '/integrations',
-    title: 'Integrations'
+    title: 'Integrations',
+    unAuthed: false
   },
   {
     Component: WorkflowsPage,
     isDisabled: false,
     path: '/',
-    title: 'Workflows'
+    title: 'Workflows',
+    unAuthed: false
   }
 ];
