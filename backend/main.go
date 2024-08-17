@@ -99,21 +99,5 @@ func main() {
 		integrationsController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
-	// //==========REMOVE BEFORE RELEASE==========
-	// _, err = conn.Write([]byte("Hello I am Go!"))
-	// if err != nil {
-	// 	fmt.Printf("Failed to send data: %s", err)
-	// }
-
-	// // Receive response
-	// buffer := make([]byte, 1024)
-	// n, err := conn.Read(buffer)
-	// if err != nil {
-	// 	fmt.Printf("Failed to read response: %s", err)
-	// }
-
-	// fmt.Printf("%s\n", buffer[:n])
-	// //===================
-
 	server.Run(":" + cfg.Server.ServerPort)
 }

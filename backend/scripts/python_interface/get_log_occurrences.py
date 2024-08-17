@@ -36,5 +36,4 @@ def log_occurrences(collectedLogs: list, comparedFields: list) -> list:
             unique_logs_list.append(incoming_log_object)
 
     return unique_logs_list
-
-    
+  
