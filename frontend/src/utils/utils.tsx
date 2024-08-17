@@ -2,8 +2,10 @@ import {
   BackStageIcon,
   JaegerIcon,
   PrometheusIcon,
+  ScheduledIcon,
   Signal0neLogo,
-  SlackIcon
+  SlackIcon,
+  WebhookIcon
 } from '../components/Icons/Icons';
 import { ReactNode } from 'react';
 
@@ -12,8 +14,10 @@ export const getIntegrationIcon = (integrationName: string) => {
     backstage: <BackStageIcon />,
     jaeger: <JaegerIcon />,
     prometheus: <PrometheusIcon />,
+    scheduled: <ScheduledIcon />,
     signal0ne: <Signal0neLogo />,
-    slack: <SlackIcon />
+    slack: <SlackIcon />,
+    webhook: <WebhookIcon />
   };
 
   return icons[integrationName] || null;

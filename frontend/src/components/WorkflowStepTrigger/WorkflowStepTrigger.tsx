@@ -1,51 +1,48 @@
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import { IWorkflowStep } from '../../data/dummyWorkflows';
+import { IWorkflowTrigger } from '../../data/dummyWorkflows';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import classNames from 'classnames';
-import './WorkflowStep.scss';
+import './WorkflowStepTrigger.scss';
 
 interface WorkflowStepProps {
-  index: number;
-  step: IWorkflowStep;
+  step: IWorkflowTrigger;
 }
 
-const WorkflowStep = ({ index, step }: WorkflowStepProps) => {
-  const { activeStep, setActiveStep } = useWorkflowsContext() as {
-    activeStep: IWorkflowStep | null;
-    setActiveStep: (step: IWorkflowStep) => void;
+const WorkflowStepTrigger = ({ step }: WorkflowStepProps) => {
+  const { setActiveStep } = useWorkflowsContext() as {
+    setActiveStep: (step: IWorkflowTrigger) => void;
   };
 
   const handleStepClick = () => setActiveStep(step);
 
+  const isWebhook = 'webhook' in step;
+  const stepOptions = isWebhook ? step.webhook.output : step.scheduled.output;
+
   return (
     <div className="workflow-step-container">
-      <p
-        className={classNames('workflow-step-index', {
-          active: step.name === activeStep?.name
-        })}
-      >
-        Step: {index + 1}
-      </p>
+      <p className={classNames('workflow-step-index')}>Trigger</p>
       <div
-        className={classNames('workflow-step-content', {
-          active: step.name === activeStep?.name
-        })}
+        className={classNames('workflow-step-content')}
         onClick={handleStepClick}
         onKeyDown={handleKeyDown(handleStepClick)}
         tabIndex={0}
       >
         <div className="workflow-step-icon">
-          {getIntegrationIcon(step.integration)}
+          {getIntegrationIcon(isWebhook ? 'webhook' : 'scheduled')}
         </div>
         <div className="workflow-step-info-container">
-          <span className="workflow-step-info-name">{step.name}</span>
-          <span className="workflow-step-info-function">
-            Function: {step.function}
+          <span className="workflow-step-info-name">
+            {isWebhook ? 'Webhook' : 'Scheduled'}
           </span>
+          {!isWebhook && (
+            <span className="workflow-step-info-function">
+              Interval: {step.scheduled.interval}
+            </span>
+          )}
         </div>
         <div className="workflow-step-output">
-          {step?.output &&
-            Object.entries(step.output).map((output, index) => {
+          {stepOptions &&
+            Object.entries(stepOptions).map((output, index) => {
               if (index === 3)
                 return (
                   <span className="more-dots" key={index}>
@@ -67,4 +64,4 @@ const WorkflowStep = ({ index, step }: WorkflowStepProps) => {
   );
 };
 
-export default WorkflowStep;
+export default WorkflowStepTrigger;

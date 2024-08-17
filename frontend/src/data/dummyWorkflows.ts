@@ -1,4 +1,4 @@
-export interface Step {
+export interface IWorkflowStep {
   condition?: string;
   function: string;
   input: {
@@ -11,11 +11,25 @@ export interface Step {
   };
 }
 
+export type IWorkflowTrigger =
+  | {
+      webhook: {
+        output: Record<string, string>;
+      };
+    }
+  | {
+      scheduled: {
+        interval: string;
+        output: Record<string, string>;
+      };
+    };
+
 export interface Workflow {
   description: string;
   id: string;
   name: string;
-  steps: Step[];
+  steps: IWorkflowStep[];
+  trigger: IWorkflowTrigger;
 }
 
 export const DUMMY_WORKFLOWS: Workflow[] = [
@@ -72,7 +86,16 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         condition: 'greater(additional_context.log_occurrences.count'
       }
-    ]
+    ],
+    trigger: {
+      webhook: {
+        output: {
+          service: 'job',
+          span: 'span_name',
+          timestamp: 'startsAt'
+        }
+      }
+    }
   },
   {
     description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit',
@@ -115,7 +138,17 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         condition: 'greater(additional_context.log_occurrences.count'
       }
-    ]
+    ],
+    trigger: {
+      scheduled: {
+        interval: '15m',
+        output: {
+          service: 'job',
+          span: 'span_name',
+          timestamp: 'startsAt'
+        }
+      }
+    }
   },
   {
     description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit',
@@ -158,7 +191,16 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         condition: 'greater(additional_context.log_occurrences.count'
       }
-    ]
+    ],
+    trigger: {
+      webhook: {
+        output: {
+          service: 'job',
+          span: 'span_name',
+          timestamp: 'startsAt'
+        }
+      }
+    }
   },
   {
     description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit',
@@ -201,12 +243,22 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         condition: 'greater(additional_context.log_occurrences.count'
       }
-    ]
+    ],
+    trigger: {
+      webhook: {
+        output: {
+          service: 'job',
+          span: 'span_name',
+          timestamp: 'startsAt'
+        }
+      }
+    }
   },
   {
     description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit',
     id: '5',
     name: 'Workflow 5',
+
     steps: [
       {
         name: 'Get ownership',
@@ -244,12 +296,22 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         condition: 'greater(additional_context.log_occurrences.count'
       }
-    ]
+    ],
+    trigger: {
+      webhook: {
+        output: {
+          service: 'job',
+          span: 'span_name',
+          timestamp: 'startsAt'
+        }
+      }
+    }
   },
   {
     description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit',
     id: '6',
     name: 'Workflow 6',
+
     steps: [
       {
         name: 'Get ownership',
@@ -287,12 +349,22 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         condition: 'greater(additional_context.log_occurrences.count'
       }
-    ]
+    ],
+    trigger: {
+      webhook: {
+        output: {
+          service: 'job',
+          span: 'span_name',
+          timestamp: 'startsAt'
+        }
+      }
+    }
   },
   {
     description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit',
     id: '7',
     name: 'Workflow 7',
+
     steps: [
       {
         name: 'Get ownership',
@@ -330,6 +402,15 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         },
         condition: 'greater(additional_context.log_occurrences.count'
       }
-    ]
+    ],
+    trigger: {
+      webhook: {
+        output: {
+          service: 'job',
+          span: 'span_name',
+          timestamp: 'startsAt'
+        }
+      }
+    }
   }
 ];
