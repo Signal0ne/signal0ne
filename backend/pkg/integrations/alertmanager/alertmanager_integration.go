@@ -1,10 +1,15 @@
 package alertmanager
 
 import (
+	"context"
 	"fmt"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
+
+	"github.com/prometheus/alertmanager/api/v2/client"
+	"github.com/prometheus/alertmanager/api/v2/client/alert"
+	alertmanagerApiModels "github.com/prometheus/alertmanager/api/v2/models"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -83,5 +88,35 @@ func getRelevantAlerts(input any, integration any) ([]any, error) {
 
 	fmt.Printf("Executing Jaeger integration function...")
 
+	assertedIntegration := integration.(AlertmanagerIntegration)
+
+	host := assertedIntegration.Host
+	port := assertedIntegration.Port
+
+	transport := client.DefaultTransportConfig().
+		WithHost(fmt.Sprintf("%s:%s", host, port)).
+		WithSchemes([]string{"http"})
+
+	_ = client.NewHTTPClientWithConfig(nil, transport)
+
+	fmt.Printf("PARSED ALERT FILTERS: %v", parsedInput.Filter)
+
+	// alerts, err := getAlerts(alertmanagerClient, parsedInput.Filter)
+
 	return output, nil
+}
+
+func getAlerts(c *client.AlertmanagerAPI, filters []string) ([]*alertmanagerApiModels.GettableAlert, error) {
+	params := alert.NewGetAlertsParams().WithContext(context.Background())
+
+	if len(filters) > 0 {
+		params.SetFilter(filters)
+	}
+
+	result, err := c.Alert.GetAlerts(params)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Payload, nil
 }

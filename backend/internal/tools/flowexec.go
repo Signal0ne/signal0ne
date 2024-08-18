@@ -142,7 +142,7 @@ func ExecutionResultWrapper(intermediateResults []any, output map[string]string)
 	return results
 }
 
-func EvaluateCondition(conditionExpression string, alertEnrichmentsMap map[string]any) bool {
+func EvaluateCondition(conditionExpression string, alert models.EnrichedAlert) bool {
 	var satisfied = true
 	buf := new(bytes.Buffer)
 
@@ -167,7 +167,7 @@ func EvaluateCondition(conditionExpression string, alertEnrichmentsMap map[strin
 		fmt.Printf("Error %v", err)
 		return satisfied
 	}
-	err = t.Execute(buf, alertEnrichmentsMap)
+	err = t.Execute(buf, alert)
 	if err != nil {
 		fmt.Printf("Error %v", err)
 		return satisfied

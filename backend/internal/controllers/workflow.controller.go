@@ -183,42 +183,15 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 
 		// 3. Prepare input
-		var alertEnrichmentsMap = make(map[string]any)
-		for key, value := range alert.TriggerProperties {
-			switch value.(type) {
-			case string:
-				alertEnrichmentsMap[key] = value
-			case int64:
-				alertEnrichmentsMap[key] = value
-			case float64:
-				alertEnrichmentsMap[key] = value
-			default:
-				bytes, err := json.Marshal(value)
-				if err != nil {
-					localErrorMessage = fmt.Sprintf("%v", err)
-					continue
-				}
-				alertEnrichmentsMap[key] = string(bytes)
-			}
-		}
-		for key, value := range alert.AdditionalContext {
-			bytes, err := json.Marshal(value)
-			if err != nil {
-				localErrorMessage = fmt.Sprintf("%v", err)
-				continue
-			}
-			alertEnrichmentsMap[key] = string(bytes)
-		}
-
 		for key, value := range step.Input {
 			buf := new(bytes.Buffer)
 			t, err := template.New("").Funcs(template.FuncMap{
 				"index": func() string {
-					bytes, _ := json.Marshal(alertEnrichmentsMap)
+					bytes, _ := json.Marshal(alert)
 					return string(bytes)
 				},
-				"default": func(value string, defaultValue string) string {
-					if value == "" || value == "null" {
+				"default": func(value any, defaultValue any) any {
+					if value == "" || value == nil {
 						return defaultValue
 					}
 					return value
@@ -254,7 +227,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
-			err = t.Execute(buf, alertEnrichmentsMap)
+			err = t.Execute(buf, alert)
 			if err != nil {
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
@@ -264,7 +237,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 		// 4. Execute
 		execResult := []map[string]any{}
-		if tools.EvaluateCondition(step.Condition, alertEnrichmentsMap) {
+		if tools.EvaluateCondition(step.Condition, alert) {
 			switch i := integration.(type) {
 			case *backstage.BackstageIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
@@ -287,7 +260,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			localErrorMessage = fmt.Sprintf("%v", err)
 		}
 
-		alert.AdditionalContext[fmt.Sprintf("%s.%s", integrationTemplate.Name, step.Function)] = models.Outputs{
+		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Function)] = models.Outputs{
 			Output: execResult,
 		}
 	}
