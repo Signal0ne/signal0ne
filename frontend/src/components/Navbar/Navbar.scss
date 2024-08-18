@@ -24,17 +24,30 @@
     }
 
     .navbar-content-links {
+      align-items: center;
       display: flex;
       gap: 32px;
 
       .navbar-content-link {
-        color: white;
+        color: #e4e4e4;
         font-size: 16px;
         font-weight: 500;
         text-decoration: none;
 
         &:hover {
-          color: #e4e4e4;
+          color: #ffffff;
+        }
+
+        &.cta {
+          border: 1px solid #e4e4e4;
+          border-radius: 8px;
+          padding: 8px 16px;
+
+          &:hover {
+            border-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+          }
         }
 
         &.disabled {
