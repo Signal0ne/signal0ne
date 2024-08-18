@@ -1,15 +1,14 @@
 package alertmanager
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
-
-	"github.com/prometheus/alertmanager/api/v2/client"
-	"github.com/prometheus/alertmanager/api/v2/client/alert"
-	alertmanagerApiModels "github.com/prometheus/alertmanager/api/v2/models"
+	"strings"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -92,31 +91,69 @@ func getRelevantAlerts(input any, integration any) ([]any, error) {
 
 	host := assertedIntegration.Host
 	port := assertedIntegration.Port
-
-	transport := client.DefaultTransportConfig().
-		WithHost(fmt.Sprintf("%s:%s", host, port)).
-		WithSchemes([]string{"http"})
-
-	_ = client.NewHTTPClientWithConfig(nil, transport)
+	apiPath := "/api/v2/alerts?"
+	url := fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
 
 	fmt.Printf("PARSED ALERT FILTERS: %v", parsedInput.Filter)
+	filters := strings.Split(parsedInput.Filter, ",")
 
-	// alerts, err := getAlerts(alertmanagerClient, parsedInput.Filter)
+	alerts, err := getAlerts(url, filters)
+	if err != nil {
+		return output, err
+	}
+
+	for _, alert := range alerts {
+		output = append(output, map[string]any{
+			"alert": alert,
+		})
+	}
 
 	return output, nil
 }
 
-func getAlerts(c *client.AlertmanagerAPI, filters []string) ([]*alertmanagerApiModels.GettableAlert, error) {
-	params := alert.NewGetAlertsParams().WithContext(context.Background())
+func getAlerts(url string, filters []string) ([]any, error) {
+	client := &http.Client{}
 
-	if len(filters) > 0 {
-		params.SetFilter(filters)
+	if !(len(filters) > 0) {
+		return nil, nil
+	} else {
+		for fi, filter := range filters {
+			if filter != "" {
+				if fi != 0 {
+					url += "&"
+				}
+				url += ("filter=" + filter)
+			}
+		}
+	}
+	fmt.Printf("FILTERS URL : %v\n", url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var bodyHandler []any
+
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("%s", resp.Status)
+		return nil, err
 	}
 
-	result, err := c.Alert.GetAlerts(params)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return result.Payload, nil
+	err = json.Unmarshal(body, &bodyHandler)
+	if err != nil {
+		err = fmt.Errorf("cannot parse response body, error %v", err)
+		return nil, err
+	}
+
+	return bodyHandler, nil
 }

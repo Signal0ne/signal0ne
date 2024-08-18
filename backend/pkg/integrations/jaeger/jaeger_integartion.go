@@ -239,9 +239,9 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 
 func compareTraces(input any, integration any) ([]any, error) {
 	type Diff struct {
-		Operation string `json:"operation"`
-		Processes string `json:"processes"`
-		Spans     string `json:"spans"`
+		Operation string         `json:"operation"`
+		Processes map[string]any `json:"processes"`
+		Spans     map[string]any `json:"spans"`
 	}
 	var parsedInput CompareTracesInput
 	var output []any
@@ -332,15 +332,23 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 		processesDiffSlice := diffStringSlices(baseProcessesSlice, comparedProcessesSlice)
 		//Compare spans, errors, durations --- TBD
+		if len(processesDiffSlice) > 0 {
+			for _, process := range processesDiffSlice {
+				sign := string(process[0])
+				processName := string(process[1:])
+				diff.Processes = map[string]any{
+					"sign":        sign,
+					"processName": processName,
+				}
+			}
 
-		diff.Processes = strings.Join(processesDiffSlice, ",")
-
-		diff.Operation = operation.(string)
-		translatedMap := map[string]any{
-			"processes": diff.Processes,
-			"operation": diff.Operation,
+			diff.Operation = operation.(string)
+			translatedMap := map[string]any{
+				"processes": diff.Processes,
+				"operation": diff.Operation,
+			}
+			output = append(output, translatedMap)
 		}
-		output = append(output, translatedMap)
 	}
 
 	return output, nil
@@ -385,11 +393,24 @@ func getJaegerObjects(url string) ([]any, error) {
 }
 
 func diffStringSlices(old, new []string) []string {
-	var diff []string
-	i, j := 0, 0
+	var diff = make([]string, 0)
+	i, j, k := 0, 0, 0
 	for ; i < len(old); i++ {
 		present := false
 		j = 0
+		k = 0
+
+		// Skip if already exists in diff
+		for ; k < len(diff); k++ {
+			if old[i] == string(diff[k][1:]) {
+				present = true
+				break
+			}
+		}
+		if present {
+			continue
+		}
+
 		for ; j < len(new); j++ {
 			if old[i] == new[j] {
 				present = true

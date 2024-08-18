@@ -33,12 +33,11 @@ steps:
     # spans_diff:
     # errors_diff:
     # duration_diff: 
-
 - name: Get containers status
   integration: alertmanager_prod
   function: get_relevant_alerts
   input:
-    filter: "{{range .AdditionalContext.jaeger_prod_compare_traces.output}}name={{.processes_diff}},{{end}}"
+    filter: "{{range .AdditionalContext.jaeger_prod_compare_traces.output}}name={{.processes_diff.processName}},{{end}}"
   output:
     alert: "alert"
 
