@@ -94,7 +94,6 @@ func getRelevantAlerts(input any, integration any) ([]any, error) {
 	apiPath := "/api/v2/alerts?"
 	url := fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
 
-	fmt.Printf("PARSED ALERT FILTERS: %v", parsedInput.Filter)
 	filters := strings.Split(parsedInput.Filter, ",")
 
 	alerts, err := getAlerts(url, filters)
@@ -103,8 +102,13 @@ func getRelevantAlerts(input any, integration any) ([]any, error) {
 	}
 
 	for _, alert := range alerts {
+		source, exists := alert.(map[string]any)["labels"].(map[string]any)["name"].(string)
+		if !exists {
+			source = ""
+		}
 		output = append(output, map[string]any{
-			"alert": alert,
+			"alert":         alert,
+			"output_source": source,
 		})
 	}
 
@@ -126,7 +130,6 @@ func getAlerts(url string, filters []string) ([]any, error) {
 			}
 		}
 	}
-	fmt.Printf("FILTERS URL : %v\n", url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

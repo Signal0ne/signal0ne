@@ -7,6 +7,7 @@ import (
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
 	"signal0ne/pkg/integrations/jaeger"
+	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
 	"signal0ne/pkg/integrations/signal0ne"
 	"signal0ne/pkg/integrations/slack"
@@ -28,6 +29,7 @@ var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"signal0ne":    reflect.TypeOf(signal0ne.Signal0neIntegration{}),
 	"slack":        reflect.TypeOf(slack.SlackIntegration{}),
 	"alertmanager": reflect.TypeOf(alertmanager.AlertmanagerIntegration{}),
+	"openai":       reflect.TypeOf(openai.OpenaiIntegration{}),
 }
 
 func GetInstallableIntegrationsLib() (map[string]map[string]any, error) {

@@ -156,7 +156,7 @@ func EvaluateCondition(conditionExpression string, alert models.EnrichedAlert) b
 			case string:
 				return !(value == "")
 			case []any:
-				return !(value == nil)
+				return !(len(value) == 0)
 			default:
 				return !(value == nil)
 			}

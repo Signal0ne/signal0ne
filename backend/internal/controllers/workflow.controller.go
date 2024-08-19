@@ -16,6 +16,7 @@ import (
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
 	"signal0ne/pkg/integrations/jaeger"
+	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
 	"signal0ne/pkg/integrations/signal0ne"
 	"signal0ne/pkg/integrations/slack"
@@ -149,6 +150,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &backstage.BackstageIntegration{}
 		case "slack":
 			integration = &slack.SlackIntegration{}
+		case "openai":
+			integration = &openai.OpenaiIntegration{}
 		case "opensearch":
 			inventory := opensearch.NewOpenSearchIntegrationInventory(
 				c.PyInterface,
@@ -250,6 +253,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			case *signal0ne.Signal0neIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *alertmanager.AlertmanagerIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *openai.OpenaiIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			default:
 				err = fmt.Errorf("unknown integration type")

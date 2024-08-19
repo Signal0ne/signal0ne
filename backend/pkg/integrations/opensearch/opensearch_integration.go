@@ -92,6 +92,7 @@ func (integration OpenSearchIntegration) ValidateStep(
 }
 
 type GetLogOccurrencesInput struct {
+	Service   string `json:"service"`
 	Query     string `json:"query"`
 	CompareBy string `json:"compare_by"`
 }
@@ -218,6 +219,10 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 	err = json.Unmarshal([]byte(resultsEncoded), &output)
 	if err != nil {
 		return output, err
+	}
+
+	for _, outputElement := range output {
+		outputElement.(map[string]any)["output_source"] = parsedInput.Service
 	}
 
 	return output, nil

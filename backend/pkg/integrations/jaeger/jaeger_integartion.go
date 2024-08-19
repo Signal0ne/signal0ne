@@ -233,6 +233,10 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
+	for _, outputElement := range output {
+		outputElement.(map[string]any)["output_source"] = parsedInput.Service
+	}
+
 	return output, nil
 
 }
@@ -344,8 +348,9 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 			diff.Operation = operation.(string)
 			translatedMap := map[string]any{
-				"processes": diff.Processes,
-				"operation": diff.Operation,
+				"output_source": parsedInput.Service,
+				"processes":     diff.Processes,
+				"operation":     diff.Operation,
 			}
 			output = append(output, translatedMap)
 		}
