@@ -6,5 +6,5 @@ type EnrichedAlert struct {
 }
 
 type Outputs struct {
-	Output []any `json:"output" bson:"output"`
+	Output any `json:"output" bson:"output"`
 }

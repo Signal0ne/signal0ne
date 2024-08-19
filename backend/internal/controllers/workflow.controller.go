@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -12,7 +13,16 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
+	"signal0ne/pkg/integrations/alertmanager"
+	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/jaeger"
+	"signal0ne/pkg/integrations/openai"
+	"signal0ne/pkg/integrations/opensearch"
+	"signal0ne/pkg/integrations/signal0ne"
+	"signal0ne/pkg/integrations/slack"
+	"strconv"
 	"text/template"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,22 +31,30 @@ import (
 )
 
 type WorkflowController struct {
-	WebhookServerRef       config.Server
-	WorkflowsCollection    *mongo.Collection
-	NamespaceCollection    *mongo.Collection //Must be used as Readonly
-	IntegrationsCollection *mongo.Collection //Must be used as Readonly
+	AlertsCollection    *mongo.Collection
+	WebhookServerRef    config.Server
+	WorkflowsCollection *mongo.Collection
+	PyInterface         net.Conn
+	// ==== Use as readonly ====
+	NamespaceCollection    *mongo.Collection
+	IntegrationsCollection *mongo.Collection
+	// =========================
 }
 
 func NewWorkflowController(
 	workflowsCollection *mongo.Collection,
 	namespaceCollection *mongo.Collection,
 	integrationsCollection *mongo.Collection,
-	webhookServerRef config.Server) *WorkflowController {
+	alertsCollection *mongo.Collection,
+	webhookServerRef config.Server,
+	pyInterface net.Conn) *WorkflowController {
 	return &WorkflowController{
 		WorkflowsCollection:    workflowsCollection,
 		NamespaceCollection:    namespaceCollection,
 		IntegrationsCollection: integrationsCollection,
+		AlertsCollection:       alertsCollection,
 		WebhookServerRef:       webhookServerRef,
+		PyInterface:            pyInterface,
 	}
 }
 
@@ -116,7 +134,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			continue
 		}
 
-		integrationType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
+		_, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
 			fmt.Printf("cannot find integration type specified")
 			localErrorMessage = fmt.Sprintf("%v", err)
@@ -124,53 +142,137 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 
 		// 2. Parse integration
-		integration := reflect.New(integrationType).Elem().Interface().(models.IIntegration)
+		var integration any
+		switch integrationTemplate.Type {
+		case "alertmanager":
+			integration = &alertmanager.AlertmanagerIntegration{}
+		case "backstage":
+			integration = &backstage.BackstageIntegration{}
+		case "slack":
+			integration = &slack.SlackIntegration{}
+		case "openai":
+			integration = &openai.OpenaiIntegration{}
+		case "opensearch":
+			inventory := opensearch.NewOpenSearchIntegrationInventory(
+				c.PyInterface,
+			)
+			integration = &opensearch.OpenSearchIntegration{
+				Inventory: inventory,
+			}
+		case "signal0ne":
+			inventory := signal0ne.NewSignal0neIntegrationInventory(
+				c.AlertsCollection,
+				c.PyInterface,
+			)
+			integration = &signal0ne.Signal0neIntegration{
+				Inventory: inventory,
+			}
+		case "jaeger":
+			inventory := jaeger.NewJaegerIntegrationInventory(
+				c.PyInterface,
+			)
+			integration = &jaeger.JaegerIntegration{
+				Inventory: inventory,
+			}
+		default:
+			integration = &models.Integration{}
+		}
+
+		err = result.Decode(integration)
+		if err != nil {
+			fmt.Printf("integration schema parsing error, %s", err)
+			localErrorMessage = fmt.Sprintf("%v", err)
+			continue
+		}
 
 		// 3. Prepare input
-		var alertEnrichmentsMap = make(map[string]any)
-		for key, value := range alert.TriggerProperties {
-			bytes, err := json.Marshal(value)
-			if err != nil {
-				localErrorMessage = fmt.Sprintf("%v", err)
-				continue
-			}
-			alertEnrichmentsMap[key] = string(bytes)
-		}
-		for key, value := range alert.AdditionalContext {
-			bytes, err := json.Marshal(value)
-			if err != nil {
-				localErrorMessage = fmt.Sprintf("%v", err)
-				continue
-			}
-			alertEnrichmentsMap[key] = string(bytes)
-		}
-
 		for key, value := range step.Input {
 			buf := new(bytes.Buffer)
 			t, err := template.New("").Funcs(template.FuncMap{
 				"index": func() string {
-					bytes, _ := json.Marshal(alertEnrichmentsMap)
+					bytes, _ := json.Marshal(alert)
 					return string(bytes)
+				},
+				"default": func(value any, defaultValue any) any {
+					if value == "" || value == nil {
+						return defaultValue
+					}
+					return value
+				},
+				"date": func(timestamp float64, shift string, outputType string) string {
+					unit := string(shift[len(shift)-1])
+					value, _ := strconv.Atoi(shift[1 : len(shift)-1])
+					sign := string(shift[0])
+					multiplier := int64(0)
+					if sign == "+" {
+						multiplier = 1
+					} else if sign == "-" {
+						multiplier = -1
+					}
+
+					if unit == "m" {
+						multiplier = multiplier * 60
+					} else if unit == "h" {
+						multiplier = multiplier * 3600
+					}
+
+					resultTimestamp := int64(timestamp) + int64(value)*multiplier
+					resultTime := time.Unix(resultTimestamp, 0)
+					if outputType == "ts" {
+						return strconv.Itoa(int(resultTimestamp))
+					} else if outputType == "rfc" {
+						return resultTime.Format(time.RFC3339)
+					}
+					return strconv.Itoa(int(resultTimestamp))
 				},
 			}).Parse(value)
 			if err != nil {
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
-			t.Execute(buf, alertEnrichmentsMap)
+			err = t.Execute(buf, alert)
+			if err != nil {
+				localErrorMessage = fmt.Sprintf("%v", err)
+				continue
+			}
 			step.Input[key] = buf.String()
 		}
 
 		// 4. Execute
-		execResult, err := integration.Execute(step.Input, step.Output, step.Function)
+		execResult := []map[string]any{}
+		if tools.EvaluateCondition(step.Condition, alert) {
+			switch i := integration.(type) {
+			case *backstage.BackstageIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *slack.SlackIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *opensearch.OpenSearchIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *jaeger.JaegerIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *signal0ne.Signal0neIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *alertmanager.AlertmanagerIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *openai.OpenaiIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			default:
+				err = fmt.Errorf("unknown integration type")
+			}
+		}
 		if err != nil {
 			fmt.Printf("failed to execute %s, error: %s", step.Function, err)
 			localErrorMessage = fmt.Sprintf("%v", err)
 		}
 
-		alert.AdditionalContext[step.Function] = models.Outputs{
+		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Function)] = models.Outputs{
 			Output: execResult,
 		}
+	}
+
+	_, err = c.AlertsCollection.InsertOne(ctx, alert)
+	if err != nil {
+		localErrorMessage = fmt.Sprintf("cannot insert alert, error: %s", err)
 	}
 
 	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)

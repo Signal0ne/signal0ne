@@ -8,6 +8,7 @@ import (
 	"signal0ne/cmd/config"
 	"signal0ne/internal/controllers"
 	"signal0ne/internal/tools"
+	"signal0ne/pkg/integrations"
 	"strings"
 	"time"
 
@@ -23,13 +24,13 @@ func main() {
 		panic("CRITICAL: unable to load config")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	mongoConn, err := tools.InitMongoClient(ctx, cfg.MongoUri)
 	if err != nil {
 		panic(
-			fmt.Sprintf("Failed to establish connectiom to %s, error: %s",
+			fmt.Sprintf("Failed to establish connection to %s, error: %s",
 				strings.Split(cfg.MongoUri, "/")[2],
 				err),
 		)
@@ -39,6 +40,7 @@ func main() {
 	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
 	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
 	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
+	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
 
 	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
 	if err != nil {
@@ -52,6 +54,12 @@ func main() {
 	}
 
 	err = tools.Initialize(ctx, namespacesCollection)
+	if err != nil {
+		panic(err)
+	}
+
+	// Loading installable integrations
+	_, err = integrations.GetInstallableIntegrationsLib()
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +84,9 @@ func main() {
 		workflowsCollection,
 		namespacesCollection,
 		integrationsCollection,
-		cfg.Server)
+		alertsCollection,
+		cfg.Server,
+		conn)
 	integrationsController := controllers.NewIntegrationController(
 		integrationsCollection,
 		namespacesCollection,
@@ -88,22 +98,6 @@ func main() {
 		workflowController,
 		integrationsController)
 	mainRouter.RegisterRoutes(routerApiGroup)
-
-	//==========REMOVE BEFORE RELEASE==========
-	_, err = conn.Write([]byte("Hello I am Go!"))
-	if err != nil {
-		fmt.Printf("Failed to send data: %s", err)
-	}
-
-	// Receive response
-	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Printf("Failed to read response: %s", err)
-	}
-
-	fmt.Printf("%s\n", buffer[:n])
-	//===================
 
 	server.Run(":" + cfg.Server.ServerPort)
 }
