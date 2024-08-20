@@ -4,3 +4,4 @@ config:
   host: string
   port: string
   ssl: boolean
+  index: string

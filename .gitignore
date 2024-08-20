@@ -1,2 +1,3 @@
 .vscode
 mongo-data
+backend/scripts/python_interface/__pycache__

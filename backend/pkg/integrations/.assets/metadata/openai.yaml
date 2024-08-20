@@ -1,0 +1,5 @@
+typeName: openai
+imageUri: '../logos/openai.svg'
+config:
+  model: string
+  apiKey: string

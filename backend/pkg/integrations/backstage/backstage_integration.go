@@ -1,8 +1,12 @@
 package backstage
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"signal0ne/internal/models"
+	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
 )
 
@@ -21,21 +25,23 @@ type BackstageIntegration struct {
 func (integration BackstageIntegration) Execute(
 	input any,
 	output map[string]string,
-	functionName string) ([]any, error) {
+	functionName string) ([]map[string]any, error) {
 
-	var result []any
+	var results []map[string]any
 
 	function, ok := functions[functionName]
 	if !ok {
-		return result, fmt.Errorf("%s.%s: cannot find requested function", integration.Name, functionName)
+		return results, fmt.Errorf("%s.%s: cannot find requested function", integration.Name, functionName)
 	}
 
-	result, err := function.Function(input)
+	intermediateResults, err := function.Function(input, integration)
 	if err != nil {
-		return make([]any, 0), fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
+		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	return result, nil
+	results = tools.ExecutionResultWrapper(intermediateResults, output)
+
+	return results, nil
 }
 
 func (integration BackstageIntegration) Validate() error {
@@ -69,15 +75,60 @@ type GetPropertiesValuesInput struct {
 	Filter string `json:"filter"`
 }
 
-func getPropertiesValues(input any) (output []any, err error) {
+func getPropertiesValues(input any, integration any) ([]any, error) {
 	var parsedInput GetPropertiesValuesInput
+	var output []any
 
-	err = helpers.ValidateInputParameters(input, parsedInput, "get_properties_values")
+	err := helpers.ValidateInputParameters(input, &parsedInput, "get_properties_values")
 	if err != nil {
 		return output, err
 	}
 
 	fmt.Printf("Executing backstage getPropertiesValues\n")
+
+	assertedIntegration := integration.(BackstageIntegration)
+
+	host := assertedIntegration.Config.Host
+	port := assertedIntegration.Config.Port
+	apiKey := assertedIntegration.Config.ApiKey
+	apiPath := "/api/catalog/entities/by-query?filter="
+
+	url := fmt.Sprintf("http://%s:%s%s%s", host, port, apiPath, parsedInput.Filter)
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return output, err
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return output, err
+	}
+	defer resp.Body.Close()
+	var bodyHandler map[string]any
+
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("%s", resp.Status)
+		return output, err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return output, err
+	}
+
+	json.Unmarshal(body, &bodyHandler)
+	items, exists := bodyHandler["items"]
+	if !exists {
+		err = fmt.Errorf("cannot parse %s response body", assertedIntegration.Name)
+		return output, err
+	}
+
+	output = items.([]any)
 
 	return output, err
 }
