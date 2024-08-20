@@ -29,7 +29,7 @@ func main() {
 	mongoConn, err := tools.InitMongoClient(ctx, cfg.MongoUri)
 	if err != nil {
 		panic(
-			fmt.Sprintf("Failed to establish connectiom to %s, error: %s",
+			fmt.Sprintf("Failed to establish connection to %s, error: %s",
 				strings.Split(cfg.MongoUri, "/")[2],
 				err),
 		)
@@ -81,12 +81,14 @@ func main() {
 		integrationsCollection,
 		namespacesCollection,
 	)
+	userAuthController := controllers.NewUserAuthController()
 
 	mainRouter := routers.NewMainRouter(
 		mainController,
 		namespaceController,
 		workflowController,
-		integrationsController)
+		integrationsController,
+		userAuthController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	//==========REMOVE BEFORE RELEASE==========
