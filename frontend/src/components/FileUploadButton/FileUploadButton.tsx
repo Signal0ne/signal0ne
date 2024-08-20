@@ -72,7 +72,7 @@ const FileUploadButton = () => {
           setJsonData(jsonObject);
 
           const res = await fetch(
-            'http://localhost:8080/api/66b64a320d0ce54a98af4c1d/workflow/create',
+            'http://172.171.253.127:8080/api/66b64a320d0ce54a98af4c1d/workflow/create',
             {
               body: JSON.stringify(jsonObject),
               headers: {
@@ -88,7 +88,7 @@ const FileUploadButton = () => {
           openModal();
 
           //TODO: Handle response data and typescript types
-          setActiveWorkflow({} as Workflow);
+          setActiveWorkflow(jsonObject);
         } catch (err: unknown) {
           if (err instanceof YAMLException) {
             toast.error(
