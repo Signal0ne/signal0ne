@@ -25,8 +25,8 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 }
 
 type Signal0neIntegrationInventory struct {
-	AlertsCollection *mongo.Collection
-	PyInterface      net.Conn
+	AlertsCollection *mongo.Collection `json:"-" bson:"-"`
+	PyInterface      net.Conn          `json:"-" bson:"-"`
 }
 
 func NewSignal0neIntegrationInventory(
