@@ -6,7 +6,6 @@ import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import ReactModal from 'react-modal';
 import yaml, { YAMLException } from 'js-yaml';
 import './FileUploadButton.scss';
-import { Workflow } from '../../data/dummyWorkflows';
 
 const customStyles = {
   content: {
