@@ -6,6 +6,7 @@ import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import ReactModal from 'react-modal';
 import yaml, { YAMLException } from 'js-yaml';
 import './FileUploadButton.scss';
+import { Workflow } from '../../data/dummyWorkflows';
 
 const customStyles = {
   content: {
@@ -87,7 +88,7 @@ const FileUploadButton = () => {
           openModal();
 
           //TODO: Handle response data and typescript types
-          setActiveWorkflow(jsonObject);
+          setActiveWorkflow({} as Workflow);
         } catch (err: unknown) {
           if (err instanceof YAMLException) {
             toast.error(
