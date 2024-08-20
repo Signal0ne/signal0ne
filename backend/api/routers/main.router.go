@@ -11,6 +11,7 @@ type MainRouter struct {
 	NamespaceController   *controllers.NamespaceController
 	WorkflowController    *controllers.WorkflowController
 	IntegrationController *controllers.IntegrationController
+	AlertController       *controllers.AlertsController
 }
 
 func NewMainRouter(
@@ -18,12 +19,14 @@ func NewMainRouter(
 	NamespaceController *controllers.NamespaceController,
 	WorkflowController *controllers.WorkflowController,
 	IntegrationController *controllers.IntegrationController,
+	AlertController *controllers.AlertsController,
 ) *MainRouter {
 	return &MainRouter{
 		MainController:        MainController,
 		NamespaceController:   NamespaceController,
 		WorkflowController:    WorkflowController,
 		IntegrationController: IntegrationController,
+		AlertController:       AlertController,
 	}
 }
 
@@ -40,9 +43,16 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 	workflowGroup := rg.Group("/:namespaceid/workflow")
 	{
 		workflowGroup.POST("/create", r.WorkflowController.ApplyWorkflow)
-		workflowGroup.GET("/:workflowid/get")
-		workflowGroup.DELETE("/:workflowid/delete")
-		workflowGroup.PATCH("/:workflowid/update")
+		workflowGroup.GET("/:workflowid")
+		workflowGroup.DELETE("/:workflowid")
+		workflowGroup.PATCH("/:workflowid")
+	}
+
+	alertGroup := rg.Group("/alert")
+	{
+		alertGroup.GET("/:alertid/details", r.AlertController.Details)
+		alertGroup.GET("/:alertid/summary", r.AlertController.Summary)
+		alertGroup.GET("/:alertid/correlations", r.AlertController.Correlations)
 	}
 
 	integrationGroup := rg.Group("/:namespaceid/integration")

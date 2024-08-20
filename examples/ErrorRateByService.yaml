@@ -78,5 +78,5 @@ steps:
   integration: slack_lab01
   function: post_message
   input:
+    slack_channel: "{{range .AdditionalContext.backstage_lab01_get_properties_values.Output}}{{.slack_channel}},{{end}}"
     parsable_context_object: "{{index}}"
-    ignore_context_keys: "backstage1.get_properties_values.Output[].slack_channel"

@@ -91,12 +91,16 @@ func main() {
 		integrationsCollection,
 		namespacesCollection,
 	)
+	alertsController := controllers.NewAlertsController(
+		alertsCollection,
+	)
 
 	mainRouter := routers.NewMainRouter(
 		mainController,
 		namespaceController,
 		workflowController,
-		integrationsController)
+		integrationsController,
+		alertsController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	server.Run(":" + cfg.Server.ServerPort)
