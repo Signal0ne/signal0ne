@@ -3,4 +3,4 @@ imageUri: '../logos/slack.svg'
 config:
   workspaceId: string
   host: string
-	port: string
+  port: string

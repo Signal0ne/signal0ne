@@ -53,6 +53,13 @@ func (ac *AlertsController) Correlations(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, nil)
+	results := make([]map[string]any, 0)
+
+	for _, result := range alert.AdditionalContext["alertmanager_prod_get_relevant_alerts"].Output.([]any) {
+		results = append(results, result.(map[string]any))
+	}
+
+	ctx.JSON(http.StatusOK, results)
 }
 
 func (ac *AlertsController) Summary(ctx *gin.Context) {}

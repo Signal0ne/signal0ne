@@ -150,9 +150,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
 		case "slack":
-			inventory := slack.NewSlackIntegrationInventory(
-				workflow.Name,
-			)
+			inventory := slack.NewSlackIntegrationInventory(workflow.Name)
 			integration = &slack.SlackIntegration{
 				Inventory: inventory,
 			}
@@ -251,6 +249,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			case *backstage.BackstageIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *slack.SlackIntegration:
+				fmt.Printf("SLACK: %v", i.Inventory)
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *opensearch.OpenSearchIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)

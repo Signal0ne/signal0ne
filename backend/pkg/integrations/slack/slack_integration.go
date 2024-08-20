@@ -20,7 +20,7 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 }
 
 type SlackIntegrationInventory struct {
-	AlertTitle string
+	AlertTitle string `json:"-" bson:"-"`
 }
 
 func NewSlackIntegrationInventory(alertTitle string) SlackIntegrationInventory {
@@ -113,7 +113,7 @@ func postMessage(input any, integration any) (output []any, err error) {
 	title := assertedIntegration.Inventory.AlertTitle
 	id := parsedAlert.Id.Hex()
 
-	resultTime := time.Unix(parsedAlert.TriggerProperties["timestamp"].(int64), 0)
+	resultTime := time.Unix(int64(parsedAlert.TriggerProperties["timestamp"].(float64)), 0)
 	date := resultTime.Format(time.RFC3339)
 
 	data := map[string]any{
