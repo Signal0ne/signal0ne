@@ -35,8 +35,12 @@ func (ac *AlertsController) Details(ctx *gin.Context) {
 
 	results := make([]map[string]any, 0)
 
-	for _, result := range alert.AdditionalContext["opensearch_prod_get_log_occurrences"].Output.([]any) {
-		results = append(results, result.(map[string]any))
+	for _, result := range alert.AdditionalContext["opensearch_prod_get_log_occurrences"].Output.(primitive.A) {
+		intermediateResult := make(map[string]any)
+		for _, element := range result.(primitive.D) {
+			intermediateResult[element.Key] = element.Value
+		}
+		results = append(results, intermediateResult)
 	}
 
 	ctx.JSON(http.StatusOK, results)
@@ -52,11 +56,14 @@ func (ac *AlertsController) Correlations(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, nil)
 	results := make([]map[string]any, 0)
 
-	for _, result := range alert.AdditionalContext["alertmanager_prod_get_relevant_alerts"].Output.([]any) {
-		results = append(results, result.(map[string]any))
+	for _, result := range alert.AdditionalContext["alertmanager_prod_get_relevant_alerts"].Output.(primitive.A) {
+		intermediateResult := make(map[string]any)
+		for _, element := range result.(primitive.D) {
+			intermediateResult[element.Key] = element.Value
+		}
+		results = append(results, intermediateResult)
 	}
 
 	ctx.JSON(http.StatusOK, results)
