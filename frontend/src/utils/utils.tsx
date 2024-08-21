@@ -5,7 +5,9 @@ import {
   ScheduledIcon,
   Signal0neLogo,
   SlackIcon,
-  WebhookIcon
+  WebhookIcon,
+  ElasticSearchIcon,
+  OpenAIIcon
 } from '../components/Icons/Icons';
 import { ReactNode } from 'react';
 
@@ -17,7 +19,10 @@ export const getIntegrationIcon = (integrationName: string) => {
     scheduled: <ScheduledIcon />,
     signal0ne: <Signal0neLogo />,
     slack: <SlackIcon />,
-    webhook: <WebhookIcon />
+    webhook: <WebhookIcon />,
+    opensearch: <ElasticSearchIcon />,
+    alertmanager: <PrometheusIcon />,
+    openai: <OpenAIIcon />
   };
 
   return icons[integrationName] || null;
