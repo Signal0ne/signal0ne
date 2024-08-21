@@ -402,7 +402,7 @@ export const ElasticSearchIcon = (props: SVGProps<SVGSVGElement>) => (
 
 export const OpenAIIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg fill="#000000" 
-       viewBox="0 0 256 256" 
+       viewBox="0 0 24 24" 
        role="img" 
        xmlns="http://www.w3.org/2000/svg"
        {...props}
