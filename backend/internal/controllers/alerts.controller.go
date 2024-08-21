@@ -35,7 +35,7 @@ func (ac *AlertsController) Details(ctx *gin.Context) {
 
 	results := make([]map[string]any, 0)
 
-	for _, result := range alert.AdditionalContext["opensearch_prod_get_log_occurrences"].Output.(primitive.A) {
+	for _, result := range alert.AdditionalContext["opensearch_get_log_occurrences"].Output.(primitive.A) {
 		intermediateResult := make(map[string]any)
 		for _, element := range result.(primitive.D) {
 			intermediateResult[element.Key] = element.Value
@@ -58,7 +58,7 @@ func (ac *AlertsController) Correlations(ctx *gin.Context) {
 
 	results := make([]map[string]any, 0)
 
-	for _, result := range alert.AdditionalContext["alertmanager_prod_get_relevant_alerts"].Output.(primitive.A) {
+	for _, result := range alert.AdditionalContext["alertmanager_get_relevant_alerts"].Output.(primitive.A) {
 		intermediateResult := make(map[string]any)
 		for _, element := range result.(primitive.D) {
 			intermediateResult[element.Key] = element.Value

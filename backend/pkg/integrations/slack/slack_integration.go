@@ -119,7 +119,7 @@ func postMessage(input any, integration any) (output []any, err error) {
 	data := map[string]any{
 		"startedAt": date,
 		"service":   parsedAlert.TriggerProperties["service"],
-		"summary":   parsedAlert.AdditionalContext["openai_prod_summarize_context"].Output.([]any)[0].(map[string]any)["summary"],
+		"summary":   parsedAlert.AdditionalContext["openai_summarize_context"].Output.([]any)[0].(map[string]any)["summary"],
 	}
 
 	payload := map[string]any{
