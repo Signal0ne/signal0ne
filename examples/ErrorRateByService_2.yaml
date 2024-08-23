@@ -40,7 +40,7 @@ steps:
     output_source: "output_source"
     count: "count"
     log: "logs.exception.stacktrace, tags.grpc.error_message"
-  condition: "{{isempty .AdditionalContext.opensearch_prod_get_log_occurrences.Output }}"
+  condition: "{{isempty .AdditionalContext.opensearch_get_log_occurrences.Output }}"
 - name: Compare traces
   integration: jaeger
   function: compare_traces
@@ -63,7 +63,7 @@ steps:
   integration: alertmanager
   function: get_relevant_alerts
   input:
-    filter: "{{range .AdditionalContext.jaeger_prod_compare_traces.Output}}name={{.processes_diff.processName}},{{end}}"
+    filter: "{{range .AdditionalContext.jaeger_compare_traces.Output}}name={{.processes_diff.processName}},{{end}}"
   output:
     output_source: "output_source"
     alert: "alert"
@@ -78,5 +78,5 @@ steps:
   integration: slack
   function: post_message
   input:
-    slack_channel: "{{range .AdditionalContext.backstage_lab01_get_properties_values.Output}}{{.slack_channel}},{{end}}"
+    slack_channel: "{{range .AdditionalContext.backstage_get_properties_values.Output}}{{.slack_channel}},{{end}}"
     parsable_context_object: "{{index}}"
