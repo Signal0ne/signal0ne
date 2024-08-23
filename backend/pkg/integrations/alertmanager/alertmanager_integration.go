@@ -131,8 +131,6 @@ func getAlerts(url string, filters []string) ([]any, error) {
 		}
 	}
 
-	fmt.Printf("URL %s", url)
-
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

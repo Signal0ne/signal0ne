@@ -249,7 +249,6 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			case *backstage.BackstageIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *slack.SlackIntegration:
-				fmt.Printf("SLACK: %v", i.Inventory)
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *opensearch.OpenSearchIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
