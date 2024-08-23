@@ -91,12 +91,14 @@ func main() {
 		integrationsCollection,
 		namespacesCollection,
 	)
+	userAuthController := controllers.NewUserAuthController()
 
 	mainRouter := routers.NewMainRouter(
 		mainController,
 		namespaceController,
 		workflowController,
-		integrationsController)
+		integrationsController,
+		userAuthController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	server.Run(":" + cfg.Server.ServerPort)
