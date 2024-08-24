@@ -9,7 +9,6 @@ import (
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
 	"strings"
-	"time"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -85,6 +84,7 @@ type PostMessageInput struct {
 	SlackChannel          string `json:"slack_channel"`
 	ParsableContextObject string `json:"parsable_context_object"`
 	IgnoreContextKeys     string `json:"ignore_context_keys"`
+	PostMessagePayload    string `json:"post_message_payload"`
 }
 
 func postMessage(input any, integration any) (output []any, err error) {
@@ -103,23 +103,15 @@ func postMessage(input any, integration any) (output []any, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
 	}
-	prettyJSON, err := json.MarshalIndent(parsedAlert, "", "    ")
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
-	}
-	fmt.Print(string(prettyJSON))
 
 	url := fmt.Sprintf("http://%s:%s/api/post_message", assertedIntegration.Host, assertedIntegration.Port)
 	title := assertedIntegration.Inventory.AlertTitle
 	id := parsedAlert.Id.Hex()
 
-	resultTime := time.Unix(int64(parsedAlert.TriggerProperties["timestamp"].(float64)), 0)
-	date := resultTime.Format(time.RFC3339)
-
-	data := map[string]any{
-		"startedAt": date,
-		"service":   parsedAlert.TriggerProperties["service"],
-		"summary":   parsedAlert.AdditionalContext["openai_summarize_context"].Output.([]any)[0].(map[string]any)["summary"],
+	data := map[string]any{}
+	err = json.Unmarshal([]byte(parsedInput.PostMessagePayload), &data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
 
 	payload := map[string]any{
@@ -129,7 +121,7 @@ func postMessage(input any, integration any) (output []any, err error) {
 		"data":        data,
 	}
 
-	prettyJSON, err = json.MarshalIndent(payload, "", "    ")
+	prettyJSON, err := json.MarshalIndent(payload, "", "    ")
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
