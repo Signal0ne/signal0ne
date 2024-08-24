@@ -94,13 +94,15 @@ func main() {
 	alertsController := controllers.NewAlertsController(
 		alertsCollection,
 	)
+	userAuthController := controllers.NewUserAuthController()
 
 	mainRouter := routers.NewMainRouter(
 		mainController,
 		namespaceController,
 		workflowController,
 		integrationsController,
-		alertsController)
+		alertsController,
+		userAuthController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	server.Run(":" + cfg.Server.ServerPort)
