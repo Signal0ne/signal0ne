@@ -81,10 +81,10 @@ func (integration SlackIntegration) ValidateStep(
 }
 
 type PostMessageInput struct {
-	SlackChannel          string `json:"slack_channel"`
-	ParsableContextObject string `json:"parsable_context_object"`
 	IgnoreContextKeys     string `json:"ignore_context_keys"`
+	ParsableContextObject string `json:"parsable_context_object"`
 	PostMessagePayload    string `json:"post_message_payload"`
+	SlackChannel          string `json:"slack_channel"`
 }
 
 func postMessage(input any, integration any) (output []any, err error) {
@@ -116,9 +116,9 @@ func postMessage(input any, integration any) (output []any, err error) {
 
 	payload := map[string]any{
 		"channelName": strings.Split(parsedInput.SlackChannel, ",")[0],
-		"title":       title,
-		"id":          id,
 		"data":        data,
+		"id":          id,
+		"title":       title,
 	}
 
 	prettyJSON, err := json.MarshalIndent(payload, "", "    ")

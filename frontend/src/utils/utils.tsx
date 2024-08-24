@@ -1,28 +1,28 @@
 import {
   BackStageIcon,
+  ElasticSearchIcon,
   JaegerIcon,
+  OpenAIIcon,
   PrometheusIcon,
   ScheduledIcon,
   Signal0neLogo,
   SlackIcon,
-  WebhookIcon,
-  ElasticSearchIcon,
-  OpenAIIcon
+  WebhookIcon
 } from '../components/Icons/Icons';
 import { ReactNode } from 'react';
 
 export const getIntegrationIcon = (integrationName: string) => {
   const icons: Record<string, ReactNode> = {
+    alertmanager: <PrometheusIcon />,
     backstage: <BackStageIcon />,
     jaeger: <JaegerIcon />,
+    openai: <OpenAIIcon />,
+    opensearch: <ElasticSearchIcon />,
     prometheus: <PrometheusIcon />,
     scheduled: <ScheduledIcon />,
     signal0ne: <Signal0neLogo />,
     slack: <SlackIcon />,
-    webhook: <WebhookIcon />,
-    opensearch: <ElasticSearchIcon />,
-    alertmanager: <PrometheusIcon />,
-    openai: <OpenAIIcon />
+    webhook: <WebhookIcon />
   };
 
   return icons[integrationName] || null;
