@@ -2,15 +2,17 @@ package routers
 
 import (
 	"signal0ne/internal/controllers"
+	"signal0ne/internal/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
 
 type MainRouter struct {
+	IntegrationController *controllers.IntegrationController
 	MainController        *controllers.MainController
 	NamespaceController   *controllers.NamespaceController
+	UserAuthController    *controllers.UserAuthController
 	WorkflowController    *controllers.WorkflowController
-	IntegrationController *controllers.IntegrationController
 	AlertController       *controllers.AlertsController
 }
 
@@ -20,17 +22,28 @@ func NewMainRouter(
 	WorkflowController *controllers.WorkflowController,
 	IntegrationController *controllers.IntegrationController,
 	AlertController *controllers.AlertsController,
+	UserAuthController *controllers.UserAuthController,
 ) *MainRouter {
 	return &MainRouter{
+		IntegrationController: IntegrationController,
 		MainController:        MainController,
 		NamespaceController:   NamespaceController,
+		UserAuthController:    UserAuthController,
 		WorkflowController:    WorkflowController,
-		IntegrationController: IntegrationController,
 		AlertController:       AlertController,
 	}
 }
 
 func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
+
+	authGroup := rg.Group("/auth")
+	{
+		authGroup.POST("/email-confirmation")
+		authGroup.POST("/email-confirmation-link-resend")
+		authGroup.POST("/login")
+		authGroup.POST("/register")
+		authGroup.POST("/token/refresh")
+	}
 
 	alertGroup := rg.Group("/alert")
 	{
@@ -39,7 +52,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		alertGroup.GET("/:alertid/summary", r.AlertController.Summary)
 	}
 
-	integrationGroup := rg.Group("/:namespaceid/integration")
+	integrationGroup := rg.Group("/:namespaceid/integration", middlewares.CheckAuthorization)
 	{
 		integrationGroup.POST("/create", r.IntegrationController.Install)
 		integrationGroup.DELETE("/:integrationid/delete")
