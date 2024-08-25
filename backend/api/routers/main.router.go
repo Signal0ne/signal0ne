@@ -13,6 +13,7 @@ type MainRouter struct {
 	NamespaceController   *controllers.NamespaceController
 	UserAuthController    *controllers.UserAuthController
 	WorkflowController    *controllers.WorkflowController
+	AlertController       *controllers.AlertsController
 }
 
 func NewMainRouter(
@@ -20,6 +21,7 @@ func NewMainRouter(
 	NamespaceController *controllers.NamespaceController,
 	WorkflowController *controllers.WorkflowController,
 	IntegrationController *controllers.IntegrationController,
+	AlertController *controllers.AlertsController,
 	UserAuthController *controllers.UserAuthController,
 ) *MainRouter {
 	return &MainRouter{
@@ -28,6 +30,7 @@ func NewMainRouter(
 		NamespaceController:   NamespaceController,
 		UserAuthController:    UserAuthController,
 		WorkflowController:    WorkflowController,
+		AlertController:       AlertController,
 	}
 }
 
@@ -42,32 +45,39 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		authGroup.POST("/token/refresh")
 	}
 
-	namespaceGroup := rg.Group("/namespace", middlewares.CheckAuthorization)
+	alertGroup := rg.Group("/alert")
 	{
-		namespaceGroup.POST("/create")
-		namespaceGroup.GET("/:namespaceid/get")
-		namespaceGroup.DELETE("/:namespaceid/delete")
-		namespaceGroup.PATCH("/:namespaceid/update")
-	}
-
-	workflowGroup := rg.Group("/:namespaceid/workflow", middlewares.CheckAuthorization)
-	{
-		workflowGroup.POST("/create", r.WorkflowController.ApplyWorkflow)
-		workflowGroup.GET("/:workflowid/get")
-		workflowGroup.DELETE("/:workflowid/delete")
-		workflowGroup.PATCH("/:workflowid/update")
+		alertGroup.GET("/:alertid/correlations", r.AlertController.Correlations)
+		alertGroup.GET("/:alertid/details", r.AlertController.Details)
+		alertGroup.GET("/:alertid/summary", r.AlertController.Summary)
 	}
 
 	integrationGroup := rg.Group("/:namespaceid/integration", middlewares.CheckAuthorization)
 	{
 		integrationGroup.POST("/create", r.IntegrationController.Install)
-		integrationGroup.GET("/:integrationid/get")
 		integrationGroup.DELETE("/:integrationid/delete")
+		integrationGroup.GET("/:integrationid/get")
 		integrationGroup.PATCH("/:integrationid/update")
+	}
+
+	namespaceGroup := rg.Group("/namespace")
+	{
+		namespaceGroup.POST("/create")
+		namespaceGroup.DELETE("/:namespaceid/delete")
+		namespaceGroup.GET("/:namespaceid/get")
+		namespaceGroup.PATCH("/:namespaceid/update")
 	}
 
 	webhookGroup := rg.Group("/webhook")
 	{
 		webhookGroup.POST("/:namespaceid/:workflowid/:salt", r.WorkflowController.WebhookTriggerHandler)
+	}
+
+	workflowGroup := rg.Group("/:namespaceid/workflow")
+	{
+		workflowGroup.POST("/create", r.WorkflowController.ApplyWorkflow)
+		workflowGroup.DELETE("/:workflowid")
+		workflowGroup.GET("/:workflowid")
+		workflowGroup.PATCH("/:workflowid")
 	}
 }

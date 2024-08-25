@@ -25,7 +25,7 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 }
 
 type OpenSearchIntegrationInventory struct {
-	PyInterface net.Conn
+	PyInterface net.Conn `json:"-" bson:"-"`
 }
 
 func NewOpenSearchIntegrationInventory(pyInterface net.Conn) OpenSearchIntegrationInventory {

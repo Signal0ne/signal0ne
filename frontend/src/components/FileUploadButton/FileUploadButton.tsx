@@ -71,7 +71,7 @@ const FileUploadButton = () => {
           setJsonData(jsonObject);
 
           const res = await fetch(
-            'http://localhost:8080/api/66b64a320d0ce54a98af4c1d/workflow/create',
+            'http://172.171.253.127:8080/api/66c5c9a5fcf10f378a14e29c/workflow/create',
             {
               body: JSON.stringify(jsonObject),
               headers: {

@@ -9,7 +9,7 @@ trigger:
       timestamp: "startsAt"
 steps:
 - name: Get ownership
-  integration: backstage_lab01
+  integration: backstage
   function: get_properties_values
   input:
     filter: kind=component,metadata.name={{.TriggerProperties.service}}
@@ -17,7 +17,7 @@ steps:
     owner: "spec.owner"
     slack_channel: "metadata.labels.slack_channel"
 - name: Get relevant logs
-  integration: opensearch_prod
+  integration: opensearch
   function: get_log_occurrences
   input:
     service: "{{.TriggerProperties.service}}"
@@ -29,7 +29,7 @@ steps:
     body: "body"
     hostname: "resource.host.name"
 - name: Inspect traces
-  integration: jaeger_prod
+  integration: jaeger
   function: get_properties_values
   input:
     service: "{{.TriggerProperties.service}}"
@@ -40,9 +40,9 @@ steps:
     output_source: "output_source"
     count: "count"
     log: "logs.exception.stacktrace, tags.grpc.error_message"
-  condition: "{{isempty .AdditionalContext.opensearch_prod_get_log_occurrences.Output }}"
+  condition: "{{isempty .AdditionalContext.opensearch_get_log_occurrences.Output }}"
 - name: Compare traces
-  integration: jaeger_prod
+  integration: jaeger
   function: compare_traces
   input:
     service: "{{.TriggerProperties.service}}"
@@ -60,23 +60,25 @@ steps:
     # errors_diff:
     # duration_diff: 
 - name: Get containers status
-  integration: alertmanager_prod
+  integration: alertmanager
   function: get_relevant_alerts
   input:
-    filter: "{{range .AdditionalContext.jaeger_prod_compare_traces.Output}}name={{.processes_diff.processName}},{{end}}"
+    filter: "{{range .AdditionalContext.jaeger_compare_traces.Output}}name={{.processes_diff.processName}},{{end}}"
   output:
     output_source: "output_source"
     alert: "alert"
 - name: Summarize issue content
-  integration: openai_prod
+  integration: openai
   function: summarize_context
   input:
     context: "{{index}}"
   output:
     summary: "summary"
 - name: Send to slack channel
-  integration: slack_lab01
+  integration: slack
   function: post_message
   input:
+    slack_channel: "{{range .AdditionalContext.backstage_get_properties_values.Output}}{{.slack_channel}},{{end}}"
     parsable_context_object: "{{index}}"
-    ignore_context_keys: "backstage1.get_properties_values.Output[].slack_channel"
+    post_message_payload: "{\"startedAt\": \"{{.TriggerProperties.timestamp}}\", \"service\": \"{{.TriggerProperties.service}}\", \"summary\": \"{{.AdditionalContext.openai_summarize_context.Output[0].summary}}\"}"
+

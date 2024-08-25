@@ -62,6 +62,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var workflow *models.Workflow
 	var localErrorMessage = ""
 	var alert = models.EnrichedAlert{
+		Id:                primitive.NewObjectID(),
 		TriggerProperties: map[string]any{},
 		AdditionalContext: map[string]models.Outputs{},
 	}
@@ -149,7 +150,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
 		case "slack":
-			integration = &slack.SlackIntegration{}
+			inventory := slack.NewSlackIntegrationInventory(workflow.Name)
+			integration = &slack.SlackIntegration{
+				Inventory: inventory,
+			}
 		case "openai":
 			integration = &openai.OpenaiIntegration{}
 		case "opensearch":

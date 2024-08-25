@@ -91,6 +91,9 @@ func main() {
 		integrationsCollection,
 		namespacesCollection,
 	)
+	alertsController := controllers.NewAlertsController(
+		alertsCollection,
+	)
 	userAuthController := controllers.NewUserAuthController()
 
 	mainRouter := routers.NewMainRouter(
@@ -98,6 +101,7 @@ func main() {
 		namespaceController,
 		workflowController,
 		integrationsController,
+		alertsController,
 		userAuthController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 

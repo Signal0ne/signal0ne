@@ -9,7 +9,7 @@ export interface WorkflowsContextType {
   activeStep: IWorkflowStep | IWorkflowTrigger | null;
   activeWorkflow: Workflow | null;
   setActiveStep: (step: IWorkflowStep | IWorkflowTrigger | null) => void;
-  setActiveWorkflow: (workflow: Workflow) => void;
+  setActiveWorkflow: (workflow: any) => void;
   setWorkflows: (workflows: Workflow[]) => void;
   workflows: Workflow[];
 }

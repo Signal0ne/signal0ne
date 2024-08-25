@@ -1,11 +1,14 @@
 package slack
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
+	"strings"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -15,7 +18,18 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 	},
 }
 
+type SlackIntegrationInventory struct {
+	AlertTitle string `json:"-" bson:"-"`
+}
+
+func NewSlackIntegrationInventory(alertTitle string) SlackIntegrationInventory {
+	return SlackIntegrationInventory{
+		AlertTitle: alertTitle,
+	}
+}
+
 type SlackIntegration struct {
+	Inventory          SlackIntegrationInventory
 	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:",inline" bson:",inline"`
 }
@@ -67,29 +81,56 @@ func (integration SlackIntegration) ValidateStep(
 }
 
 type PostMessageInput struct {
-	ParsableContextObject string `json:"parsable_context_object"`
 	IgnoreContextKeys     string `json:"ignore_context_keys"`
+	ParsableContextObject string `json:"parsable_context_object"`
+	PostMessagePayload    string `json:"post_message_payload"`
+	SlackChannel          string `json:"slack_channel"`
 }
 
 func postMessage(input any, integration any) (output []any, err error) {
 	var parsedInput PostMessageInput
-	var parsedAlert map[string]any
+	var parsedAlert models.EnrichedAlert
 
 	err = helpers.ValidateInputParameters(input, &parsedInput, "post_message")
 	if err != nil {
 		return output, err
 	}
 
+	assertedIntegration := integration.(SlackIntegration)
+
 	fmt.Printf("Executing slack postMessage\n")
 	err = json.Unmarshal([]byte(parsedInput.ParsableContextObject), &parsedAlert)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
 	}
-	prettyJSON, err := json.MarshalIndent(parsedAlert, "", "    ")
+
+	url := fmt.Sprintf("http://%s:%s/api/post_message", assertedIntegration.Host, assertedIntegration.Port)
+	title := assertedIntegration.Inventory.AlertTitle
+	id := parsedAlert.Id.Hex()
+
+	data := map[string]any{}
+	err = json.Unmarshal([]byte(parsedInput.PostMessagePayload), &data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
-	fmt.Print(string(prettyJSON))
+
+	payload := map[string]any{
+		"channelName": strings.Split(parsedInput.SlackChannel, ",")[0],
+		"data":        data,
+		"id":          id,
+		"title":       title,
+	}
+
+	prettyJSON, err := json.MarshalIndent(payload, "", "    ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+
+	_, err = http.Post(url, "application/json", bytes.NewBuffer(prettyJSON))
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %v", err)
+
+	}
 
 	return output, err
 }

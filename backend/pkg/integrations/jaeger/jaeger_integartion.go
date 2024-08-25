@@ -25,7 +25,7 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 }
 
 type JaegerIntegrationInventory struct {
-	PyInterface net.Conn
+	PyInterface net.Conn `json:"-" bson:"-"`
 }
 
 func NewJaegerIntegrationInventory(pyInterface net.Conn) JaegerIntegrationInventory {
