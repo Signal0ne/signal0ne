@@ -31,10 +31,10 @@ import (
 )
 
 type WorkflowController struct {
-	AlertsCollection    *mongo.Collection
 	WebhookServerRef    config.Server
 	WorkflowsCollection *mongo.Collection
 	PyInterface         net.Conn
+	IncidentsCollection *mongo.Collection
 	// ==== Use as readonly ====
 	NamespaceCollection    *mongo.Collection
 	IntegrationsCollection *mongo.Collection
@@ -45,14 +45,14 @@ func NewWorkflowController(
 	workflowsCollection *mongo.Collection,
 	namespaceCollection *mongo.Collection,
 	integrationsCollection *mongo.Collection,
-	alertsCollection *mongo.Collection,
+	incidentsCollection *mongo.Collection,
 	webhookServerRef config.Server,
 	pyInterface net.Conn) *WorkflowController {
 	return &WorkflowController{
 		WorkflowsCollection:    workflowsCollection,
 		NamespaceCollection:    namespaceCollection,
 		IntegrationsCollection: integrationsCollection,
-		AlertsCollection:       alertsCollection,
+		IncidentsCollection:    incidentsCollection,
 		WebhookServerRef:       webhookServerRef,
 		PyInterface:            pyInterface,
 	}
@@ -165,7 +165,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			}
 		case "signal0ne":
 			inventory := signal0ne.NewSignal0neIntegrationInventory(
-				c.AlertsCollection,
+				c.IncidentsCollection,
 				c.PyInterface,
 			)
 			integration = &signal0ne.Signal0neIntegration{
@@ -274,10 +274,54 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 	}
 
-	_, err = c.AlertsCollection.InsertOne(ctx, alert)
-	if err != nil {
-		localErrorMessage = fmt.Sprintf("cannot insert alert, error: %s", err)
+	// New incident
+	keys := make([]string, 0, len(alert.AdditionalContext))
+	for k := range alert.AdditionalContext {
+		keys = append(keys, k)
 	}
+
+	primaryFields := make([]map[string]any, 0)
+	primaryFields = append(primaryFields, alert.TriggerProperties)
+
+	tasks := make([]models.Task, 0)
+
+	for si, step := range workflow.Steps {
+		isDone := true
+		fields := make([]models.Field, 0)
+		output := alert.AdditionalContext[keys[si]].Output.([]map[string]any)
+		for _, outputObject := range output {
+			outputKeys := make([]string, 0, len(outputObject))
+			for k := range outputObject {
+				outputKeys = append(outputKeys, k)
+			}
+			field := models.Field{
+				Key:       "",
+				Source:    step.Integration,
+				Value:     "",
+				ValueType: "",
+			}
+		}
+		task := models.Task{
+			StepName: step.Name,
+			Priority: si,
+			Assignee: models.User{},
+			IsDone:   isDone,
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	incident := models.Incident{
+		Id:            alert.Id,
+		Title:         workflow.Name,
+		Assignee:      models.User{},
+		Severity:      "",
+		PrimaryFields: primaryFields,
+		Tasks:         tasks,
+		History:       make([]models.IncidentUpdate[models.Update], 0),
+	}
+
+	c.IncidentsCollection.InsertOne(ctx, incident)
 
 	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 
