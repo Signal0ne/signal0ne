@@ -5,7 +5,11 @@ type Task struct {
 	Priority int
 	Assignee User
 	IsDone   bool
-	Fields   []Field
+	Items    []Item
+}
+
+type Item struct {
+	Fields []Field
 }
 
 type Field struct {

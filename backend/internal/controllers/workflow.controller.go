@@ -167,6 +167,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			inventory := signal0ne.NewSignal0neIntegrationInventory(
 				c.IncidentsCollection,
 				c.PyInterface,
+				workflow,
 			)
 			integration = &signal0ne.Signal0neIntegration{
 				Inventory: inventory,
@@ -273,56 +274,6 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			Output: execResult,
 		}
 	}
-
-	// New incident
-	keys := make([]string, 0, len(alert.AdditionalContext))
-	for k := range alert.AdditionalContext {
-		keys = append(keys, k)
-	}
-
-	primaryFields := make([]map[string]any, 0)
-	primaryFields = append(primaryFields, alert.TriggerProperties)
-
-	tasks := make([]models.Task, 0)
-
-	for si, step := range workflow.Steps {
-		isDone := true
-		fields := make([]models.Field, 0)
-		output := alert.AdditionalContext[keys[si]].Output.([]map[string]any)
-		for _, outputObject := range output {
-			outputKeys := make([]string, 0, len(outputObject))
-			for k := range outputObject {
-				outputKeys = append(outputKeys, k)
-			}
-			field := models.Field{
-				Key:       "",
-				Source:    step.Integration,
-				Value:     "",
-				ValueType: "",
-			}
-		}
-		task := models.Task{
-			StepName: step.Name,
-			Priority: si,
-			Assignee: models.User{},
-			IsDone:   isDone,
-		}
-
-		tasks = append(tasks, task)
-	}
-
-	incident := models.Incident{
-		Id:            alert.Id,
-		Title:         workflow.Name,
-		Assignee:      models.User{},
-		Severity:      "",
-		PrimaryFields: primaryFields,
-		Tasks:         tasks,
-		History:       make([]models.IncidentUpdate[models.Update], 0),
-	}
-
-	c.IncidentsCollection.InsertOne(ctx, incident)
-
 	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 
 	ctx.JSON(http.StatusOK, nil)

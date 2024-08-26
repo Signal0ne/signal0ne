@@ -1,0 +1,91 @@
+---
+name: ErrorRateByService - Incident
+lookback: 15m
+trigger:
+  webhook:
+    output:
+      service: "job"
+      span: "span_name"
+      timestamp: "startsAt"
+steps:
+- name: Get ownership
+  integration: backstage
+  function: get_properties_values
+  input:
+    filter: kind=component,metadata.name={{.TriggerProperties.service}}
+  output:
+    owner: "spec.owner"
+
+###
+# name: Create slack channel
+###
+
+###
+# name: Add all stakeholders
+###
+
+- name: Get relevant logs
+  integration: opensearch
+  function: get_log_occurrences
+  input:
+    service: "{{.TriggerProperties.service}}"
+    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.TriggerProperties.service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .TriggerProperties.timestamp \"-15m\" \"rfc\"}}\",\"lte\": \"{{date .TriggerProperties.timestamp \"+15m\" \"rfc\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
+    compare_by: "body, resource.host.name"
+  output:
+    output_source: "output_source"
+    count: "count"
+    body: "body"
+    hostname: "resource.host.name"
+- name: Inspect traces
+  integration: jaeger
+  function: get_properties_values
+  input:
+    service: "{{.TriggerProperties.service}}"
+    tags: "{\"error\":\"true\"}"
+    query: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
+    compare_by: "logs.exception.stacktrace, tags.grpc.error_message"
+  output:
+    output_source: "output_source"
+    count: "count"
+    log: "logs.exception.stacktrace, tags.grpc.error_message"
+  condition: "{{isempty .AdditionalContext.opensearch_get_log_occurrences.Output }}"
+- name: Compare traces
+  integration: jaeger
+  function: compare_traces
+  input:
+    service: "{{.TriggerProperties.service}}"
+    operation: "{{ default .TriggerProperties.span \"all\"}}"
+    baseTraceTags: "{\"rpc.grpc.status_code\":\"0\"},{\"http.status_code\":\"200\"}"
+    comparedTraceTags: "{\"error\":\"true\"}"
+    baseTraceQuery: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=30m&maxDuration&minDuration"
+    comparedTraceQuery: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
+  output:
+    output_source: "output_source"
+    operation: "operation"
+    processes_diff: "processes"
+- name: Get containers status
+  integration: alertmanager
+  function: get_relevant_alerts
+  input:
+    filter: "{{range .AdditionalContext.jaeger_compare_traces.Output}}name={{.processes_diff.processName}},{{end}}"
+  output:
+    output_source: "output_source"
+    alert: "alert"
+- name: Summarize issue content
+  integration: openai
+  function: summarize_context
+  input:
+    context: "{{index}}"
+  output:
+    summary: "summary"
+
+###
+# name: Create incident
+# input:
+# parsable_context_object: "{{index}}"
+###
+
+###
+# name: Send incident details to slack channel
+###
+
