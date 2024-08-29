@@ -31,10 +31,10 @@ import (
 )
 
 type WorkflowController struct {
-	AlertsCollection    *mongo.Collection
 	WebhookServerRef    config.Server
 	WorkflowsCollection *mongo.Collection
 	PyInterface         net.Conn
+	IncidentsCollection *mongo.Collection
 	// ==== Use as readonly ====
 	NamespaceCollection    *mongo.Collection
 	IntegrationsCollection *mongo.Collection
@@ -45,14 +45,14 @@ func NewWorkflowController(
 	workflowsCollection *mongo.Collection,
 	namespaceCollection *mongo.Collection,
 	integrationsCollection *mongo.Collection,
-	alertsCollection *mongo.Collection,
+	incidentsCollection *mongo.Collection,
 	webhookServerRef config.Server,
 	pyInterface net.Conn) *WorkflowController {
 	return &WorkflowController{
 		WorkflowsCollection:    workflowsCollection,
 		NamespaceCollection:    namespaceCollection,
 		IntegrationsCollection: integrationsCollection,
-		AlertsCollection:       alertsCollection,
+		IncidentsCollection:    incidentsCollection,
 		WebhookServerRef:       webhookServerRef,
 		PyInterface:            pyInterface,
 	}
@@ -165,8 +165,9 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			}
 		case "signal0ne":
 			inventory := signal0ne.NewSignal0neIntegrationInventory(
-				c.AlertsCollection,
+				c.IncidentsCollection,
 				c.PyInterface,
+				workflow,
 			)
 			integration = &signal0ne.Signal0neIntegration{
 				Inventory: inventory,
@@ -193,7 +194,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		for key, value := range step.Input {
 			buf := new(bytes.Buffer)
 			t, err := template.New("").Funcs(template.FuncMap{
-				"index": func() string {
+				"root": func() string {
 					bytes, _ := json.Marshal(alert)
 					return string(bytes)
 				},
@@ -273,12 +274,6 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			Output: execResult,
 		}
 	}
-
-	_, err = c.AlertsCollection.InsertOne(ctx, alert)
-	if err != nil {
-		localErrorMessage = fmt.Sprintf("cannot insert alert, error: %s", err)
-	}
-
 	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 
 	ctx.JSON(http.StatusOK, nil)

@@ -13,7 +13,7 @@ type MainRouter struct {
 	NamespaceController   *controllers.NamespaceController
 	UserAuthController    *controllers.UserAuthController
 	WorkflowController    *controllers.WorkflowController
-	AlertController       *controllers.AlertsController
+	IncidentController    *controllers.IncidentController
 }
 
 func NewMainRouter(
@@ -21,7 +21,7 @@ func NewMainRouter(
 	NamespaceController *controllers.NamespaceController,
 	WorkflowController *controllers.WorkflowController,
 	IntegrationController *controllers.IntegrationController,
-	AlertController *controllers.AlertsController,
+	IncidentController *controllers.IncidentController,
 	UserAuthController *controllers.UserAuthController,
 ) *MainRouter {
 	return &MainRouter{
@@ -30,7 +30,7 @@ func NewMainRouter(
 		NamespaceController:   NamespaceController,
 		UserAuthController:    UserAuthController,
 		WorkflowController:    WorkflowController,
-		AlertController:       AlertController,
+		IncidentController:    IncidentController,
 	}
 }
 
@@ -45,11 +45,9 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		authGroup.POST("/token/refresh")
 	}
 
-	alertGroup := rg.Group("/alert")
+	incidentGroup := rg.Group("/:namespaceid/incident")
 	{
-		alertGroup.GET("/:alertid/correlations", r.AlertController.Correlations)
-		alertGroup.GET("/:alertid/details", r.AlertController.Details)
-		alertGroup.GET("/:alertid/summary", r.AlertController.Summary)
+		incidentGroup.GET("/:incidentid")
 	}
 
 	integrationGroup := rg.Group("/:namespaceid/integration", middlewares.CheckAuthorization)
