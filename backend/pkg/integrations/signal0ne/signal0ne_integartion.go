@@ -99,7 +99,7 @@ type CorrelateOngoingAlertsInput struct {
 }
 
 type CreateIncidentInput struct {
-	Severity              string `json:"type"`
+	Severity              string `json:"severity"`
 	Assignee              string `json:"assignee"`
 	ParsableContextObject string `json:"parsable_context_object"`
 }
@@ -262,7 +262,7 @@ func createIncident(input any, integration any) ([]any, error) {
 					Key:       key,
 					Source:    step.Integration,
 					Value:     value,
-					ValueType: "",
+					ValueType: "markdown",
 				})
 			}
 			task.Items = append(task.Items, item)

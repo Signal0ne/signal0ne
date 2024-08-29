@@ -15,15 +15,6 @@ steps:
     filter: kind=component,metadata.name={{.TriggerProperties.service}}
   output:
     owner: "spec.owner"
-
-###
-# name: Create slack channel
-###
-
-###
-# name: Add all stakeholders
-###
-
 - name: Get relevant logs
   integration: opensearch
   function: get_log_occurrences
@@ -75,17 +66,37 @@ steps:
   integration: openai
   function: summarize_context
   input:
-    context: "{{index}}"
+    context: "{{root}}"
   output:
     summary: "summary"
-
-###
-# name: Create incident
-# input:
-# parsable_context_object: "{{index}}"
-###
-
-###
-# name: Send incident details to slack channel
-###
+- name: Create incident
+  integration: signal0ne
+  function: create_incident
+  input:
+    severity: "critical"
+    parsable_context_object: "{{root}}"
+  output:
+    url: "url"
+    name: "name"
+    severity: "severity"
+    assignee: "assignee"
+- name: Create slack channel
+  integration: slack
+  function: create_channel
+  input:
+    channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
+    is_private: "false"
+- name: Add all stakeholders
+  integration: slack
+  function: add_users_to_channel
+  input:
+    user_handles: "{{range .AdditionalContext.backstage_get_properties_values.Output}}{{.owner}},{{end}}"
+    channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
+- name: Send to slack channel
+  integration: slack
+  function: post_message
+  input:
+    slack_channel: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
+    parsable_context_object: "{{root}}"
+    post_message_payload: "{{ .TriggerProperties }}"
 

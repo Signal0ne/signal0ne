@@ -71,7 +71,7 @@ steps:
   integration: openai
   function: summarize_context
   input:
-    context: "{{index}}"
+    context: "{{root}}"
   output:
     summary: "summary"
 - name: Send to slack channel
@@ -79,6 +79,6 @@ steps:
   function: post_message
   input:
     slack_channel: "{{range .AdditionalContext.backstage_get_properties_values.Output}}{{.slack_channel}},{{end}}"
-    parsable_context_object: "{{index}}"
-    post_message_payload: "{\"startedAt\": \"{{.TriggerProperties.timestamp}}\", \"service\": \"{{.TriggerProperties.service}}\", \"summary\": \"{{.AdditionalContext.openai_summarize_context.Output[0].summary}}\"}"
+    parsable_context_object: "{{root}}"
+    post_message_payload: "{\"startedAt\": \"{{.TriggerProperties.timestamp}}\", \"service\": \"{{.TriggerProperties.service}}\", \"summary\": \"{{( index .AdditionalContext.openai_summarize_context.Output 0).summary}}\"}"
 

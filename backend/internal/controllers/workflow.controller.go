@@ -194,7 +194,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		for key, value := range step.Input {
 			buf := new(bytes.Buffer)
 			t, err := template.New("").Funcs(template.FuncMap{
-				"index": func() string {
+				"root": func() string {
 					bytes, _ := json.Marshal(alert)
 					return string(bytes)
 				},

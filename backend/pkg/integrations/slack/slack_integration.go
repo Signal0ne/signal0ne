@@ -16,6 +16,14 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 		Function: postMessage,
 		Input:    PostMessageInput{},
 	},
+	"create_channel": models.WorkflowFunctionDefinition{
+		Function: createChannel,
+		Input:    CreateChannelInput{},
+	},
+	"add_users_to_channel": models.WorkflowFunctionDefinition{
+		Function: addUsersToTheChannel,
+		Input:    AddUsersToTheChannelInput{},
+	},
 }
 
 type SlackIntegrationInventory struct {
@@ -87,6 +95,16 @@ type PostMessageInput struct {
 	SlackChannel          string `json:"slack_channel"`
 }
 
+type CreateChannelInput struct {
+	ChannelName string `json:"channel_name"`
+	IsPrivate   string `json:"is_private"`
+}
+
+type AddUsersToTheChannelInput struct {
+	ChannelName string `json:"channel_name"`
+	UserHandles string `json:"user_handles"`
+}
+
 func postMessage(input any, integration any) (output []any, err error) {
 	var parsedInput PostMessageInput
 	var parsedAlert models.EnrichedAlert
@@ -130,6 +148,28 @@ func postMessage(input any, integration any) (output []any, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
 
+	}
+
+	return output, err
+}
+
+func createChannel(input any, integration any) (output []any, err error) {
+	var parsedInput CreateChannelInput
+
+	err = helpers.ValidateInputParameters(input, &parsedInput, "create_channel")
+	if err != nil {
+		return output, err
+	}
+
+	return output, err
+}
+
+func addUsersToTheChannel(input any, integration any) (output []any, err error) {
+	var parsedInput AddUsersToTheChannelInput
+
+	err = helpers.ValidateInputParameters(input, &parsedInput, "add_users_to_channel")
+	if err != nil {
+		return output, err
 	}
 
 	return output, err
