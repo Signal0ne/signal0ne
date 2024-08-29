@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"net"
 	"signal0ne/api/routers"
@@ -104,6 +106,24 @@ func main() {
 		incidentController,
 		userAuthController)
 	mainRouter.RegisterRoutes(routerApiGroup)
+
+	pyInterfacePayload := map[string]any{
+		"command": "ping",
+		"params":  map[string]any{},
+	}
+
+	payloadBytes, err := json.Marshal(pyInterfacePayload)
+	if err != nil {
+		panic(err)
+	}
+
+	batchSizeHeader := make([]byte, 4)
+	binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
+	payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
+	_, err = conn.Write(payloadBytesWithHeaders)
+	if err != nil {
+		panic(err)
+	}
 
 	server.Run(":" + cfg.Server.ServerPort)
 }
