@@ -60,6 +60,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 
 	namespaceGroup := rg.Group("/namespace")
 	{
+		namespaceGroup.GET("/search-by-name", r.NamespaceController.GetNamespaceByName)
 		namespaceGroup.POST("/create")
 		namespaceGroup.DELETE("/:namespaceid/delete")
 		namespaceGroup.GET("/:namespaceid/get")
