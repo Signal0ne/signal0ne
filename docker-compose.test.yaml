@@ -3,23 +3,24 @@ services:
   backend:
     container_name: s0backend
     build:
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.test
       context: ./backend
+    command: ["./pkg/integrations/opensearch"]
     ports:
       - 8080:8080
     depends_on:
       - python-service
       - mongo-db
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./sockets:/var/run:rw
 
   python-service:
     container_name: python-service
     build:
-      dockerfile: ./backend/scripts/python-interface/Dockerfile
-      context: ./backend/scripts/python-interface
+      dockerfile: ./scripts/python_interface/Dockerfile
+      context: ./backend
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./sockets:/var/run:rw
 
   mongo-db:
     container_name: mongodb

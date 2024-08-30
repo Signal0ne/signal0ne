@@ -1,0 +1,9 @@
+FROM golang:1.22.5-bullseye AS go-builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
+# Start both applications
+ENTRYPOINT ["go", "test"]

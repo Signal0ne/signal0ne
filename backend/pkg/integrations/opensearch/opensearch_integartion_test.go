@@ -1,12 +1,8 @@
 package opensearch
 
 import (
-	"encoding/json"
-	"log"
-	"net"
-	"signal0ne/cmd/config"
+	"signal0ne/internal/utils"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -16,30 +12,18 @@ import (
 // You need to run lab01 -  https://portal.azure.com/#@szymonst2808gmail.onmicrosoft.com/resource/subscriptions/fb775820-301c-4a7d-af99-83285b864825/resourceGroups/rg01-lab01/providers/Microsoft.Compute/virtualMachines/lab01/overview
 // In order to run this test without mocking
 func Test_GetLogOccurrences(t *testing.T) {
-	cfg := config.GetInstance()
-	var mockConn, err = net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
-	if err != nil {
-		log.Fatalf("Error connecting to the socket: %s", err)
+	mockConn := utils.ConnectToSocket()
+	defer mockConn.Close()
+	mockedGetLogOccurrencesInput := map[string]string{
+		"service":    "adservice",
+		"query":      "{\"query\": {\"match_all\": {}}}",
+		"compare_by": "resource.service.name",
 	}
-
-	mockedGetLogOccurrencesInput := GetLogOccurrencesInput{
-		Query: `{
-					"query": {
-						"match_all": {}
-					}
-				  }`,
-		CompareBy: "resource.service.name",
-	}
-
-	mockedGetLogOccurrencesInputStringified, _ := json.Marshal(mockedGetLogOccurrencesInput)
-
-	input := mockedGetLogOccurrencesInputStringified
 
 	//Create integration object
+	inventory := NewOpenSearchIntegrationInventory(mockConn)
 	integration := OpenSearchIntegration{
-		Inventory: OpenSearchIntegrationInventory{
-			PyInterface: mockConn,
-		},
+		Inventory: inventory,
 		Config: Config{
 			Host:  "20.127.192.216",
 			Index: "otel",
@@ -48,7 +32,7 @@ func Test_GetLogOccurrences(t *testing.T) {
 		},
 	}
 
-	output, err := getLogOccurrences(input, integration)
+	output, err := getLogOccurrences(mockedGetLogOccurrencesInput, integration)
 	assert.NoError(t, err)
 	assert.NotNil(t, output)
 
