@@ -9,7 +9,5 @@ chmod +x /app/healthcheck.sh
 COPY ./scripts/python_interface ./python_interface/
 COPY .default.env .default.env
 
-HEALTHCHECK --interval=15s --timeout=5s --retries=3 CMD /app/healthcheck.sh || exit 1
-
 # Start both applications
 CMD ["python", "-u", "./python_interface/main.py"]

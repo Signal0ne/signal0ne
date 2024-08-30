@@ -3,8 +3,6 @@
 
 SOCKET_FILE="/var/run/d.sock"
 
-echo "Checking socket file"
-
 if [ ! -S "$SOCKET_FILE" ]; then
   echo "Socket file does not exist"
   exit 1

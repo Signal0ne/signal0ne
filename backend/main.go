@@ -26,7 +26,7 @@ func main() {
 		panic("CRITICAL: unable to load config")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	mongoConn, err := tools.InitMongoClient(ctx, cfg.MongoUri)
@@ -44,15 +44,18 @@ func main() {
 	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
 	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
 
-	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
-	if err != nil {
-		panic(
-			fmt.Sprintf("Failed to establish connection to %s, error: %s",
+	var conn net.Conn = nil
+	for conn == nil {
+		conn, err = net.DialTimeout("unix", cfg.IPCSocket, (60 * time.Second))
+		if err != nil {
+			fmt.Printf("Failed to establish connection to %s, error: %s, retrying in 5 seconds\n",
 				cfg.IPCSocket,
-				err),
-		)
-	} else {
-		defer conn.Close()
+				err)
+			time.Sleep(5 * time.Second)
+		} else {
+			defer conn.Close()
+			break
+		}
 	}
 
 	err = tools.Initialize(ctx, namespacesCollection)
