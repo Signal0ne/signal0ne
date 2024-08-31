@@ -210,5 +210,41 @@ func addUsersToTheChannel(input any, integration any) (output []any, err error) 
 		return output, err
 	}
 
+	assertedIntegration := integration.(SlackIntegration)
+	url := fmt.Sprintf("http://%s:%s/api/add_users_to_channel", assertedIntegration.Host, assertedIntegration.Port)
+
+	payload := map[string]any{
+		"channelName": parsedInput.ChannelName,
+		"userHandles": strings.Split(parsedInput.UserHandles, ","),
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to add users to the channel: %v", resp.Status)
+	}
+
+	var response map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %v", err)
+	}
+
+	output = append(output, response)
 	return output, err
 }
