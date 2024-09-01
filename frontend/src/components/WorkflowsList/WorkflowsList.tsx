@@ -1,22 +1,52 @@
+import { useEffect, useRef, useState } from 'react';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import { Workflow } from '../../data/dummyWorkflows';
+import classNames from 'classnames';
 import Spinner from '../Spinner/Spinner';
 import WorkflowsListItem from '../WorkflowsListItem/WorkflowsListItem';
 import './WorkflowsList.scss';
 
 interface WorkflowsListProps {
+  isEmpty: boolean;
   isLoading: boolean;
   workflows: Workflow[];
 }
 
-const WorkflowsList = ({ isLoading, workflows }: WorkflowsListProps) => {
+const WorkflowsList = ({
+  isEmpty,
+  isLoading,
+  workflows
+}: WorkflowsListProps) => {
+  const [shouldDisplayScrollOffset, setShouldDisplayScrollOffset] =
+    useState(false);
+
+  const workflowsListRef = useRef<HTMLUListElement>(null);
+
   const { activeWorkflow, setActiveWorkflow } = useWorkflowsContext();
+
+  useEffect(() => {
+    checkDisplayScrollOffset();
+  }, [workflows]);
+
+  const checkDisplayScrollOffset = () => {
+    if (!workflowsListRef.current) return setShouldDisplayScrollOffset(false);
+
+    setShouldDisplayScrollOffset(
+      workflowsListRef.current.scrollHeight >
+        workflowsListRef.current.clientHeight
+    );
+  };
 
   const handleListItemClick = (workflow: Workflow) =>
     setActiveWorkflow(workflow);
 
   return (
-    <ul className="workflows-list">
+    <ul
+      className={classNames('workflows-list', {
+        'scroll-offset': shouldDisplayScrollOffset
+      })}
+      ref={workflowsListRef}
+    >
       {isLoading ? (
         <Spinner />
       ) : workflows?.length ? (
@@ -29,7 +59,14 @@ const WorkflowsList = ({ isLoading, workflows }: WorkflowsListProps) => {
           />
         ))
       ) : (
-        <p className="workflows-list--empty">No workflows found</p>
+        <p className="workflows-list--empty">
+          No workflows found
+          <span className="helpful-msg">
+            {isEmpty
+              ? 'Click the button above to upload one'
+              : 'Please refine your search'}
+          </span>
+        </p>
       )}
     </ul>
   );

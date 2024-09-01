@@ -1,7 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { ROUTES } from '../../data/routes';
-import NotFoundPage from '../../pages/NotFoundPage/NotFoundPage';
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
+import NotFoundPage from '../../pages/NotFoundPage/NotFoundPage';
 
 const AppRoutes = () => (
   <Routes>

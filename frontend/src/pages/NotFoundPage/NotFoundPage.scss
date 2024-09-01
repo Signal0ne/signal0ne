@@ -1,0 +1,27 @@
+.not-found-page {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  height: calc(100% - 80px);
+  justify-content: center;
+
+  .go-home-btn {
+    border: 1px solid #e4e4e4;
+    border-radius: 8px;
+    color: #e4e4e4;
+    text-decoration: none;
+    padding: 8px 16px;
+
+    &:hover {
+      border-color: #fff;
+      box-shadow: 0 3px 4px rgba(255, 255, 255 , 0.15);
+      color: #fff;
+    }
+  }
+
+  .title {
+    font-size: 32px;
+    margin: 0;
+  }
+}
