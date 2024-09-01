@@ -7,7 +7,7 @@ type Incident struct {
 	Title         string                   `json:"title" bson:"title"`
 	Assignee      User                     `json:"user" bson:"user"`
 	Severity      string                   `json:"severity" bson:"severity"`
-	PrimaryFields []map[string]any         `json:"primaryFields" bson:"primaryFields"`
+	PrimaryFields map[string]any           `json:"primaryFields" bson:"primaryFields"`
 	Tasks         []Task                   `json:"tasks" bson:"tasks"`
 	History       []IncidentUpdate[Update] `json:"history" bson:"history"`
 }

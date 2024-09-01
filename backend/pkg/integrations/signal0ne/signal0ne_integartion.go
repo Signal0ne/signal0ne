@@ -225,10 +225,6 @@ func createIncident(input any, integration any) ([]any, error) {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
 	}
 
-	// Get primary fields
-	primaryFields := make([]map[string]any, 0)
-	primaryFields = append(primaryFields, parsedAlert.TriggerProperties)
-
 	// Search for assignee in db
 	assignee := models.User{}
 
@@ -238,7 +234,7 @@ func createIncident(input any, integration any) ([]any, error) {
 	for si, step := range assertedIntegration.Inventory.WorkflowProperties.Steps {
 		isDone := true
 
-		stepOutputs := parsedAlert.AdditionalContext[fmt.Sprint("%s_%s", step.Integration, step.Function)].Output.([]any)
+		stepOutputs, _ := parsedAlert.AdditionalContext[fmt.Sprintf("%s_%s", step.Integration, step.Function)].Output.([]any)
 
 		// Check if is done
 		if len(stepOutputs) == 0 {
@@ -275,7 +271,7 @@ func createIncident(input any, integration any) ([]any, error) {
 		Title:         assertedIntegration.Inventory.WorkflowProperties.Name,
 		Assignee:      assignee,
 		Severity:      parsedInput.Severity,
-		PrimaryFields: primaryFields,
+		PrimaryFields: parsedAlert.TriggerProperties,
 		Tasks:         tasks,
 		History:       []models.IncidentUpdate[models.Update]{},
 	}

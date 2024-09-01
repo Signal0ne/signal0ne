@@ -43,7 +43,7 @@ func main() {
 	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
 	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
 	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
-	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
+	incidentsCollection := mongoConn.Database("signalone").Collection("incidents")
 
 	var conn net.Conn = nil
 	conn = utils.ConnectToSocket()
@@ -80,7 +80,7 @@ func main() {
 		workflowsCollection,
 		namespacesCollection,
 		integrationsCollection,
-		alertsCollection,
+		incidentsCollection,
 		cfg.Server,
 		conn)
 	integrationsController := controllers.NewIntegrationController(
@@ -88,7 +88,7 @@ func main() {
 		namespacesCollection,
 	)
 	incidentController := controllers.NewIncidentController(
-		alertsCollection,
+		incidentsCollection,
 	)
 	userAuthController := controllers.NewUserAuthController()
 

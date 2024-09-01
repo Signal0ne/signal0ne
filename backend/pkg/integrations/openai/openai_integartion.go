@@ -83,7 +83,7 @@ func summarizeContext(input any, integration any) ([]any, error) {
 
 	assertedIntegration := integration.(OpenaiIntegration)
 
-	fmt.Printf("Executing OpenAi integration function...")
+	fmt.Printf("###\nExecuting OpenAi integration function...\n")
 	model := assertedIntegration.Model
 	apiKey := assertedIntegration.ApiKey
 	prompt := fmt.Sprintf(`You are on-call engineer Based on the full context from the investigation summarize investigation context for other engineers.
