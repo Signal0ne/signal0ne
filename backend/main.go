@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"net"
 	"signal0ne/api/routers"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/controllers"
 	"signal0ne/internal/tools"
+	"signal0ne/internal/utils"
 	"signal0ne/pkg/integrations"
 	"strings"
 	"time"
@@ -24,7 +27,7 @@ func main() {
 		panic("CRITICAL: unable to load config")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	mongoConn, err := tools.InitMongoClient(ctx, cfg.MongoUri)
@@ -42,16 +45,9 @@ func main() {
 	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
 	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
 
-	conn, err := net.DialTimeout("unix", cfg.IPCSocket, (15 * time.Second))
-	if err != nil {
-		panic(
-			fmt.Sprintf("Failed to establish connection to %s, error: %s",
-				cfg.IPCSocket,
-				err),
-		)
-	} else {
-		defer conn.Close()
-	}
+	var conn net.Conn = nil
+	conn = utils.ConnectToSocket()
+	defer conn.Close()
 
 	err = tools.Initialize(ctx, namespacesCollection)
 	if err != nil {
@@ -104,6 +100,24 @@ func main() {
 		incidentController,
 		userAuthController)
 	mainRouter.RegisterRoutes(routerApiGroup)
+
+	pyInterfacePayload := map[string]any{
+		"command": "ping",
+		"params":  map[string]any{},
+	}
+
+	payloadBytes, err := json.Marshal(pyInterfacePayload)
+	if err != nil {
+		panic(err)
+	}
+
+	batchSizeHeader := make([]byte, 4)
+	binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
+	payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
+	_, err = conn.Write(payloadBytesWithHeaders)
+	if err != nil {
+		panic(err)
+	}
 
 	server.Run(":" + cfg.Server.ServerPort)
 }

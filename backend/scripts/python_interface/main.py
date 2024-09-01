@@ -8,6 +8,7 @@ import traceback
 
 from get_log_occurrences import log_occurrences
 from correlate_ongoing_alerts import correlate_ongoing_alerts
+from ping import ping
 
 logging.basicConfig(
     filename="python_interface.log",
@@ -23,7 +24,7 @@ def main():
 
     load_dotenv(dotenv_path='.default.env')
     print("loading...")
-    socket_path = os.getenv('IPC_SOCKET')
+    socket_path = os.getenv('IPC_SOCKET', "/net/socket")
 
     try:
         os.unlink(socket_path)
@@ -79,6 +80,16 @@ def main():
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         print("Success!!!")
                         connection.sendall(response)    
+                    if command == "ping":
+                        result = ping(1)
+                        responseTemplate = json.dumps({"status":"0", "result":result})
+                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                        connection.sendall(response)
+                    else:
+                        result = "Unknown command"
+                        responseTemplate = json.dumps({"status":"1", "error":result})
+                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                        connection.sendall(response)
                 except Exception:
                         traceback.print_exc()
                         responseTemplate = json.dumps({"status":"1", "error":traceback.format_exc()})
