@@ -6,6 +6,8 @@ import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import ReactModal from 'react-modal';
 import yaml, { YAMLException } from 'js-yaml';
 import './FileUploadButton.scss';
+import { Workflow } from '../../data/dummyWorkflows';
+import { useAuthContext } from '../../hooks/useAuthContext';
 
 const customStyles = {
   content: {
@@ -33,6 +35,7 @@ const FileUploadButton = () => {
   );
   const [webhookUrl, setWebhookUrl] = useState('');
 
+  const { namespaceId } = useAuthContext();
   const { activeWorkflow, setActiveStep, setActiveWorkflow } =
     useWorkflowsContext();
 
@@ -65,13 +68,15 @@ const FileUploadButton = () => {
         try {
           if (!e.target) return;
 
+          if (!namespaceId) throw new Error('Namespace ID not found');
+
           const yamlText = e.target.result as string;
           const jsonObject = yaml.load(yamlText) as Record<string, unknown>;
 
           setJsonData(jsonObject);
 
           const res = await fetch(
-            'http://172.171.253.127:8080/api/66c5c9a5fcf10f378a14e29c/workflow/create',
+            `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/create`,
             {
               body: JSON.stringify(jsonObject),
               headers: {
@@ -87,7 +92,7 @@ const FileUploadButton = () => {
           openModal();
 
           //TODO: Handle response data and typescript types
-          setActiveWorkflow(jsonObject);
+          setActiveWorkflow(jsonObject as unknown as Workflow);
         } catch (err: unknown) {
           if (err instanceof YAMLException) {
             toast.error(
