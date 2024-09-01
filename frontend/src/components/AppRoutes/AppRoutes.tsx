@@ -1,6 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
 import { ROUTES } from '../../data/routes';
-import NotFoundPage from '../../pages/NotFoundPage/NotFoundPage';
 import ProtectedRoute from '../ProtectedRoute/ProtectedRoute';
 
 const AppRoutes = () => (
@@ -16,7 +15,6 @@ const AppRoutes = () => (
         path={path}
       />
     ))}
-    <Route element={<NotFoundPage />} path="*" />
   </Routes>
 );
 
