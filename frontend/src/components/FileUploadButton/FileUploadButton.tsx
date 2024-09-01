@@ -12,6 +12,7 @@ import './FileUploadButton.scss';
 interface FetchWorkflowsResponse {
   workflows: Workflow[];
 }
+
 interface WorkflowCreateResponse {
   webhook: string;
   workflow: Workflow;
