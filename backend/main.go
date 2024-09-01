@@ -10,6 +10,7 @@ import (
 	"signal0ne/cmd/config"
 	"signal0ne/internal/controllers"
 	"signal0ne/internal/tools"
+	"signal0ne/internal/utils"
 	"signal0ne/pkg/integrations"
 	"strings"
 	"time"
@@ -45,18 +46,8 @@ func main() {
 	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
 
 	var conn net.Conn = nil
-	for conn == nil {
-		conn, err = net.DialTimeout("unix", cfg.IPCSocket, (60 * time.Second))
-		if err != nil {
-			fmt.Printf("Failed to establish connection to %s, error: %s, retrying in 5 seconds\n",
-				cfg.IPCSocket,
-				err)
-			time.Sleep(5 * time.Second)
-		} else {
-			defer conn.Close()
-			break
-		}
-	}
+	conn = utils.ConnectToSocket()
+	defer conn.Close()
 
 	err = tools.Initialize(ctx, namespacesCollection)
 	if err != nil {
