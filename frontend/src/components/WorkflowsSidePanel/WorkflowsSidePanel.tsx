@@ -1,25 +1,47 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { DUMMY_WORKFLOWS } from '../../data/dummyWorkflows';
+import { toast } from 'react-toastify';
+import { useAuthContext } from '../../hooks/useAuthContext';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
+import { Workflow } from '../../data/dummyWorkflows';
 import FileUploadButton from '../FileUploadButton/FileUploadButton';
 import SearchInput from '../SearchInput/SearchInput';
 import WorkflowsList from '../WorkflowsList/WorkflowsList';
 import './WorkflowsSidePanel.scss';
 
+interface WorkflowsResponseBody {
+  workflows: Workflow[];
+}
+
 const WorkflowsSidePanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
 
+  const { namespaceId } = useAuthContext();
   const { setWorkflows, workflows } = useWorkflowsContext();
 
   useEffect(() => {
-    setIsLoading(true);
-    //TODO: Fetch workflows from API
-    setTimeout(() => {
-      setWorkflows(DUMMY_WORKFLOWS);
-      setIsLoading(false);
-    }, 1000);
-  }, [setWorkflows]);
+    if (!namespaceId) return;
+
+    const fetchWorkflows = async () => {
+      setIsLoading(true);
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/workflows`
+        );
+        const data: WorkflowsResponseBody = await response.json();
+
+        setWorkflows(data.workflows);
+      } catch (error) {
+        console.error('Error fetching workflows:', error);
+        toast.error("Couldn't fetch workflows");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWorkflows();
+  }, [namespaceId, setWorkflows]);
 
   const handleSearch = (e: ChangeEvent) => {
     const target = e.target as HTMLInputElement;
@@ -46,7 +68,11 @@ const WorkflowsSidePanel = () => {
           value={search}
         />
         <FileUploadButton />
-        <WorkflowsList isLoading={isLoading} workflows={FILTERED_WORKFLOWS} />
+        <WorkflowsList
+          isEmpty={workflows.length === 0}
+          isLoading={isLoading}
+          workflows={FILTERED_WORKFLOWS}
+        />
       </div>
     </aside>
   );
