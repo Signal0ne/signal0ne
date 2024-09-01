@@ -5,6 +5,7 @@ export interface IWorkflowStep {
     [key: string]: string;
   };
   integration: string;
+  integrationType: string;
   name: string;
   output?: {
     [key: string]: string;
@@ -41,6 +42,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Get ownership',
         integration: 'backstage',
+        integrationType: 'backstage',
         function: 'get_properties_values',
         input: {
           filter: 'kind=component,metadata.name={service}'
@@ -55,6 +57,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Inspect traces',
         integration: 'jaeger',
+        integrationType: 'jaeger',
         function: 'log_occurrences',
         input: {
           service: '{service}',
@@ -69,17 +72,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Send to slack channel',
         integration: 'slack',
+        integrationType: 'slack',
         function: 'post_message',
-        input: {
-          parsable_context_object: '.',
-          ignore_context_keys: 'additional_context.components[].slack_channel'
-        },
-        condition: 'greater(additional_context.log_occurrences.count'
-      },
-      {
-        name: 'Send to slack channel2',
-        integration: 'slack',
-        function: 'post_message2',
         input: {
           parsable_context_object: '.',
           ignore_context_keys: 'additional_context.components[].slack_channel'
@@ -105,6 +99,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Get ownership',
         integration: 'backstage',
+        integrationType: 'backstage',
         function: 'get_properties_values',
         input: {
           filter: 'kind=component,metadata.name={service}'
@@ -117,6 +112,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Inspect traces',
         integration: 'jaeger',
+        integrationType: 'jaeger',
         function: 'log_occurrences',
         input: {
           service: '{service}',
@@ -131,6 +127,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Send to slack channel',
         integration: 'slack',
+        integrationType: 'slack',
         function: 'post_message',
         input: {
           parsable_context_object: '.',
@@ -158,6 +155,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Get ownership',
         integration: 'backstage',
+        integrationType: 'backstage',
         function: 'get_properties_values',
         input: {
           filter: 'kind=component,metadata.name={service}'
@@ -170,6 +168,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Inspect traces',
         integration: 'jaeger',
+        integrationType: 'jaeger',
         function: 'log_occurrences',
         input: {
           service: '{service}',
@@ -184,6 +183,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Send to slack channel',
         integration: 'slack',
+        integrationType: 'slack',
         function: 'post_message',
         input: {
           parsable_context_object: '.',
@@ -210,6 +210,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Get ownership',
         integration: 'backstage',
+        integrationType: 'backstage',
         function: 'get_properties_values',
         input: {
           filter: 'kind=component,metadata.name={service}'
@@ -222,6 +223,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Inspect traces',
         integration: 'jaeger',
+        integrationType: 'jaeger',
         function: 'log_occurrences',
         input: {
           service: '{service}',
@@ -236,6 +238,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Send to slack channel',
         integration: 'slack',
+        integrationType: 'slack',
         function: 'post_message',
         input: {
           parsable_context_object: '.',
@@ -263,6 +266,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Get ownership',
         integration: 'backstage',
+        integrationType: 'backstage',
         function: 'get_properties_values',
         input: {
           filter: 'kind=component,metadata.name={service}'
@@ -275,6 +279,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Inspect traces',
         integration: 'jaeger',
+        integrationType: 'jaeger',
         function: 'log_occurrences',
         input: {
           service: '{service}',
@@ -289,6 +294,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Send to slack channel',
         integration: 'slack',
+        integrationType: 'slack',
         function: 'post_message',
         input: {
           parsable_context_object: '.',
@@ -316,6 +322,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Get ownership',
         integration: 'backstage',
+        integrationType: 'backstage',
         function: 'get_properties_values',
         input: {
           filter: 'kind=component,metadata.name={service}'
@@ -328,6 +335,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Inspect traces',
         integration: 'jaeger',
+        integrationType: 'jaeger',
         function: 'log_occurrences',
         input: {
           service: '{service}',
@@ -342,6 +350,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Send to slack channel',
         integration: 'slack',
+        integrationType: 'slack',
         function: 'post_message',
         input: {
           parsable_context_object: '.',
@@ -369,6 +378,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Get ownership',
         integration: 'backstage',
+        integrationType: 'backstage',
         function: 'get_properties_values',
         input: {
           filter: 'kind=component,metadata.name={service}'
@@ -381,6 +391,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Inspect traces',
         integration: 'jaeger',
+        integrationType: 'jaeger',
         function: 'log_occurrences',
         input: {
           service: '{service}',
@@ -395,6 +406,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
       {
         name: 'Send to slack channel',
         integration: 'slack',
+        integrationType: 'slack',
         function: 'post_message',
         input: {
           parsable_context_object: '.',

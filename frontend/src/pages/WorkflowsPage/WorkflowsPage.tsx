@@ -4,12 +4,12 @@ import WorkflowsSidePanel from '../../components/WorkflowsSidePanel/WorkflowsSid
 import './WorkflowsPage.scss';
 
 const WorkflowsPage = () => (
-  <div className="workflows-container">
-    <WorkflowsProvider>
+  <WorkflowsProvider>
+    <div className="workflows-container">
       <WorkflowsSidePanel />
       <WorkflowsMainPanel />
-    </WorkflowsProvider>
-  </div>
+    </div>
+  </WorkflowsProvider>
 );
 
 export default WorkflowsPage;

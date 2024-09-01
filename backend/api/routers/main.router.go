@@ -77,6 +77,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		workflowGroup.POST("/create", r.WorkflowController.ApplyWorkflow)
 		workflowGroup.DELETE("/:workflowid")
 		workflowGroup.GET("/:workflowid")
+		workflowGroup.GET("/workflows", r.WorkflowController.GetWorkflows)
 		workflowGroup.PATCH("/:workflowid")
 	}
 }

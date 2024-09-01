@@ -2,12 +2,20 @@ import { ChangeEvent, memo, useEffect, useState } from 'react';
 import { CopyIcon, UploadIcon } from '../Icons/Icons';
 import { handleKeyDown } from '../../utils/utils';
 import { toast } from 'react-toastify';
+import { useAuthContext } from '../../hooks/useAuthContext';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
+import { Workflow } from '../../data/dummyWorkflows';
 import ReactModal from 'react-modal';
 import yaml, { YAMLException } from 'js-yaml';
 import './FileUploadButton.scss';
-import { Workflow } from '../../data/dummyWorkflows';
-import { useAuthContext } from '../../hooks/useAuthContext';
+
+interface FetchWorkflowsResponse {
+  workflows: Workflow[];
+}
+interface WorkflowCreateResponse {
+  webhook: string;
+  workflow: Workflow;
+}
 
 const customStyles = {
   content: {
@@ -36,7 +44,7 @@ const FileUploadButton = () => {
   const [webhookUrl, setWebhookUrl] = useState('');
 
   const { namespaceId } = useAuthContext();
-  const { activeWorkflow, setActiveStep, setActiveWorkflow } =
+  const { activeWorkflow, setActiveStep, setActiveWorkflow, setWorkflows } =
     useWorkflowsContext();
 
   useEffect(() => {
@@ -45,12 +53,15 @@ const FileUploadButton = () => {
 
   const closeModal = () => setIsModalOpen(false);
 
-  const handleWebhookCopy = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    toast.success('Webhook URL copied to clipboard');
-  };
+  const fetchWorkflows = async () => {
+    const res = await fetch(
+      `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/workflows`
+    );
 
-  const openModal = () => setIsModalOpen(true);
+    const data: FetchWorkflowsResponse = await res.json();
+
+    setWorkflows(data.workflows);
+  };
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -86,13 +97,13 @@ const FileUploadButton = () => {
             }
           );
 
-          const data = (await res.json()) as { webhook: string };
-          console.log('data', data);
+          const data: WorkflowCreateResponse = await res.json();
+
           setWebhookUrl(data.webhook);
+          setActiveWorkflow(data.workflow);
           openModal();
 
-          //TODO: Handle response data and typescript types
-          setActiveWorkflow(jsonObject as unknown as Workflow);
+          await fetchWorkflows();
         } catch (err: unknown) {
           if (err instanceof YAMLException) {
             toast.error(
@@ -122,6 +133,13 @@ const FileUploadButton = () => {
     e.target.value = '';
   };
 
+  const handleWebhookCopy = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    toast.success('Webhook URL copied to clipboard');
+  };
+
+  const openModal = () => setIsModalOpen(true);
+
   return (
     <>
       <label className="file-upload-input-container" htmlFor="file-upload">
@@ -136,31 +154,29 @@ const FileUploadButton = () => {
           type="file"
         />
       </label>
-      {isModalOpen && (
-        <ReactModal
-          className="webhook-modal-content"
-          contentLabel="Your Webhook URL:"
-          isOpen={isModalOpen}
-          onRequestClose={closeModal}
-          style={customStyles}
-        >
-          <h3 className="modal-title">Your Webhook URL: </h3>
-          <div className="modal-content-container">
-            <input className="modal-input" readOnly value={webhookUrl} />
-            <CopyIcon
-              className="modal-copy-icon"
-              data-tooltip-class-name="copy-tooltip"
-              data-tooltip-content="Copy Webhook URL"
-              data-tooltip-id="global"
-              height={28}
-              onClick={handleWebhookCopy}
-              onKeyDown={handleKeyDown(handleWebhookCopy)}
-              tabIndex={0}
-              width={28}
-            />
-          </div>
-        </ReactModal>
-      )}
+      <ReactModal
+        className="webhook-modal-content"
+        contentLabel="Your Webhook URL:"
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        style={customStyles}
+      >
+        <h3 className="modal-title">Your Webhook URL: </h3>
+        <div className="modal-content-container">
+          <input className="modal-input" readOnly value={webhookUrl} />
+          <CopyIcon
+            className="modal-copy-icon"
+            data-tooltip-class-name="copy-tooltip"
+            data-tooltip-content="Copy Webhook URL"
+            data-tooltip-id="global"
+            height={28}
+            onClick={handleWebhookCopy}
+            onKeyDown={handleKeyDown(handleWebhookCopy)}
+            tabIndex={0}
+            width={28}
+          />
+        </div>
+      </ReactModal>
     </>
   );
 };

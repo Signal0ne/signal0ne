@@ -1,4 +1,5 @@
 import { ArrowDown } from '../Icons/Icons';
+import { Fragment } from 'react';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import WorkflowStep from '../WorkflowStep/WorkflowStep';
 import WorkflowStepTrigger from '../WorkflowStepTrigger/WorkflowStepTrigger';
@@ -37,8 +38,8 @@ const WorkflowSteps = () => {
         <WorkflowStepTrigger step={activeWorkflow.trigger} />
         <ArrowDown className="workflow-step-separator" height={36} width={36} />
         {activeWorkflow.steps.map((step, index) => (
-          <>
-            <WorkflowStep index={index} key={step.name} step={step} />
+          <Fragment key={step.name}>
+            <WorkflowStep index={index} step={step} />
             {index !== activeWorkflow.steps.length - 1 && (
               <ArrowDown
                 className="workflow-step-separator"
@@ -46,7 +47,7 @@ const WorkflowSteps = () => {
                 width={36}
               />
             )}
-          </>
+          </Fragment>
         ))}
       </div>
     </div>
