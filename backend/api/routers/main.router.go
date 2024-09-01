@@ -45,16 +45,20 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		authGroup.POST("/token/refresh")
 	}
 
-	incidentGroup := rg.Group("/:namespaceid/incident")
+	incidentGroup := rg.Group("/:namespaceid/incident", middlewares.CheckAuthorization)
 	{
 		incidentGroup.GET("/:incidentid")
+		incidentGroup.POST("/create")
+		incidentGroup.PATCH("/:incidentid")
+		incidentGroup.POST("/:incidentid/register-history-event")
 	}
 
 	integrationGroup := rg.Group("/:namespaceid/integration", middlewares.CheckAuthorization)
 	{
 		integrationGroup.POST("/create", r.IntegrationController.Install)
-		integrationGroup.DELETE("/:integrationid/delete")
-		integrationGroup.GET("/:integrationid/get")
+		integrationGroup.DELETE("/:integrationid")
+		integrationGroup.GET("/:integrationid")
+		integrationGroup.GET("/installable")
 		integrationGroup.PATCH("/:integrationid/update")
 	}
 
