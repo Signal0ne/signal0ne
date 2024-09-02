@@ -1,19 +1,19 @@
 export interface InstalledIntegration {
-  icon: string;
   name: string;
+  type: string;
 }
 
 export const DUMMY_INSTALLED_INTEGRATIONS: InstalledIntegration[] = [
   {
-    icon: 'backstage',
-    name: 'Backstage'
+    name: 'backstage_prod',
+    type: 'Backstage'
   },
   {
-    icon: 'jaeger',
-    name: 'Jaeger'
+    name: 'jaeger Prod',
+    type: 'Jaeger'
   },
   {
-    icon: 'slack',
-    name: 'Slack'
+    name: 'slack_prod',
+    type: 'Slack'
   }
 ];

@@ -7,8 +7,11 @@ import (
 	"reflect"
 	"signal0ne/internal/models"
 	"signal0ne/pkg/integrations"
+	"sort"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -26,8 +29,94 @@ func NewIntegrationController(
 	}
 }
 
+func (ic *IntegrationController) GetInstallableIntegrations(ctx *gin.Context) {
+	var integrationsList []map[string]any
+
+	installableIntegrations, err := integrations.GetInstallableIntegrationsLib()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+	}
+
+	for _, integration := range installableIntegrations {
+
+		if config, ok := integration["config"].(map[string]any); ok {
+			if _, hostOk := config["host"].(string); hostOk {
+				if _, portOk := config["port"].(string); portOk {
+					config["url"] = "string"
+					delete(config, "host")
+					delete(config, "port")
+				}
+			}
+		}
+
+		integrationsList = append(integrationsList, integration)
+	}
+
+	if integrationsList == nil {
+		integrationsList = []map[string]any{}
+	}
+
+	sort.Slice(integrationsList, func(i, j int) bool {
+		return integrationsList[i]["typeName"].(string) < integrationsList[j]["typeName"].(string)
+	})
+
+	ctx.JSON(http.StatusOK, gin.H{"installableIntegrations": integrationsList})
+}
+
+func (ic *IntegrationController) GetInstalledIntegrations(ctx *gin.Context) {
+	var installedIntegrations []models.Integration
+	var namespace *models.Namespace
+
+	namespaceId := ctx.Param("namespaceid")
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := ic.NamespaceCollection.FindOne(ctx, primitive.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("cannot find namespace: %v", err),
+		})
+		return
+	}
+
+	cursor, err := ic.IntegrationCollection.Find(ctx, primitive.M{"namespaceId": namespaceId})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("cannot get installed integrations: %v", err),
+		})
+		return
+	}
+
+	err = cursor.All(ctx, &installedIntegrations)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("cannot decode installed integrations: %v", err),
+		})
+		return
+	}
+
+	if installedIntegrations == nil {
+		installedIntegrations = []models.Integration{}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"installedIntegrations": installedIntegrations})
+}
+
 func (ic *IntegrationController) Install(ctx *gin.Context) {
 	var integrationTemplate map[string]interface{}
+	var namespace *models.Namespace
+
+	namespaceId := ctx.Param("namespaceid")
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := ic.NamespaceCollection.FindOne(ctx, bson.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("cannot find namespace, %s", err),
+		})
+		return
+	}
 
 	body, err := ctx.GetRawData()
 	if err != nil || len(body) == 0 {
@@ -43,6 +132,8 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 			"error": "cannot parse body",
 		})
 	}
+
+	integrationTemplate["namespaceId"] = namespaceId
 
 	integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate["type"].(string)]
 	if !exists {
@@ -69,7 +160,7 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 		return
 	}
 
-	_, err = ic.IntegrationCollection.InsertOne(ctx, integration)
+	_, err = ic.IntegrationCollection.InsertOne(ctx, integrationTemplate)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": fmt.Sprintf("cannot save integration config: %v", err),
@@ -78,17 +169,4 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, integration)
-}
-
-func (ic *IntegrationController) ListInstalled(ctx *gin.Context) {
-}
-
-func (ic *IntegrationController) ListInstallable(ctx *gin.Context) {
-	installableIntegrations, err := integrations.GetInstallableIntegrationsLib()
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
-	}
-	ctx.JSON(http.StatusOK, installableIntegrations)
 }

@@ -23,7 +23,7 @@ const InstalledIntegrationsListItem = ({
       tabIndex={0}
     >
       <div className="integration-icon">
-        {getIntegrationIcon(integration.icon)}
+        {getIntegrationIcon(integration.type)}
       </div>
       <span className="integration-name">{integration.name}</span>
     </li>

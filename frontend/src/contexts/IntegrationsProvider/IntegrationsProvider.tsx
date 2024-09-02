@@ -12,6 +12,8 @@ export interface IntegrationsContextType {
   availableIntegrations: AvailableIntegration[];
   installedIntegrations: InstalledIntegration[];
   selectedIntegration: AvailableIntegration | InstalledIntegration | null;
+  setAvailableIntegrations: (integrations: AvailableIntegration[]) => void;
+  setInstalledIntegrations: (integrations: InstalledIntegration[]) => void;
   setSelectedIntegration: (
     integration: AvailableIntegration | InstalledIntegration
   ) => void;
@@ -28,14 +30,22 @@ const IntegrationsContext = createContext<IntegrationsContextType | undefined>(
 export const IntegrationsProvider = ({
   children
 }: IntegrationsProviderProps) => {
+  const [availableIntegrations, setAvailableIntegrations] = useState<
+    AvailableIntegration[]
+  >(DUMMY_AVAILABLE_INTEGRATIONS);
+  const [installedIntegrations, setInstalledIntegrations] = useState<
+    InstalledIntegration[]
+  >(DUMMY_INSTALLED_INTEGRATIONS);
   const [selectedIntegration, setSelectedIntegration] = useState<
     AvailableIntegration | InstalledIntegration | null
   >(null);
 
   const VALUE = {
-    availableIntegrations: DUMMY_AVAILABLE_INTEGRATIONS,
-    installedIntegrations: DUMMY_INSTALLED_INTEGRATIONS,
+    availableIntegrations,
+    installedIntegrations,
     selectedIntegration,
+    setAvailableIntegrations,
+    setInstalledIntegrations,
     setSelectedIntegration
   };
 

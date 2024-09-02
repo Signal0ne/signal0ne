@@ -2,11 +2,27 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%;
   list-style: none;
   margin: 0;
   overflow-y: scroll;
   padding: 0;
-  padding-right: 8px;
   width: 100%;
   @include customScrollbar;
+  
+  &.scroll-offset {
+    padding-right: 8px;
+  }
+
+  .installed-integrations-list--empty {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: auto 0;
+
+    .helpful-msg {
+      font-size: 13px;
+    }
+  }
 }

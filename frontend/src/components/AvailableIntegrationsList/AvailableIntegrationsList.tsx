@@ -1,29 +1,22 @@
-import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
+import { AvailableIntegration } from '../../data/dummyAvailableIntegrations';
 import AvailableIntegrationsListItem from '../AvailableIntegrationsListItem/AvailableIntegrationsListItem';
 import './AvailableIntegrationsList.scss';
 
-const AvailableIntegrationsList = () => {
-  const { availableIntegrations } = useIntegrationsContext();
+interface AvailableIntegrationsListProps {
+  availableIntegrations: AvailableIntegration[];
+}
+
+const AvailableIntegrationsList = ({
+  availableIntegrations
+}: AvailableIntegrationsListProps) => {
+  // const { availableIntegrations } = useIntegrationsContext();
 
   return (
     <ul className="available-integrations-list">
       {availableIntegrations.map(integration => (
         <AvailableIntegrationsListItem
           integration={integration}
-          key={integration.name}
-        />
-      ))}
-      {/* TODO: remove after connecting the Backend */}
-      {availableIntegrations.map(integration => (
-        <AvailableIntegrationsListItem
-          integration={integration}
-          key={integration.name}
-        />
-      ))}
-      {availableIntegrations.map(integration => (
-        <AvailableIntegrationsListItem
-          integration={integration}
-          key={integration.name}
+          key={integration.typeName}
         />
       ))}
     </ul>

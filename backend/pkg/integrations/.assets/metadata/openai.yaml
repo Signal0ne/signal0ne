@@ -1,4 +1,5 @@
 typeName: openai
+displayName: OpenAI
 imageUri: '../logos/openai.svg'
 config:
   apiKey: string

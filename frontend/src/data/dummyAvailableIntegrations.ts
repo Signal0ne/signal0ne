@@ -1,27 +1,53 @@
 export interface AvailableIntegration {
-  icon: string;
-  name: string;
+  config: Record<string, unknown> | null;
+  displayName: string;
+  imageUri: string;
+  typeName: string;
 }
 
 export const DUMMY_AVAILABLE_INTEGRATIONS: AvailableIntegration[] = [
   {
-    icon: 'backstage',
-    name: 'Backstage'
+    config: {
+      apiKey: 'string',
+      host: 'string',
+      port: 'string'
+    },
+    displayName: 'Backstage',
+    imageUri: '../logos/backstage.svg',
+    typeName: 'backstage'
   },
   {
-    icon: 'jaeger',
-    name: 'Jaeger'
+    config: {
+      host: 'string',
+      port: 'string'
+    },
+    displayName: 'Jaeger',
+    imageUri: '../logos/jaeger.svg',
+    typeName: 'jaeger'
   },
   {
-    icon: 'prometheus',
-    name: 'Prometheus'
+    config: {
+      host: 'string',
+      port: 'string'
+    },
+    displayName: 'Alertmanager',
+    imageUri: '../logos/alertmanager.svg',
+    typeName: 'alertmanager'
   },
   {
-    icon: 'signal0ne',
-    name: 'Signal0ne'
+    config: null,
+    displayName: 'Signal0ne',
+    imageUri: '../logos/signal0ne.svg',
+    typeName: 'signal0ne'
   },
   {
-    icon: 'slack',
-    name: 'Slack'
+    config: {
+      host: 'string',
+      port: 'string',
+      workspaceId: 'string'
+    },
+    displayName: 'Slack',
+    imageUri: '../logos/slack.svg',
+    typeName: 'slack'
   }
 ];

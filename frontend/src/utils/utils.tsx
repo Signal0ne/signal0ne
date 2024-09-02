@@ -11,6 +11,12 @@ import {
 } from '../components/Icons/Icons';
 import { ReactNode } from 'react';
 
+export const checkDisplayScrollOffset = (element: HTMLElement) => {
+  if (!element) return false;
+
+  return element.scrollHeight > element.clientHeight;
+};
+
 export const getIntegrationIcon = (integrationName: string) => {
   const icons: Record<string, ReactNode> = {
     alertmanager: <PrometheusIcon />,

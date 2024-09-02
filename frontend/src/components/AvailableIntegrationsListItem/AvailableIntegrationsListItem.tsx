@@ -18,15 +18,17 @@ const AvailableIntegrationsListItem = ({
   return (
     <li
       className="available-integrations-list-item"
-      key={integration.name}
+      key={integration.typeName}
       onClick={handleAvailableIntegrationClick}
       onKeyDown={handleKeyDown(handleAvailableIntegrationClick)}
       tabIndex={0}
     >
       <div className="available-integration-icon">
-        {getIntegrationIcon(integration.icon)}
+        {getIntegrationIcon(integration.typeName)}
       </div>
-      <span className="available-integration-name">{integration.name}</span>
+      <span className="available-integration-name">
+        {integration.displayName}
+      </span>
     </li>
   );
 };

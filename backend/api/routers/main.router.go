@@ -53,6 +53,8 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 	integrationGroup := rg.Group("/:namespaceid/integration", middlewares.CheckAuthorization)
 	{
 		integrationGroup.POST("/create", r.IntegrationController.Install)
+		integrationGroup.GET("/installable", r.IntegrationController.GetInstallableIntegrations)
+		integrationGroup.GET("/installed", r.IntegrationController.GetInstalledIntegrations)
 		integrationGroup.DELETE("/:integrationid/delete")
 		integrationGroup.GET("/:integrationid/get")
 		integrationGroup.PATCH("/:integrationid/update")

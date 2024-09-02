@@ -1,4 +1,5 @@
 typeName: slack
+displayName: Slack
 imageUri: '../logos/slack.svg'
 config:
   host: string
