@@ -18,6 +18,8 @@ import (
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
+	"signal0ne/pkg/integrations/pagerduty"
+	"signal0ne/pkg/integrations/servicenow"
 	"signal0ne/pkg/integrations/signal0ne"
 	"signal0ne/pkg/integrations/slack"
 	"strconv"
@@ -308,9 +310,11 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &alertmanager.AlertmanagerIntegration{}
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
-		case "slack":
-			inventory := slack.NewSlackIntegrationInventory(workflow.Name)
-			integration = &slack.SlackIntegration{
+		case "jaeger":
+			inventory := jaeger.NewJaegerIntegrationInventory(
+				c.PyInterface,
+			)
+			integration = &jaeger.JaegerIntegration{
 				Inventory: inventory,
 			}
 		case "openai":
@@ -322,6 +326,15 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &opensearch.OpenSearchIntegration{
 				Inventory: inventory,
 			}
+		case "pagerduty":
+			inventory := pagerduty.NewPagerdutyIntegrationInventory(
+				workflow,
+			)
+			integration = &pagerduty.PagerdutyIntegration{
+				Inventory: inventory,
+			}
+		case "servicenow":
+			integration = &servicenow.ServicenowIntegration{}
 		case "signal0ne":
 			inventory := signal0ne.NewSignal0neIntegrationInventory(
 				c.IncidentsCollection,
@@ -331,11 +344,9 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &signal0ne.Signal0neIntegration{
 				Inventory: inventory,
 			}
-		case "jaeger":
-			inventory := jaeger.NewJaegerIntegrationInventory(
-				c.PyInterface,
-			)
-			integration = &jaeger.JaegerIntegration{
+		case "slack":
+			inventory := slack.NewSlackIntegrationInventory(workflow.Name)
+			integration = &slack.SlackIntegration{
 				Inventory: inventory,
 			}
 		default:
@@ -407,6 +418,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		if tools.EvaluateCondition(step.Condition, alert) {
 			switch i := integration.(type) {
 			case *backstage.BackstageIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *pagerduty.PagerdutyIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *servicenow.ServicenowIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *slack.SlackIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)

@@ -10,16 +10,28 @@ import (
 	"signal0ne/pkg/integrations/helpers"
 )
 
-type PagerdutyIntegration struct {
-	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
-}
-
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"create_incident": models.WorkflowFunctionDefinition{
 		Function: createIncident,
 		Input:    CreateIncidentInput{},
 	},
+}
+
+type PagerdutyIntegrationInventory struct {
+	WorkflowProperties *models.Workflow `json:"-" bson:"-"`
+}
+
+func NewPagerdutyIntegrationInventory(
+	workflowProperties *models.Workflow) PagerdutyIntegrationInventory {
+	return PagerdutyIntegrationInventory{
+		WorkflowProperties: workflowProperties,
+	}
+}
+
+type PagerdutyIntegration struct {
+	Inventory          PagerdutyIntegrationInventory
+	models.Integration `json:",inline" bson:",inline"`
+	Config             `json:",inline" bson:",inline"`
 }
 
 func (integration PagerdutyIntegration) Execute(
@@ -68,14 +80,16 @@ func (integration PagerdutyIntegration) ValidateStep(
 }
 
 type CreateIncidentInput struct {
-	Type        string `json:"type" bson:"type"`
-	Title       string `json:"title" bson:"title"`
-	Urgency     string `json:"urgency" bson:"urgency"`
-	ServiceName string `json:"service_name" bson:"service_name"`
+	Type                  string `json:"type" bson:"type"`
+	Title                 string `json:"title" bson:"title"`
+	Urgency               string `json:"urgency" bson:"urgency"`
+	ServiceName           string `json:"service_name" bson:"service_name"`
+	ParsableContextObject string `json:"parsable_context_object"`
 }
 
 func createIncident(input any, integration any) ([]any, error) {
 	var parsedInput CreateIncidentInput
+	var parsedAlert models.EnrichedAlert
 	var output []any
 
 	assertedIntegration := integration.(PagerdutyIntegration)
@@ -85,15 +99,23 @@ func createIncident(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
+	err = json.Unmarshal([]byte(parsedInput.ParsableContextObject), &parsedAlert)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
+	}
+
 	client := http.Client{}
 
-	//Search for the service by name
+	// Search for the service by name
 
 	req, err := http.NewRequest(
 		"GET",
-		fmt.Sprintf("%/services?service=%s", assertedIntegration.Config.Url, parsedInput.ServiceName),
+		fmt.Sprintf("%s/services?name=%s", assertedIntegration.Config.Url, parsedInput.ServiceName),
 		nil,
 	)
+	if err != nil {
+		return output, err
+	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Token token=%s", assertedIntegration.Config.ApiKey))
 	req.Header.Add("Accept", "application/json")
@@ -116,7 +138,7 @@ func createIncident(input any, integration any) ([]any, error) {
 	service["id"] = services["services"].([]any)[0].(map[string]any)["id"].(string)
 	service["type"] = services["services"].([]any)[0].(map[string]any)["type"].(string)
 
-	//Create incident
+	// Create incident
 	var incidentBody = map[string]any{
 		"type":    parsedInput.Type,
 		"title":   parsedInput.Title,
@@ -145,7 +167,65 @@ func createIncident(input any, integration any) ([]any, error) {
 		return output, nil
 	}
 
-	output = append(output, incidentResponse)
+	incident := make(map[string]any)
+	err = json.NewDecoder(incidentResponse.Body).Decode(&incident)
+	if err != nil {
+		return output, nil
+	}
+
+	incidentId, _ := incident["incident"].(map[string]any)["id"].(string)
+
+	// Create note for each step from the workflow for the current incident
+	type Note struct {
+		Content string `json:"content"`
+	}
+	for _, step := range assertedIntegration.Inventory.WorkflowProperties.Steps {
+		var note = Note{}
+		isDone := true
+
+		stepOutputs, _ := parsedAlert.AdditionalContext[fmt.Sprintf("%s_%s", step.Integration, step.Function)].Output.([]any)
+
+		if len(stepOutputs) == 0 {
+			isDone = false
+		}
+
+		if !isDone {
+			continue
+		}
+
+		note.Content = fmt.Sprintf("Step: %s\nAssignee: Signal0ne\n##############################", step.Name)
+
+		for _, stepOutput := range stepOutputs {
+			for key, value := range stepOutput.(map[string]any) {
+				note.Content += fmt.Sprintf("Key: %s\nValue: %s\n---", key, value)
+			}
+		}
+
+		note.Content += "##############################"
+
+		noteBodyJSON, err := json.Marshal(map[string]Note{
+			"note": note,
+		})
+		if err != nil {
+			return output, err
+		}
+
+		noteBodyBuffer := bytes.NewBuffer(noteBodyJSON)
+
+		req, err = http.NewRequest("POST", fmt.Sprintf("%s/incidents/%s/notes", incidentId, assertedIntegration.Config.Url), noteBodyBuffer)
+		if err != nil {
+			return output, err
+		}
+
+		req.Header.Add("Authorization", fmt.Sprintf("Token token=%s", assertedIntegration.Config.ApiKey))
+		req.Header.Add("Accept", "application/json")
+		req.Header.Add("Content-Type", "application/json")
+
+		_, err = client.Do(req)
+		if err != nil {
+			return output, err
+		}
+	}
 
 	return output, nil
 }
