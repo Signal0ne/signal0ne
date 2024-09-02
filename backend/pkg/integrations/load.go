@@ -9,6 +9,8 @@ import (
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
+	"signal0ne/pkg/integrations/pagerduty"
+	"signal0ne/pkg/integrations/servicenow"
 	"signal0ne/pkg/integrations/signal0ne"
 	"signal0ne/pkg/integrations/slack"
 	"sync"
@@ -30,6 +32,8 @@ var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"slack":        reflect.TypeOf(slack.SlackIntegration{}),
 	"alertmanager": reflect.TypeOf(alertmanager.AlertmanagerIntegration{}),
 	"openai":       reflect.TypeOf(openai.OpenaiIntegration{}),
+	"servicenow":   reflect.TypeOf(servicenow.ServicenowIntegration{}),
+	"pagerduty":    reflect.TypeOf(pagerduty.PagerdutyIntegration{}),
 }
 
 func GetInstallableIntegrationsLib() (map[string]map[string]any, error) {
