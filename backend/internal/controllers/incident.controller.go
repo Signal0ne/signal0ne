@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"signal0ne/internal/models"
@@ -63,7 +64,7 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 	err := ctx.BindJSON(&createIncidentRequest)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request",
+			"error": fmt.Sprintf("invalid request: %v", err),
 		})
 		return
 	}
@@ -162,7 +163,7 @@ func (ic *IncidentController) RegisterHistoryEvent(ctx *gin.Context) {
 		err := ctx.BindJSON(&incidentUpdate)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid request",
+				"error": fmt.Sprintf("invalid request: %v", err),
 			})
 			return
 		}
@@ -172,7 +173,7 @@ func (ic *IncidentController) RegisterHistoryEvent(ctx *gin.Context) {
 		err := ctx.BindJSON(&incidentUpdate)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{
-				"error": "invalid request",
+				"error": fmt.Sprintf("invalid request: %v", err),
 			})
 			return
 		}
@@ -187,7 +188,7 @@ func (ic *IncidentController) UpdateIncident(ctx *gin.Context) {
 	err := ctx.BindJSON(&incident)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid request",
+			"error": fmt.Sprintf("invalid request: %v", err),
 		})
 		return
 	}
