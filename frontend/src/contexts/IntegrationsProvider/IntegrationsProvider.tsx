@@ -15,7 +15,7 @@ export interface IntegrationsContextType {
   setAvailableIntegrations: (integrations: AvailableIntegration[]) => void;
   setInstalledIntegrations: (integrations: InstalledIntegration[]) => void;
   setSelectedIntegration: (
-    integration: AvailableIntegration | InstalledIntegration
+    integration: AvailableIntegration | InstalledIntegration | null
   ) => void;
 }
 

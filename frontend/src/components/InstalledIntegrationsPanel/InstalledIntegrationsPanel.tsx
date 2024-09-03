@@ -1,5 +1,4 @@
 import { InstalledIntegration } from '../../data/dummyInstalledIntegrations';
-import { PlusIcon } from '../Icons/Icons';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useEffect, useState } from 'react';
@@ -46,10 +45,6 @@ const InstalledIntegrationsPanel = () => {
   return (
     <aside className="installed-integrations-container">
       <h3 className="installed-integrations-title">Your Integrations:</h3>
-      <button className="install-integration-btn" type="button">
-        <PlusIcon height={24} width={24} />
-        Install Integration
-      </button>
       <InstalledIntegrationsList
         isLoading={isLoading}
         installedIntegrations={installedIntegrations}

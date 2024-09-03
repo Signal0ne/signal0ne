@@ -34,8 +34,8 @@ const Navbar = () => {
           })}
         </div>
         <div className="navbar-content-actions">
-          <GearIcon height={28} tabIndex={0} width={28} />
-          <AccountIcon height={32} tabIndex={0} width={32} />
+          <GearIcon height={32} tabIndex={0} width={32} />
+          <AccountIcon height={36} tabIndex={0} width={36} />
         </div>
       </>
     ) : (
