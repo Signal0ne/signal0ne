@@ -94,7 +94,7 @@ steps:
 		},
 		Config: Config{
 			Url:    "https://api.pagerduty.com",
-			ApiKey: "e+xxQyZxTCuSoYhtC3Ug",
+			ApiKey: "<paste_api_key_here>",
 		},
 	}
 
