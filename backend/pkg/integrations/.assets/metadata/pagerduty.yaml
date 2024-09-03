@@ -3,5 +3,4 @@ imageUri: ../logos/pagerduty.svg
 config:
   url: string
   apiKey: string
-
   

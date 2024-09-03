@@ -3,5 +3,4 @@ imageUri: ../logos/servicenow.svg
 config:
   url: string
   apiKey: string
-
   
