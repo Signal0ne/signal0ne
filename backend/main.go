@@ -40,6 +40,7 @@ func main() {
 	}
 	defer mongoConn.Disconnect(ctx)
 
+	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
 	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
 	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
 	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
@@ -81,14 +82,20 @@ func main() {
 		namespacesCollection,
 		integrationsCollection,
 		incidentsCollection,
+		alertsCollection,
 		cfg.Server,
-		conn)
+		conn,
+	)
 	integrationsController := controllers.NewIntegrationController(
 		integrationsCollection,
 		namespacesCollection,
 	)
 	incidentController := controllers.NewIncidentController(
 		incidentsCollection,
+		integrationsCollection,
+		alertsCollection,
+		workflowsCollection,
+		conn,
 	)
 	userAuthController := controllers.NewUserAuthController()
 

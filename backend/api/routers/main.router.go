@@ -48,12 +48,12 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 	incidentGroup := rg.Group("/:namespaceid/incident", middlewares.CheckAuthorization)
 	{
 		// All incident types
-		incidentGroup.GET("/:incidentid", r.IncidentController.GetIncident)
 		incidentGroup.POST("/create", r.IncidentController.CreateIncident)
 
 		// Signal0ne incident only
-		incidentGroup.PATCH("/:incidentid")
-		incidentGroup.POST("/:incidentid/register-history-event")
+		incidentGroup.PATCH("/:incidentid", r.IncidentController.UpdateIncident)
+		incidentGroup.GET("/:incidentid", r.IncidentController.GetIncident)
+		incidentGroup.POST("/:incidentid/register-history-event/:updatetype", r.IncidentController.RegisterHistoryEvent)
 	}
 
 	integrationGroup := rg.Group("/:namespaceid/integration", middlewares.CheckAuthorization)

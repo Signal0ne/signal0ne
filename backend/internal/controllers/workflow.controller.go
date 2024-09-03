@@ -37,6 +37,7 @@ type WorkflowController struct {
 	WorkflowsCollection *mongo.Collection
 	PyInterface         net.Conn
 	IncidentsCollection *mongo.Collection
+	AlertsCollection    *mongo.Collection
 	// ==== Use as readonly ====
 	NamespaceCollection    *mongo.Collection
 	IntegrationsCollection *mongo.Collection
@@ -48,6 +49,7 @@ func NewWorkflowController(
 	namespaceCollection *mongo.Collection,
 	integrationsCollection *mongo.Collection,
 	incidentsCollection *mongo.Collection,
+	alertsCollection *mongo.Collection,
 	webhookServerRef config.Server,
 	pyInterface net.Conn) *WorkflowController {
 	return &WorkflowController{
@@ -55,6 +57,7 @@ func NewWorkflowController(
 		NamespaceCollection:    namespaceCollection,
 		IntegrationsCollection: integrationsCollection,
 		IncidentsCollection:    incidentsCollection,
+		AlertsCollection:       alertsCollection,
 		WebhookServerRef:       webhookServerRef,
 		PyInterface:            pyInterface,
 	}
@@ -449,6 +452,13 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 	}
 	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+
+	_, err = c.AlertsCollection.InsertOne(ctx, alert)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+	}
 
 	ctx.JSON(http.StatusOK, nil)
 }
