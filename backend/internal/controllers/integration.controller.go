@@ -47,7 +47,7 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 	integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate["type"].(string)]
 	if !exists {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "cannot find requested integartion",
+			"error": "cannot find requested integration",
 		})
 		return
 	}
@@ -72,7 +72,7 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 	_, err = ic.IntegrationCollection.InsertOne(ctx, integration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": fmt.Sprintf("cannot save intergation config: %v", err),
+			"error": fmt.Sprintf("cannot save integration config: %v", err),
 		})
 		return
 	}

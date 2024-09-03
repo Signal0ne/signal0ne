@@ -72,7 +72,7 @@ const WorkflowStepDetails = () => {
         <h3 className="workflow-step-details-group-header">
           Title
           <div className="workflow-step-details-group-header-icon">
-            {getIntegrationIcon(activeStep?.integration || '')}
+            {getIntegrationIcon(activeStep?.integrationType || '')}
           </div>
         </h3>
         <input

@@ -35,7 +35,7 @@ const WorkflowStep = ({ index, step }: WorkflowStepProps) => {
         tabIndex={0}
       >
         <div className="workflow-step-icon">
-          {getIntegrationIcon(step.integration)}
+          {getIntegrationIcon(step.integrationType)}
         </div>
         <div className="workflow-step-info-container">
           <span className="workflow-step-info-name">{step.name}</span>

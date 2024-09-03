@@ -1,0 +1,38 @@
+version: "3"
+services:
+  frontend:
+    container_name: s0frontend
+    image: 322456/s0frontend:latest
+    ports:
+      - 80:80
+    depends_on:
+      - backend
+
+  backend:
+    container_name: s0backend
+    build:
+      dockerfile: Dockerfile
+      context: ./backend
+    ports:
+      - 8080:8080
+    depends_on:
+      - python-service
+      - mongo-db
+    volumes:
+      - ./sockets:/var/run:rw
+
+  python-service:
+    container_name: python-service
+    build:
+      dockerfile: ./scripts/python_interface/Dockerfile
+      context: ./backend
+    volumes:
+      - ./sockets:/var/run:rw
+
+  mongo-db:
+    container_name: mongodb
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo-data:/data/db
