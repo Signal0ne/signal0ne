@@ -35,6 +35,10 @@ type PagerdutyIntegration struct {
 	Config             `json:",inline" bson:",inline"`
 }
 
+type Note struct {
+	Content string `json:"content"`
+}
+
 func (integration PagerdutyIntegration) Execute(
 	input any,
 	output map[string]string,
@@ -193,10 +197,6 @@ func createIncident(input any, integration any) ([]any, error) {
 	incidentId, _ := incident["incident"].(map[string]any)["id"].(string)
 
 	// Create note for each step from the workflow for the current incident
-	type Note struct {
-		Content string `json:"content"`
-	}
-
 	for _, step := range assertedIntegration.Inventory.WorkflowProperties.Steps {
 		var note = Note{}
 		isDone := true
