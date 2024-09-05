@@ -116,7 +116,7 @@ func postMessage(input any, integration any) (output []any, err error) {
 
 	assertedIntegration := integration.(SlackIntegration)
 
-	fmt.Printf("Executing slack postMessage\n")
+	fmt.Printf("###\nExecuting slack postMessage\n")
 	err = json.Unmarshal([]byte(parsedInput.ParsableContextObject), &parsedAlert)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)

@@ -1,0 +1,7 @@
+typeName: servicenow
+imageUri: ../logos/servicenow.svg
+displayName: ServiceNow
+config:
+  url: string
+  apiKey: string
+  

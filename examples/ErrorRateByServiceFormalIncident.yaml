@@ -7,6 +7,7 @@ trigger:
       service: "job"
       span: "span_name"
       timestamp: "startsAt"
+      category: "category"
 steps:
   - name: Get ownership
     integration: backstage
@@ -69,6 +70,7 @@ steps:
       context: "{{root}}"
     output:
       summary: "summary"
+# ===================================== Signal0ne =====================================
   - name: Create incident
     integration: signal0ne
     function: create_incident
@@ -80,6 +82,13 @@ steps:
       name: "name"
       severity: "severity"
       assignee: "assignee"
+    condition: "{{ if eq .TriggerProperties.category \"core\" }}true{{ else }}false{{ end }}"
+# ===================================== PagerDuty =====================================
+#  - name: Create incident
+# ===================================== ServiceNow =====================================
+#  - name: Create incident
+
+
 # - name: Create slack channel
 #   integration: slack
 #   function: create_channel
