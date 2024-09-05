@@ -18,16 +18,16 @@ import (
 )
 
 type CreateIncidentRequest struct {
-	Integration string `json:"integration"`
 	BaseAlertId string `json:"baseAlertId"`
+	Integration string `json:"integration"`
 }
 
 type IncidentController struct {
+	AlertsCollection       *mongo.Collection
 	IncidentsCollection    *mongo.Collection
 	IntegrationsCollection *mongo.Collection
-	WorkflowsCollection    *mongo.Collection
-	AlertsCollection       *mongo.Collection
 	PyInterface            net.Conn
+	WorkflowsCollection    *mongo.Collection
 }
 
 func NewIncidentController(
@@ -45,22 +45,10 @@ func NewIncidentController(
 	}
 }
 
-func (ic *IncidentController) GetIncident(ctx *gin.Context) {
-	id := ctx.Param("incidentid")
-
-	incident, err := db.GetIncidentById(id, ctx, ic.IncidentsCollection)
-	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "incident not found",
-		})
-		return
-	}
-
-	ctx.JSON(http.StatusOK, incident)
-}
-
 func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
+	var integration any
 	var createIncidentRequest CreateIncidentRequest
+
 	err := ctx.BindJSON(&createIncidentRequest)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -103,8 +91,6 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 		})
 		return
 	}
-
-	var integration any
 
 	switch integrationTemplate.Type {
 	case "pagerduty":
@@ -162,6 +148,20 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 		// Create incident in ServiceNow
 	}
 
+}
+
+func (ic *IncidentController) GetIncident(ctx *gin.Context) {
+	id := ctx.Param("incidentid")
+
+	incident, err := db.GetIncidentById(id, ctx, ic.IncidentsCollection)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "incident not found",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, incident)
 }
 
 func (ic *IncidentController) RegisterHistoryEvent(ctx *gin.Context) {

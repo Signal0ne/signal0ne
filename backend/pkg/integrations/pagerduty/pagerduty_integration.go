@@ -30,9 +30,9 @@ func NewPagerdutyIntegrationInventory(
 }
 
 type PagerdutyIntegration struct {
+	Config             `json:",inline" bson:",inline"`
 	Inventory          PagerdutyIntegrationInventory
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
 }
 
 type Note struct {
@@ -151,9 +151,9 @@ func createIncident(input any, integration any) ([]any, error) {
 	// Create incident
 	var incidentBody = map[string]any{
 		"incident": map[string]any{
-			"type":    parsedInput.Type,
-			"title":   parsedInput.Title,
 			"service": service,
+			"title":   parsedInput.Title,
+			"type":    parsedInput.Type,
 		},
 	}
 
