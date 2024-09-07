@@ -15,6 +15,7 @@ import (
 	"signal0ne/pkg/integrations"
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/confluence"
 	"signal0ne/pkg/integrations/github"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
@@ -312,6 +313,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		switch integrationTemplate.Type {
 		case "alertmanager":
 			integration = &alertmanager.AlertmanagerIntegration{}
+		case "confluence":
+			integration = &confluence.ConfluenceIntegration{}
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
 		case "github":
@@ -424,6 +427,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		if tools.EvaluateCondition(step.Condition, alert) {
 			switch i := integration.(type) {
 			case *backstage.BackstageIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *confluence.ConfluenceIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *github.GithubIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)

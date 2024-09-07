@@ -20,7 +20,7 @@ func Test_GetFileContent(t *testing.T) {
 			Type: "github",
 		},
 		Config: Config{
-			ApiKey: "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",
+			ApiKey: "<your api key here>",
 		},
 	}
 

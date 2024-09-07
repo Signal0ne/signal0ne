@@ -1,0 +1,6 @@
+typeName: confluence
+imageUri: ../logos/confluence.svg
+displayName: Confluence
+config:
+  email: string
+  apiKey: secret
