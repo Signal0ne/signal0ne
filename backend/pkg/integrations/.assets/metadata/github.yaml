@@ -1,0 +1,5 @@
+typeName: github
+imageUri: ../logos/github.svg
+displayName: GitHub
+config:
+  apiKey: secret

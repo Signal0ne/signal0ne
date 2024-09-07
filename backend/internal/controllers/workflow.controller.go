@@ -15,6 +15,7 @@ import (
 	"signal0ne/pkg/integrations"
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/github"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
@@ -313,6 +314,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &alertmanager.AlertmanagerIntegration{}
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
+		case "github":
+			integration = &github.GithubIntegration{}
 		case "jaeger":
 			inventory := jaeger.NewJaegerIntegrationInventory(
 				c.PyInterface,
@@ -421,6 +424,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		if tools.EvaluateCondition(step.Condition, alert) {
 			switch i := integration.(type) {
 			case *backstage.BackstageIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *github.GithubIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *pagerduty.PagerdutyIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)

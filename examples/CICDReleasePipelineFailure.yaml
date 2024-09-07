@@ -1,0 +1,45 @@
+---
+name: ErrorRateByService
+lookback: 5m
+trigger:
+  webhook:
+    output:
+      repository_name: "workflow_run.head_repository.full_name"
+      logs_url: "workflow_run.logs_url"
+      content_url: "workflow_run.head_repository.contents_url"
+      status: "workflow_run.conclusion"
+      commit: "workflow_run.head_commit.id"
+steps:
+  - name: Inspect pipeline logs
+    integration: github
+    function: get-content
+    input:
+      content_url: "{{.TriggerProperties.logs_url}}"
+      type: "logs"
+    output:
+      content: "content"
+    condition: "{{.TriggerProperties.status != 'success' && .TriggerProperties.logs_url != ''}}"
+  - name: Get pipeline definition
+    integration: github
+    function: get-content
+    input:
+      content_url: "{{.TriggerProperties.content_url}}"
+      type: "file"
+      path: "/.github/workflows/release.yaml"
+    output:
+      content: "content"
+  - name: Search for runbooks and wiki pages
+    integration: confluence
+    function: search
+    input:
+      query: "Error rate"
+    output:
+      page: "page"
+  - name: Propose issue resolution
+    integration: openai
+    function: propose_resolution_steps
+    input:
+      issue_logs: "{{ (index .AdditionalContext.github_get_workflow_run_logs).Output 0).logs}}"
+      additional_context: "{{}}" # Stuff like doc pages or runbooks
+    output:
+      content: "content"

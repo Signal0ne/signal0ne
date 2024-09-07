@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/github"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
@@ -27,6 +28,7 @@ var globalErrorHandle error = nil
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"alertmanager": reflect.TypeOf(alertmanager.AlertmanagerIntegration{}),
 	"backstage":    reflect.TypeOf(backstage.BackstageIntegration{}),
+	"github":       reflect.TypeOf(github.GithubIntegration{}),
 	"jaeger":       reflect.TypeOf(jaeger.JaegerIntegration{}),
 	"openai":       reflect.TypeOf(openai.OpenaiIntegration{}),
 	"opensearch":   reflect.TypeOf(opensearch.OpenSearchIntegration{}),

@@ -85,27 +85,32 @@ steps:
     condition: "{{ if eq .TriggerProperties.category \"core\" }}true{{ else }}false{{ end }}"
 # ===================================== PagerDuty =====================================
 #  - name: Create incident
-# ===================================== ServiceNow =====================================
-#  - name: Create incident
-
-
-# - name: Create slack channel
-#   integration: slack
-#   function: create_channel
-#   input:
-#     channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
-#     is_private: "false"
-# - name: Add all stakeholders
-#   integration: slack
-#   function: add_users_to_channel
-#   input:
-#     user_handles: "{{range .AdditionalContext.backstage_get_properties_values.Output}}{{.owner}},{{end}}"
-#     channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
-# - name: Send to slack channel
-#   integration: slack
-#   function: post_message
-#   input:
-#     slack_channel: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
-#     parsable_context_object: "{{root}}"
-#     post_message_payload: "{{ .TriggerProperties }}"
+#    integration: pagerduty
+#    function: create_incident
+#    input:
+#      type: "incident"
+#      title: "Error rate by service"
+#      service_name: "{{.TriggerProperties.service}}"
+#      parsable_context_object: "{{root}}"
+#    condition: "{{ if eq .TriggerProperties.category \"core\" }}true{{ else }}false{{ end }}"
+# =====================================  =====================================
+  - name: Create slack channel
+    integration: slack
+    function: create_channel
+    input:
+      channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
+      is_private: "false"
+  - name: Add all stakeholders
+    integration: slack
+    function: add_users_to_channel
+    input:
+      user_handles: "{{range .AdditionalContext.backstage_get_properties_values.Output}}{{.owner}},{{end}}"
+      channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
+  - name: Send message to slack channel
+    integration: slack
+    function: post_message
+    input:
+      slack_channel: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
+      parsable_context_object: "{{root}}"
+      post_message_payload: "{{ .TriggerProperties }}"
 
