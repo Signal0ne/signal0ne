@@ -452,7 +452,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			localErrorMessage = fmt.Sprintf("%v", err)
 		}
 
-		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Function)] = models.Outputs{
+		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = models.Outputs{
 			Output: execResult,
 		}
 	}

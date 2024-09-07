@@ -7,6 +7,7 @@ export interface IWorkflowStep {
   integration: string;
   integrationType: string;
   name: string;
+  displayName?: string;
   output?: {
     [key: string]: string;
   };
@@ -14,16 +15,16 @@ export interface IWorkflowStep {
 
 export type IWorkflowTrigger =
   | {
-      webhook: {
-        output: Record<string, string>;
-      };
-    }
-  | {
-      scheduled: {
-        interval: string;
-        output: Record<string, string>;
-      };
+    webhook: {
+      output: Record<string, string>;
     };
+  }
+  | {
+    scheduled: {
+      interval: string;
+      output: Record<string, string>;
+    };
+  };
 
 export interface Workflow {
   description: string;

@@ -79,6 +79,15 @@ const WorkflowStepDetails = () => {
           className="workflow-step-input"
           readOnly
           type="text"
+          value={activeStep?.displayName || ''}
+        />
+      </div>
+      <div className="workflow-step-details-group title">
+        <h3 className="workflow-step-details-group-header">Name</h3>
+        <input
+          className="workflow-step-input"
+          readOnly
+          type="text"
           value={activeStep?.name || ''}
         />
       </div>

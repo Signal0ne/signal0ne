@@ -21,7 +21,7 @@ type GithubIntegration struct {
 }
 
 var functions = map[string]models.WorkflowFunctionDefinition{
-	"get-content": models.WorkflowFunctionDefinition{
+	"get_content": models.WorkflowFunctionDefinition{
 		Function: getContent,
 		Input:    GetFileContentInput{},
 	},
@@ -82,7 +82,7 @@ func getContent(input any, integration any) ([]any, error) {
 	var parsedInput GetFileContentInput
 	var output []any
 
-	err := helpers.ValidateInputParameters(input, &parsedInput, "get-content")
+	err := helpers.ValidateInputParameters(input, &parsedInput, "get_content")
 	if err != nil {
 		return output, err
 	}

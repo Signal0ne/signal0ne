@@ -10,36 +10,40 @@ trigger:
       status: "workflow_run.conclusion"
       commit: "workflow_run.head_commit.id"
 steps:
-  - name: Inspect pipeline logs
+  - displayName: Inspect pipeline logs
+    name: inspect-logs
     integration: github
-    function: get-content
+    function: get_content
     input:
       content_url: "{{.TriggerProperties.logs_url}}"
       type: "logs"
     output:
       content: "content"
     condition: "{{.TriggerProperties.status != 'success' && .TriggerProperties.logs_url != ''}}"
-  - name: Get pipeline definition
+  - displayName: Get pipeline definition
+    name: get-pipeline-definition
     integration: github
-    function: get-content
+    function: get_content
     input:
       content_url: "{{.TriggerProperties.content_url}}"
       type: "file"
       path: "/.github/workflows/release.yaml"
     output:
       content: "content"
-  - name: Search for runbooks and wiki pages
+  - displayName: Search for runbooks and wiki pages
+    name: search-runbooks
     integration: confluence
     function: search
     input:
       query: "Error rate"
     output:
       page: "page"
-  - name: Propose issue resolution
+  - displayName: Propose issue resolution
+    name: propose-resolution
     integration: openai
     function: propose_resolution_steps
     input:
-      issue_logs: "{{ (index .AdditionalContext.github_get_workflow_run_logs).Output 0).logs}}"
+      issue_logs: "{{ (index .AdditionalContext.github_inspect-logs.Output 0).logs}}"
       additional_context: "{{}}" # Stuff like doc pages or runbooks
     output:
       content: "content"
