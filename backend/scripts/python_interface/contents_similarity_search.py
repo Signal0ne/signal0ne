@@ -10,6 +10,7 @@ def contents_similarity(similarityCase: str, contents: list) -> list:
 
     for content in contents:
         cos_sim = enc.predict([(similarityCase, content)])
+        print("cos_sim: ", cos_sim)
         if cos_sim[0] > 0.3:
             contents_search_results.append(content)
 

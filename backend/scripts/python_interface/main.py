@@ -85,9 +85,11 @@ def main():
                     if command == "contents_similarity":
                         result = contents_similarity(params["similarityCase"], params["contents"])
                         parsedResult = json.dumps(result)
+                        print("RESULT", parsedResult)
                         responseTemplate = json.dumps({"status":"0", "result":parsedResult})
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         print("Success!!!")
+                        connection.sendall(response)
                     if command == "ping":
                         result = ping(1)
                         responseTemplate = json.dumps({"status":"0", "result":result})

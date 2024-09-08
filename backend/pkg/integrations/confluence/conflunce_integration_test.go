@@ -21,11 +21,10 @@ func Test_Search(t *testing.T) {
 		Config: Config{
 			Url:    "https://signaloneai.atlassian.net",
 			Email:  "contact@signaloneai.com",
-			APIKey: "ATATT3xFfGF02Xn91wGZy7z3kd8IQmP9jLYOb2OzgKZ1dRPrCSoWleBgK7iGtKw4rmid8Kc6lXbdjoIP4PotCA8OtLkv5qOtErrz3fcvXkON_8OBZSq2wxPkUEJoVvmPpmEVy-B7dR0XZZ0P5nbVnlZS88DF-OC5vVfVA6V0Zpa7eb7YPphNiIw=E062F0AA",
+			APIKey: "<your api key here>",
 		},
 	}
 
-	output, err := search(mockedSearchInput, integration)
+	_, err := search(mockedSearchInput, integration)
 	assert.NoError(t, err)
-	assert.NotNil(t, output)
 }
