@@ -314,7 +314,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		case "alertmanager":
 			integration = &alertmanager.AlertmanagerIntegration{}
 		case "confluence":
-			integration = &confluence.ConfluenceIntegration{}
+			inventory := confluence.NewConfluenceIntegrationInventory(
+				c.PyInterface,
+			)
+			integration = &confluence.ConfluenceIntegration{
+				Inventory: inventory,
+			}
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
 		case "github":

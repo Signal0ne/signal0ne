@@ -8,6 +8,7 @@ import traceback
 
 from get_log_occurrences import log_occurrences
 from correlate_ongoing_alerts import correlate_ongoing_alerts
+from contents_similarity_search import contents_similarity
 from ping import ping
 
 logging.basicConfig(
@@ -62,6 +63,7 @@ def main():
             if len(payload) >= int(payloadBatchBuffer):
                 data = json.loads(payload)
                 command = data["command"]
+                print("Command: ", command)
                 params = data["params"]
 
             
@@ -80,6 +82,12 @@ def main():
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         print("Success!!!")
                         connection.sendall(response)    
+                    if command == "contents_similarity":
+                        result = contents_similarity(params["similarityCase"], params["contents"])
+                        parsedResult = json.dumps(result)
+                        responseTemplate = json.dumps({"status":"0", "result":parsedResult})
+                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                        print("Success!!!")
                     if command == "ping":
                         result = ping(1)
                         responseTemplate = json.dumps({"status":"0", "result":result})
