@@ -35,7 +35,8 @@ steps:
     integration: confluence
     function: search
     input:
-      query: "Error rate"
+      query: "type=page and (text~build)"
+      similarity_case: "{{.AdditionalContext.github_inspect-logs.Output}}"
     output:
       page: "page"
   - displayName: Propose issue resolution

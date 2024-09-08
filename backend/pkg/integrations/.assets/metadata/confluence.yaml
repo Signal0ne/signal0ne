@@ -2,5 +2,6 @@ typeName: confluence
 imageUri: ../logos/confluence.svg
 displayName: Confluence
 config:
+  url: string
   email: string
   apiKey: secret
