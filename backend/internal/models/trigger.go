@@ -6,7 +6,8 @@ type Trigger struct {
 }
 
 type WebhookTrigger struct {
-	Webhook Webhook `json:"webhook"`
+	Webhook   Webhook `json:"webhook"`
+	Condition string  `json:"condition"`
 }
 
 type Webhook struct {

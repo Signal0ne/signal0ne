@@ -7,8 +7,10 @@ trigger:
       repository_name: "workflow_run.head_repository.full_name"
       logs_url: "workflow_run.logs_url"
       content_url: "workflow_run.head_repository.contents_url"
-      status: "workflow_run.conclusion"
+      result: "workflow_run.conclusion"
+      status: "workflow_run.status"
       commit: "workflow_run.head_commit.id"
+    condition: "{{result != 'success' && status == 'completed'}}"
 steps:
   - displayName: Inspect pipeline logs
     name: inspect-logs

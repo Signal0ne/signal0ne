@@ -17,6 +17,7 @@ export type IWorkflowTrigger =
   | {
     webhook: {
       output: Record<string, string>;
+      condition?: string;
     };
   }
   | {

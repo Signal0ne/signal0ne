@@ -11,8 +11,7 @@ func Test_Search(t *testing.T) {
 	mockConn := utils.ConnectToSocket()
 	defer mockConn.Close()
 	mockedSearchInput := map[string]string{
-		"query":           "title~build",
-		"similarity_case": "2024-09-07T18:30:19.6825159Z ##[error]Username and password required",
+		"query": "title~build",
 	}
 
 	inventory := NewConfluenceIntegrationInventory(mockConn)
