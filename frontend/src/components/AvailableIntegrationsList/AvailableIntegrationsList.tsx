@@ -8,19 +8,15 @@ interface AvailableIntegrationsListProps {
 
 const AvailableIntegrationsList = ({
   availableIntegrations
-}: AvailableIntegrationsListProps) => {
-  // const { availableIntegrations } = useIntegrationsContext();
-
-  return (
-    <ul className="available-integrations-list">
-      {availableIntegrations.map(integration => (
-        <AvailableIntegrationsListItem
-          integration={integration}
-          key={integration.type}
-        />
-      ))}
-    </ul>
-  );
-};
+}: AvailableIntegrationsListProps) => (
+  <ul className="available-integrations-list">
+    {availableIntegrations.map(integration => (
+      <AvailableIntegrationsListItem
+        integration={integration}
+        key={integration.type}
+      />
+    ))}
+  </ul>
+);
 
 export default AvailableIntegrationsList;

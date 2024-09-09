@@ -34,6 +34,35 @@ func NewIntegrationController(
 	}
 }
 
+func (ic *IntegrationController) GetIntegration(ctx *gin.Context) {
+	var integration InstalledIntegration
+	var namespace *models.Namespace
+
+	integrationId := ctx.Param("integrationid")
+	namespaceId := ctx.Param("namespaceid")
+
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := ic.NamespaceCollection.FindOne(ctx, primitive.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find namespace: %v", err),
+		})
+		return
+	}
+
+	integID, _ := primitive.ObjectIDFromHex(integrationId)
+	err = ic.IntegrationCollection.FindOne(ctx, primitive.M{"_id": integID, "namespaceId": namespaceId}).Decode(&integration)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find integration: %v", err),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"integration": integration})
+}
+
 func (ic *IntegrationController) GetInstallableIntegrations(ctx *gin.Context) {
 	var integrationsList []map[string]any
 
@@ -169,7 +198,7 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, integration)
 }
 
-func (ic *IntegrationController) Update(ctx *gin.Context) {
+func (ic *IntegrationController) UpdateIntegration(ctx *gin.Context) {
 	var integrationTemplate map[string]interface{}
 	var namespace *models.Namespace
 

@@ -1,4 +1,3 @@
-
 import { createContext, ReactNode, useState } from 'react';
 
 export interface Integration {
@@ -10,11 +9,11 @@ export interface Integration {
 }
 
 export interface IntegrationsContextType {
-  availableIntegrations: Integration[];
   installedIntegrations: Integration[];
+  isModalOpen: boolean;
   selectedIntegration: Integration | null;
-  setAvailableIntegrations: (integrations: Integration[]) => void;
   setInstalledIntegrations: (integrations: Integration[]) => void;
+  setIsModalOpen: (isOpen: boolean) => void;
   setSelectedIntegration: (integration: Integration | null) => void;
 }
 
@@ -29,21 +28,19 @@ const IntegrationsContext = createContext<IntegrationsContextType | undefined>(
 export const IntegrationsProvider = ({
   children
 }: IntegrationsProviderProps) => {
-  const [availableIntegrations, setAvailableIntegrations] = useState<
-    Integration[]
-  >([]);
   const [installedIntegrations, setInstalledIntegrations] = useState<
     Integration[]
   >([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIntegration, setSelectedIntegration] =
     useState<Integration | null>(null);
 
   const VALUE = {
-    availableIntegrations,
     installedIntegrations,
+    isModalOpen,
     selectedIntegration,
-    setAvailableIntegrations,
     setInstalledIntegrations,
+    setIsModalOpen,
     setSelectedIntegration
   };
 

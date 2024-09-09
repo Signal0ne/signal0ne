@@ -62,8 +62,8 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		integrationGroup.GET("/installable", r.IntegrationController.GetInstallableIntegrations)
 		integrationGroup.GET("/installed", r.IntegrationController.GetInstalledIntegrations)
 		integrationGroup.DELETE("/:integrationid")
-		integrationGroup.GET("/:integrationid")
-		integrationGroup.PATCH("/:integrationid", r.IntegrationController.Update)
+		integrationGroup.GET("/:integrationid", r.IntegrationController.GetIntegration)
+		integrationGroup.PATCH("/:integrationid", r.IntegrationController.UpdateIntegration)
 	}
 
 	namespaceGroup := rg.Group("/namespace")
