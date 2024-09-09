@@ -20,7 +20,7 @@ func Test_Search(t *testing.T) {
 		Config: Config{
 			Url:    "https://signaloneai.atlassian.net",
 			Email:  "contact@signaloneai.com",
-			APIKey: "<your api key here>",
+			ApiKey: "<your api key here>",
 		},
 	}
 

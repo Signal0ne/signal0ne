@@ -99,7 +99,7 @@ func search(input any, integration any) ([]any, error) {
 
 	//Hardcoded limit for UX readability reasons
 	url := fmt.Sprintf("%s/wiki/rest/api/content/search?limit=6&expand=body.view&cql=%s", assertedIntegration.Url, parsedInput.Query)
-	basicCredentials := base64.RawStdEncoding.EncodeToString([]byte(assertedIntegration.Email + ":" + assertedIntegration.APIKey))
+	basicCredentials := base64.RawStdEncoding.EncodeToString([]byte(assertedIntegration.Email + ":" + assertedIntegration.ApiKey))
 
 	contents, err := getPageContent(url, basicCredentials)
 	if err != nil {
@@ -118,7 +118,6 @@ func search(input any, integration any) ([]any, error) {
 	}
 
 	return output, nil
-
 }
 
 func (integration ConfluenceIntegration) compareContent(contents []string, similarityCase string) ([]string, error) {
@@ -131,6 +130,7 @@ func (integration ConfluenceIntegration) compareContent(contents []string, simil
 			"contents":       contents,
 		},
 	}
+
 	payloadBytes, err := json.Marshal(pyInterfacePayload)
 	if err != nil {
 		return similarContents, err
@@ -150,24 +150,27 @@ func (integration ConfluenceIntegration) compareContent(contents []string, simil
 	if err != nil {
 		return similarContents, err
 	}
+
 	size := binary.BigEndian.Uint32(headerBuffer)
 
 	payloadBuffer := make([]byte, size)
-	n, err := integration.Inventory.PyInterface.Read(payloadBuffer)
+	numberOfBytesSent, err := integration.Inventory.PyInterface.Read(payloadBuffer)
 	if err != nil {
 		return similarContents, err
 	}
 
 	var intermediateOutput map[string]any
-	err = json.Unmarshal(payloadBuffer[:n], &intermediateOutput)
+	err = json.Unmarshal(payloadBuffer[:numberOfBytesSent], &intermediateOutput)
 	if err != nil {
 		return similarContents, err
 	}
+
 	statusCode, exists := intermediateOutput["status"].(string)
 	if !exists || statusCode != "0" {
 		errorMsg, _ := intermediateOutput["error"].(string)
 		return similarContents, fmt.Errorf("cannot retrieve results %s", errorMsg)
 	}
+
 	resultsEncoded, exists := intermediateOutput["result"].(string)
 	if !exists {
 		return similarContents, fmt.Errorf("cannot retrieve results")
