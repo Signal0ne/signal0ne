@@ -1,8 +1,6 @@
-typeName: opensearch
-displayName: OpenSearch
+type: opensearch
+name: OpenSearch
 imageUri: '../logos/opensearch.svg'
 config:
-  host: string
+  url: url
   index: string
-  port: string
-  ssl: boolean

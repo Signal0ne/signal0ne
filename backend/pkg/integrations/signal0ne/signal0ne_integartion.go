@@ -43,7 +43,7 @@ func NewSignal0neIntegrationInventory(
 type Signal0neIntegration struct {
 	Inventory          Signal0neIntegrationInventory
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 func (integration Signal0neIntegration) Execute(

@@ -13,7 +13,7 @@ import (
 
 type OpenaiIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 var functions = map[string]models.WorkflowFunctionDefinition{

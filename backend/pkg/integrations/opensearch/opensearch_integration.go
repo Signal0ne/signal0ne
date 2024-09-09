@@ -37,7 +37,7 @@ func NewOpenSearchIntegrationInventory(pyInterface net.Conn) OpenSearchIntegrati
 type OpenSearchIntegration struct {
 	Inventory          OpenSearchIntegrationInventory
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 func (integration OpenSearchIntegration) Execute(
@@ -63,12 +63,12 @@ func (integration OpenSearchIntegration) Execute(
 }
 
 func (integration OpenSearchIntegration) Validate() error {
-	if integration.Config.Host == "" {
-		return fmt.Errorf("host cannot be empty")
+	if integration.Config.Url == "" {
+		return fmt.Errorf("url cannot be empty")
 	}
 
-	if integration.Config.Port == "" {
-		return fmt.Errorf("port cannot be empty")
+	if integration.Config.Index == "" {
+		return fmt.Errorf("index cannot be empty")
 	}
 
 	return nil
@@ -116,7 +116,7 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 
 	client, err := opensearch.NewClient(opensearch.Config{
 		Addresses: []string{
-			fmt.Sprintf("http://%s:%s", assertedIntegration.Host, assertedIntegration.Port),
+			assertedIntegration.Url,
 		},
 	})
 	if err != nil {
@@ -226,5 +226,4 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 	}
 
 	return output, nil
-
 }

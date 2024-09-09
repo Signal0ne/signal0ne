@@ -5,9 +5,8 @@
 Create yaml file with following format `<integration_name>.yaml` in the
 `pkg/integrations/.assets/metadata` directory
 
-File should contain fields `typeName`(unique), `imageUri` with uri to the
-integrated tool logo and `config` with demanded config field for integration to
-work
+File should contain fields `type`(unique), `imageUri` with uri to the integrated
+tool logo and `config` with demanded config field for integration to work
 
 ## Integration root creation
 
@@ -32,5 +31,5 @@ located in `pkg/integrations/load.go`
 ## Integration functions(Use pkg/integrations/.template integration as reference)
 
 Implement functions provided by integration. Insert them to the
-`functions map[string]models.WorkflowFunctionDefinition` with proper
-function name as key.
+`functions map[string]models.WorkflowFunctionDefinition` with proper function
+name as key.

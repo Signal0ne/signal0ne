@@ -32,8 +32,7 @@ func Test_PostMessage(t *testing.T) {
 			AlertTitle: "Test Alert",
 		},
 		Config: Config{
-			Host:        "localhost",
-			Port:        "8091",
+			Url:         "localhost:8091",
 			WorkspaceID: "workspace_123",
 		},
 	}

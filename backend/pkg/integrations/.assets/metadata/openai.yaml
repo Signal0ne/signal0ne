@@ -1,6 +1,6 @@
-typeName: openai
-displayName: OpenAI
+type: openai
+name: OpenAI
 imageUri: '../logos/openai.svg'
 config:
-  apiKey: string
+  apiKey: secret
   model: string

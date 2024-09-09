@@ -30,6 +30,15 @@ export const getFormattedFormLabel = (fieldLabel: string) => {
   }
 };
 
+export const getInputType = (fieldLabel: string) => {
+  switch (fieldLabel) {
+    case 'apiKey':
+      return 'password';
+    default:
+      return 'text';
+  }
+};
+
 export const getIntegrationGradientColor = (integrationName: string) => {
   switch (integrationName) {
     case 'alertmanager':

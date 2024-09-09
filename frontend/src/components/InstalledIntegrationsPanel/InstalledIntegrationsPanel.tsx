@@ -1,17 +1,19 @@
-import { InstalledIntegration } from '../../data/dummyInstalledIntegrations';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
-import { useEffect, useState } from 'react';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import InstalledIntegrationsList from '../InstalledIntegrationsList/InstalledIntegrationsList';
+import SearchInput from '../SearchInput/SearchInput';
 import './InstalledIntegrationsPanel.scss';
 
 interface GetInstalledIntegrationsResponse {
-  installedIntegrations: InstalledIntegration[];
+  installedIntegrations: Integration[];
 }
 
 const InstalledIntegrationsPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   const { namespaceId } = useAuthContext();
   const { installedIntegrations, setInstalledIntegrations } =
@@ -32,7 +34,6 @@ const InstalledIntegrationsPanel = () => {
 
         setInstalledIntegrations(data.installedIntegrations);
       } catch (error) {
-        console.error('Error fetching installed integrations:', error);
         toast.error('Cannot fetch installed integrations');
       } finally {
         setIsLoading(false);
@@ -42,12 +43,30 @@ const InstalledIntegrationsPanel = () => {
     fetchInstalledIntegrations();
   }, [namespaceId, setInstalledIntegrations]);
 
+  const handleSearch = (e: ChangeEvent) => {
+    const target = e.target as HTMLInputElement;
+    setSearch(target.value);
+  };
+
+  const FILTERED_INSTALLED_INTEGRATIONS = useMemo(
+    () =>
+      installedIntegrations.filter(integration =>
+        integration.name?.toLowerCase().includes(search.trim().toLowerCase())
+      ),
+    [installedIntegrations, search]
+  );
+
   return (
     <aside className="installed-integrations-container">
       <h3 className="installed-integrations-title">Your Integrations:</h3>
+      <SearchInput
+        onChange={handleSearch}
+        placeholder="Search for Integration..."
+        value={search}
+      />
       <InstalledIntegrationsList
         isLoading={isLoading}
-        installedIntegrations={installedIntegrations}
+        installedIntegrations={FILTERED_INSTALLED_INTEGRATIONS}
       />
     </aside>
   );

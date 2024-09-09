@@ -25,10 +25,8 @@ func Test_GetLogOccurrences(t *testing.T) {
 	integration := OpenSearchIntegration{
 		Inventory: inventory,
 		Config: Config{
-			Host:  "20.127.192.216",
 			Index: "otel",
-			Port:  "9200",
-			Ssl:   false,
+			Url:   "20.127.192.216:9200",
 		},
 	}
 

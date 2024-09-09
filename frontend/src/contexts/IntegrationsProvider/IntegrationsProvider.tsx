@@ -1,22 +1,21 @@
-import {
-  AvailableIntegration,
-  DUMMY_AVAILABLE_INTEGRATIONS
-} from '../../data/dummyAvailableIntegrations';
+
 import { createContext, ReactNode, useState } from 'react';
-import {
-  DUMMY_INSTALLED_INTEGRATIONS,
-  InstalledIntegration
-} from '../../data/dummyInstalledIntegrations';
+
+export interface Integration {
+  config: Record<string, string> | null;
+  id?: string;
+  imageUri: string;
+  name: string;
+  type: string;
+}
 
 export interface IntegrationsContextType {
-  availableIntegrations: AvailableIntegration[];
-  installedIntegrations: InstalledIntegration[];
-  selectedIntegration: AvailableIntegration | InstalledIntegration | null;
-  setAvailableIntegrations: (integrations: AvailableIntegration[]) => void;
-  setInstalledIntegrations: (integrations: InstalledIntegration[]) => void;
-  setSelectedIntegration: (
-    integration: AvailableIntegration | InstalledIntegration | null
-  ) => void;
+  availableIntegrations: Integration[];
+  installedIntegrations: Integration[];
+  selectedIntegration: Integration | null;
+  setAvailableIntegrations: (integrations: Integration[]) => void;
+  setInstalledIntegrations: (integrations: Integration[]) => void;
+  setSelectedIntegration: (integration: Integration | null) => void;
 }
 
 interface IntegrationsProviderProps {
@@ -31,14 +30,13 @@ export const IntegrationsProvider = ({
   children
 }: IntegrationsProviderProps) => {
   const [availableIntegrations, setAvailableIntegrations] = useState<
-    AvailableIntegration[]
-  >(DUMMY_AVAILABLE_INTEGRATIONS);
+    Integration[]
+  >([]);
   const [installedIntegrations, setInstalledIntegrations] = useState<
-    InstalledIntegration[]
-  >(DUMMY_INSTALLED_INTEGRATIONS);
-  const [selectedIntegration, setSelectedIntegration] = useState<
-    AvailableIntegration | InstalledIntegration | null
-  >(null);
+    Integration[]
+  >([]);
+  const [selectedIntegration, setSelectedIntegration] =
+    useState<Integration | null>(null);
 
   const VALUE = {
     availableIntegrations,

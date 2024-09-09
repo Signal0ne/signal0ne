@@ -1,5 +1,5 @@
 import { checkDisplayScrollOffset } from '../../utils/utils';
-import { InstalledIntegration } from '../../data/dummyInstalledIntegrations';
+import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import InstalledIntegrationsListItem from '../InstalledIntegrationsListItem/InstalledIntegrationsListItem';
@@ -7,13 +7,13 @@ import Spinner from '../Spinner/Spinner';
 import './InstalledIntegrationsList.scss';
 
 interface InstalledIntegrationsListProps {
-  installedIntegrations: InstalledIntegration[];
+  installedIntegrations: Integration[];
   isLoading: boolean;
 }
 
 const InstalledIntegrationsList = ({
-  isLoading,
-  installedIntegrations
+  installedIntegrations,
+  isLoading
 }: InstalledIntegrationsListProps) => {
   const [shouldDisplayScrollOffset, setShouldDisplayScrollOffset] =
     useState(false);
@@ -43,14 +43,14 @@ const InstalledIntegrationsList = ({
         installedIntegrations.map(integration => (
           <InstalledIntegrationsListItem
             integration={integration}
-            key={integration.name}
+            key={integration.id}
           />
         ))
       ) : (
         <p className="installed-integrations-list--empty">
           No installed integrations found
           <span className="helpful-msg">
-            Click the button above to install one
+            Select desired integrations from the list on the right to install
           </span>
         </p>
       )}

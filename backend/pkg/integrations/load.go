@@ -23,13 +23,13 @@ var installableIntegrationsLib = map[string]map[string]any{}
 var globalErrorHandle error = nil
 
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
+	"alertmanager": reflect.TypeOf(alertmanager.AlertmanagerIntegration{}),
 	"backstage":    reflect.TypeOf(backstage.BackstageIntegration{}),
 	"jaeger":       reflect.TypeOf(jaeger.JaegerIntegration{}),
+	"openai":       reflect.TypeOf(openai.OpenaiIntegration{}),
 	"opensearch":   reflect.TypeOf(opensearch.OpenSearchIntegration{}),
 	"signal0ne":    reflect.TypeOf(signal0ne.Signal0neIntegration{}),
 	"slack":        reflect.TypeOf(slack.SlackIntegration{}),
-	"alertmanager": reflect.TypeOf(alertmanager.AlertmanagerIntegration{}),
-	"openai":       reflect.TypeOf(openai.OpenaiIntegration{}),
 }
 
 func GetInstallableIntegrationsLib() (map[string]map[string]any, error) {
@@ -50,7 +50,7 @@ func GetInstallableIntegrationsLib() (map[string]map[string]any, error) {
 				if err != nil {
 					fmt.Printf("Warning: failed to read integration metadata from: %s, error: %s", integrationMDFSObject.Name(), err)
 				}
-				installableIntegrationsLib[integration["typeName"].(string)] = integration
+				installableIntegrationsLib[integration["type"].(string)] = integration
 			}
 		}
 	})

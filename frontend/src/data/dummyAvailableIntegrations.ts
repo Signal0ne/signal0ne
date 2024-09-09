@@ -1,44 +1,40 @@
-export interface AvailableIntegration {
-  config: Record<string, unknown> | null;
-  displayName: string;
-  imageUri: string;
-  typeName: string;
-}
+import { Integration } from '../contexts/IntegrationsProvider/IntegrationsProvider';
 
-export const DUMMY_AVAILABLE_INTEGRATIONS: AvailableIntegration[] = [
+
+export const DUMMY_AVAILABLE_INTEGRATIONS: Integration[] = [
   {
     config: {
       apiKey: 'string',
       host: 'string',
       port: 'string'
     },
-    displayName: 'Backstage',
     imageUri: '../logos/backstage.svg',
-    typeName: 'backstage'
+    name: 'Backstage',
+    type: 'backstage'
   },
   {
     config: {
       host: 'string',
       port: 'string'
     },
-    displayName: 'Jaeger',
     imageUri: '../logos/jaeger.svg',
-    typeName: 'jaeger'
+    name: 'Jaeger',
+    type: 'jaeger'
   },
   {
     config: {
       host: 'string',
       port: 'string'
     },
-    displayName: 'Alertmanager',
     imageUri: '../logos/alertmanager.svg',
-    typeName: 'alertmanager'
+    name: 'Alertmanager',
+    type: 'alertmanager'
   },
   {
     config: null,
-    displayName: 'Signal0ne',
     imageUri: '../logos/signal0ne.svg',
-    typeName: 'signal0ne'
+    name: 'Signal0ne',
+    type: 'signal0ne'
   },
   {
     config: {
@@ -46,8 +42,8 @@ export const DUMMY_AVAILABLE_INTEGRATIONS: AvailableIntegration[] = [
       port: 'string',
       workspaceId: 'string'
     },
-    displayName: 'Slack',
     imageUri: '../logos/slack.svg',
-    typeName: 'slack'
+    name: 'Slack',
+    type: 'slack'
   }
 ];

@@ -12,6 +12,7 @@ type IIntegration interface {
 }
 
 type Integration struct {
+	Id          string `json:"id" bson:"_id"`
 	Name        string `json:"name" bson:"name"`
 	NamespaceId string `json:"namespaceId" bson:"namespaceId"`
 	Type        string `json:"type" bson:"type"`

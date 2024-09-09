@@ -1,6 +1,5 @@
-typeName: jaeger
-displayName: Jaeger
+type: jaeger
+name: Jaeger
 imageUri: ../logos/jaeger.svg
 config:
-  host: string
-  port: string
+  url: url

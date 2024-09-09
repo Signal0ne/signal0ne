@@ -1,10 +1,10 @@
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import { InstalledIntegration } from '../../data/dummyInstalledIntegrations';
+import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import './InstalledIntegrationsListItem.scss';
 
 interface InstalledIntegrationsListItemProps {
-  integration: InstalledIntegration;
+  integration: Integration;
 }
 
 const InstalledIntegrationsListItem = ({

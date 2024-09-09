@@ -1,9 +1,9 @@
-import { AvailableIntegration } from '../../data/dummyAvailableIntegrations';
+import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import AvailableIntegrationsListItem from '../AvailableIntegrationsListItem/AvailableIntegrationsListItem';
 import './AvailableIntegrationsList.scss';
 
 interface AvailableIntegrationsListProps {
-  availableIntegrations: AvailableIntegration[];
+  availableIntegrations: Integration[];
 }
 
 const AvailableIntegrationsList = ({
@@ -16,7 +16,7 @@ const AvailableIntegrationsList = ({
       {availableIntegrations.map(integration => (
         <AvailableIntegrationsListItem
           integration={integration}
-          key={integration.typeName}
+          key={integration.type}
         />
       ))}
     </ul>

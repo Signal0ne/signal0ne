@@ -1,10 +1,10 @@
-import { AvailableIntegration } from '../../data/dummyAvailableIntegrations';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
+import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import './AvailableIntegrationsListItem.scss';
 
 interface AvailableIntegrationsListItemProps {
-  integration: AvailableIntegration;
+  integration: Integration;
 }
 
 const AvailableIntegrationsListItem = ({
@@ -18,17 +18,15 @@ const AvailableIntegrationsListItem = ({
   return (
     <li
       className="available-integrations-list-item"
-      key={integration.typeName}
+      key={integration.type}
       onClick={handleAvailableIntegrationClick}
       onKeyDown={handleKeyDown(handleAvailableIntegrationClick)}
       tabIndex={0}
     >
       <div className="available-integration-icon">
-        {getIntegrationIcon(integration.typeName)}
+        {getIntegrationIcon(integration.type)}
       </div>
-      <span className="available-integration-name">
-        {integration.displayName}
-      </span>
+      <span className="available-integration-name">{integration.name}</span>
     </li>
   );
 };
