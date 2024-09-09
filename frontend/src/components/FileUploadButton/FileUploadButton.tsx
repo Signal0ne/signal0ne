@@ -87,7 +87,6 @@ const FileUploadButton = () => {
 
           setJsonData(jsonObject);
 
-          console.log('jsonObject:', jsonObject);
           const res = await fetch(
             `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/create`,
             {
