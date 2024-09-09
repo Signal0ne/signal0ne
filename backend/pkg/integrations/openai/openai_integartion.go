@@ -17,13 +17,13 @@ type OpenaiIntegration struct {
 }
 
 var functions = map[string]models.WorkflowFunctionDefinition{
-	"summarize_context": models.WorkflowFunctionDefinition{
-		Function: summarizeContext,
-		Input:    SummarizeContextInput{},
-	},
 	"propose_resolution_steps": models.WorkflowFunctionDefinition{
 		Function: proposeResolutions,
 		Input:    ProposeResolutionsInput{},
+	},
+	"summarize_context": models.WorkflowFunctionDefinition{
+		Function: summarizeContext,
+		Input:    SummarizeContextInput{},
 	},
 }
 
@@ -77,38 +77,8 @@ type SummarizeContextInput struct {
 }
 
 type ProposeResolutionsInput struct {
-	Logs              string `json:"logs"`
 	AdditionalContext string `json:"additional_context"`
-}
-
-func summarizeContext(input any, integration any) ([]any, error) {
-	var parsedInput SummarizeContextInput
-	var output []any
-
-	err := helpers.ValidateInputParameters(input, &parsedInput, "summarize_context")
-	if err != nil {
-		return output, err
-	}
-
-	assertedIntegration := integration.(OpenaiIntegration)
-
-	fmt.Printf("###\nExecuting OpenAi integration function...\n")
-	model := assertedIntegration.Model
-	apiKey := assertedIntegration.ApiKey
-	prompt := fmt.Sprintf(`You are on-call engineer Based on the full context from the investigation summarize investigation context for other engineers.
-		Response must contain one short paragraph of explanation of the probable root causes in full sentences. Try to correlate different context for an holistic overview.
-		The full issue context: %s`, parsedInput.Context)
-
-	summary, err := callOpenAiApi(prompt, model, apiKey)
-	if err != nil {
-		return output, err
-	}
-
-	output = append(output, map[string]any{
-		"summary": summary,
-	})
-
-	return output, nil
+	Logs              string `json:"logs"`
 }
 
 func proposeResolutions(input any, integration any) ([]any, error) {
@@ -137,6 +107,36 @@ func proposeResolutions(input any, integration any) ([]any, error) {
 
 	output = append(output, map[string]any{
 		"content": resolutions,
+	})
+
+	return output, nil
+}
+
+func summarizeContext(input any, integration any) ([]any, error) {
+	var parsedInput SummarizeContextInput
+	var output []any
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "summarize_context")
+	if err != nil {
+		return output, err
+	}
+
+	assertedIntegration := integration.(OpenaiIntegration)
+
+	fmt.Printf("###\nExecuting OpenAi integration function...\n")
+	model := assertedIntegration.Model
+	apiKey := assertedIntegration.ApiKey
+	prompt := fmt.Sprintf(`You are on-call engineer Based on the full context from the investigation summarize investigation context for other engineers.
+		Response must contain one short paragraph of explanation of the probable root causes in full sentences. Try to correlate different context for an holistic overview.
+		The full issue context: %s`, parsedInput.Context)
+
+	summary, err := callOpenAiApi(prompt, model, apiKey)
+	if err != nil {
+		return output, err
+	}
+
+	output = append(output, map[string]any{
+		"summary": summary,
 	})
 
 	return output, nil

@@ -74,8 +74,8 @@ func (integration GithubIntegration) ValidateStep(
 
 type GetFileContentInput struct {
 	ContentUrl string `json:"content_url" bson:"content_url"`
-	Type       string `json:"type" bson:"type"`
 	Path       string `json:"path" bson:"path"`
+	Type       string `json:"type" bson:"type"`
 }
 
 func getContent(input any, integration any) ([]any, error) {

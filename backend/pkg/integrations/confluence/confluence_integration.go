@@ -82,9 +82,9 @@ func (integration ConfluenceIntegration) ValidateStep(
 }
 
 type SearchInput struct {
+	Limit          int    `json:"limit" bson:"limit"`
 	Query          string `json:"query" bson:"query"`
 	SimilarityCase string `json:"similarity_case" bson:"similarity_case"`
-	Limit          int    `json:"limit" bson:"limit"`
 }
 
 func search(input any, integration any) ([]any, error) {
