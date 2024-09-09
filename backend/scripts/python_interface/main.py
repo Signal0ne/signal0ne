@@ -63,7 +63,6 @@ def main():
             if len(payload) >= int(payloadBatchBuffer):
                 data = json.loads(payload)
                 command = data["command"]
-                print("Command: ", command)
                 params = data["params"]
 
             
@@ -85,7 +84,6 @@ def main():
                     if command == "contents_similarity":
                         result = contents_similarity(params["similarityCase"], params["contents"])
                         parsedResult = json.dumps(result)
-                        print("RESULT", parsedResult)
                         responseTemplate = json.dumps({"status":"0", "result":parsedResult})
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         print("Success!!!")

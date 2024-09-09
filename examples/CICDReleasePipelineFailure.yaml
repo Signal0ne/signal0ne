@@ -46,7 +46,7 @@ steps:
     integration: openai
     function: propose_resolution_steps
     input:
-      issue_logs: "{{ (index .AdditionalContext.github_inspect-logs.Output 0).logs}}"
-      additional_context: "{{}}" # Stuff like doc pages or runbooks
+      logs: "{{ (index .AdditionalContext.github_inspect-logs.Output 0).logs}}"
+      additional_context: "{{.AdditionalContext.confluence_search.Output}}" # Stuff like doc pages or runbooks
     output:
       content: "content"
