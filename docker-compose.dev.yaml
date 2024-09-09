@@ -2,7 +2,9 @@ version: "3"
 services:
   frontend:
     container_name: s0frontend
-    image: 322456/s0frontend:latest
+    build:
+      dockerfile: Dockerfile
+      context: ./frontend
     ports:
       - 80:80
     depends_on:

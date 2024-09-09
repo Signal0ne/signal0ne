@@ -91,7 +91,7 @@ func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string
 		desiredPropertiesWithValues[key] = TraverseOutput(incomingTriggerPayload, key, mapping)
 	}
 
-	t, err := template.New("").Parse(workflow.Trigger.WebhookTrigger.Condition)
+	t, err := template.New("").Parse(workflow.Trigger.WebhookTrigger.Webhook.Condition)
 	if err != nil {
 		return desiredPropertiesWithValues, fmt.Errorf("cannot parse condition %s", err)
 	}
