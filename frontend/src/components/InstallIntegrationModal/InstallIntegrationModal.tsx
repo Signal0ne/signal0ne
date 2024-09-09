@@ -11,6 +11,8 @@ import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import { useEffect, useMemo, useState } from 'react';
 import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
+import Spinner from '../Spinner/Spinner';
+import './InstallIntegrationModal.scss';
 
 interface Error {
   message: string;
@@ -51,8 +53,10 @@ const InstallIntegrationModal = () => {
 
   const { namespaceId } = useAuthContext();
   const {
+    isModalOpen,
     selectedIntegration,
     setInstalledIntegrations,
+    setIsModalOpen,
     setSelectedIntegration
   } = useIntegrationsContext();
 
@@ -78,7 +82,7 @@ const InstallIntegrationModal = () => {
 
       if (selectedIntegration.id) {
         res = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${selectedIntegration.id}/update`,
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${selectedIntegration.id}`,
           {
             body: JSON.stringify(newIntegration),
             headers: {
@@ -89,7 +93,7 @@ const InstallIntegrationModal = () => {
         );
       } else {
         res = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/create`,
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration`,
           {
             body: JSON.stringify(newIntegration),
             headers: {
@@ -113,7 +117,9 @@ const InstallIntegrationModal = () => {
       setInstalledIntegrations(data.installedIntegrations);
       setSelectedIntegration(null);
 
-      toast.success(`Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`);
+      toast.success(
+        `Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`
+      );
     } catch (err) {
       toast.error('Failed to install integration');
 
@@ -153,71 +159,74 @@ const InstallIntegrationModal = () => {
     return formFields;
   }, [selectedIntegration]);
 
-  if (selectedIntegration === null) return null;
-
   return (
     <ReactModal
-      isOpen={Boolean(selectedIntegration)}
+      isOpen={isModalOpen}
       onRequestClose={() => {
+        setIsModalOpen(false);
         setSelectedIntegration(null);
         reset();
       }}
       style={CUSTOM_STYLES}
     >
-      <div className="install-integration-container">
-        <h3 className="form-title">
-          {selectedIntegration.id ? 'Edit ' : 'Install '}
-          <span
-            className="integration-name"
-            style={{
-              backgroundImage: getIntegrationGradientColor(
-                selectedIntegration.type
-              )
-            }}
-          >
-            {selectedIntegration.name}
-          </span>{' '}
-          integration
-        </h3>
-        <form className="form-content" onSubmit={handleSubmit(submitForm)}>
-          {formattedSelectedIntegration &&
-            formattedSelectedIntegration.map(entry => {
-              const { key, value } = entry;
+      {selectedIntegration ? (
+        <div className="install-integration-container">
+          <h3 className="form-title">
+            {selectedIntegration.id ? 'Edit ' : 'Install '}
+            <span
+              className="integration-name"
+              style={{
+                backgroundImage: getIntegrationGradientColor(
+                  selectedIntegration.type
+                )
+              }}
+            >
+              {selectedIntegration.name}
+            </span>{' '}
+            integration
+          </h3>
+          <form className="form-content" onSubmit={handleSubmit(submitForm)}>
+            {formattedSelectedIntegration &&
+              formattedSelectedIntegration.map(entry => {
+                const { key, value } = entry;
 
-              const errorMessage =
-                typeof errors[key]?.message === 'string'
-                  ? { message: errors[key]?.message }
-                  : undefined;
+                const errorMessage =
+                  typeof errors[key]?.message === 'string'
+                    ? { message: errors[key]?.message }
+                    : undefined;
 
-              return (
-                <div className="form-field" key={key}>
-                  <Input
-                    defaultValue={selectedIntegration?.id ? value : undefined}
-                    error={errorMessage}
-                    id={`field-${key}`}
-                    label={getFormattedFormLabel(key)}
-                    placeholder={`Enter ${getFormattedFormLabel(key)} here...`}
-                    type={getInputType(key)} //TODO: Find a way to determinate it from the BE
-                    {...register(key, {
-                      pattern:
-                        key === 'url'
-                          ? {
-                              message: 'Invalid URL address',
-                              value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
-                            }
-                          : undefined,
-                      required: 'This field is required'
-                    })}
-                  />
-                </div>
-              );
-            })}
-          {error ? <p className="error-msg">{error.message}</p> : null}
-          <button className="submit" type="submit">
-            {selectedIntegration.id ? 'Save Changes' : 'Install'}
-          </button>
-        </form>
-      </div>
+                return (
+                  <div className="form-field" key={key}>
+                    <Input
+                      defaultValue={selectedIntegration?.id ? value : undefined}
+                      error={errorMessage}
+                      id={`field-${key}`}
+                      label={getFormattedFormLabel(key)}
+                      placeholder={`Enter ${getFormattedFormLabel(key)} here...`}
+                      type={getInputType(key)} //TODO: Find a way to determinate it from the BE
+                      {...register(key, {
+                        pattern:
+                          key === 'url'
+                            ? {
+                                message: 'Invalid URL address',
+                                value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
+                              }
+                            : undefined,
+                        required: 'This field is required'
+                      })}
+                    />
+                  </div>
+                );
+              })}
+            {error ? <p className="error-msg">{error.message}</p> : null}
+            <button className="submit" type="submit">
+              {selectedIntegration.id ? 'Save Changes' : 'Install'}
+            </button>
+          </form>
+        </div>
+      ) : (
+        <Spinner />
+      )}
     </ReactModal>
   );
 };

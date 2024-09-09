@@ -1,10 +1,14 @@
 import {
   BackStageIcon,
+  ConfluenceIcon,
+  GithubIcon,
   JaegerIcon,
   OpenAIIcon,
   OpenSearchIcon,
+  PagerDutyIcon,
   PrometheusIcon,
   ScheduledIcon,
+  ServiceNowIcon,
   Signal0neLogo,
   SlackIcon,
   WebhookIcon
@@ -45,12 +49,20 @@ export const getIntegrationGradientColor = (integrationName: string) => {
       return 'linear-gradient(45deg, #da4e31 0%, #e77f6a 100%)';
     case 'backstage':
       return 'linear-gradient(45deg, #36baa2 0%, #36baa2 100%)';
+    case 'confluence':
+      return 'linear-gradient(45deg, #2684ff 0%, #59a0fe 100%)';
+    case 'github':
+      return 'linear-gradient(90deg, #5a6370 0%, #fafbfc 200%)';
     case 'jaeger':
       return 'linear-gradient(90deg, #fff 0%, #60d0e4 50%, #638b18 75%, #e1caa2 100%)';
     case 'openai':
       return 'linear-gradient(135deg, #10A37F 0%, #CAFEFF 200%)';
     case 'opensearch':
       return 'linear-gradient(45deg, #0073b4 0%, #005EB8 100%)';
+    case 'pagerduty':
+      return 'linear-gradient(45deg, #06AC38 0%, #00dc42 100%)';
+    case 'servicenow':
+      return 'linear-gradient(45deg, #62d84e 0%, #48a063 100%)';
     case 'signal0ne':
       return 'linear-gradient(45deg, #fff 0%, #eee 100%)';
     case 'slack':
@@ -64,11 +76,15 @@ export const getIntegrationIcon = (integrationName: string) => {
   const icons: Record<string, ReactNode> = {
     alertmanager: <PrometheusIcon />,
     backstage: <BackStageIcon />,
+    confluence: <ConfluenceIcon />,
+    github: <GithubIcon />,
     jaeger: <JaegerIcon />,
     openai: <OpenAIIcon />,
     opensearch: <OpenSearchIcon />,
+    pagerduty: <PagerDutyIcon />,
     prometheus: <PrometheusIcon />,
     scheduled: <ScheduledIcon />,
+    servicenow: <ServiceNowIcon />,
     signal0ne: <Signal0neLogo />,
     slack: <SlackIcon />,
     webhook: <WebhookIcon />

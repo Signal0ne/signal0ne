@@ -10,10 +10,12 @@ interface AvailableIntegrationsListItemProps {
 const AvailableIntegrationsListItem = ({
   integration
 }: AvailableIntegrationsListItemProps) => {
-  const { setSelectedIntegration } = useIntegrationsContext();
+  const { setIsModalOpen, setSelectedIntegration } = useIntegrationsContext();
 
-  const handleAvailableIntegrationClick = () =>
+  const handleAvailableIntegrationClick = () => {
+    setIsModalOpen(true);
     setSelectedIntegration(integration);
+  };
 
   return (
     <li

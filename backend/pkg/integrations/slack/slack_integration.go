@@ -168,7 +168,7 @@ func createChannel(input any, integration any) (output []any, err error) {
 	}
 
 	assertedIntegration := integration.(SlackIntegration)
-	url := fmt.Sprintf("http://%s:%s/api/create_channel", assertedIntegration.Host, assertedIntegration.Port)
+	url := fmt.Sprintf("%s/api/create_channel", assertedIntegration.Url)
 
 	payload := map[string]any{
 		"channelName": parsedInput.ChannelName,
@@ -216,7 +216,7 @@ func addUsersToTheChannel(input any, integration any) (output []any, err error) 
 	}
 
 	assertedIntegration := integration.(SlackIntegration)
-	url := fmt.Sprintf("http://%s:%s/api/add_users_to_channel", assertedIntegration.Host, assertedIntegration.Port)
+	url := fmt.Sprintf("%s/api/add_users_to_channel", assertedIntegration.Url)
 
 	payload := map[string]any{
 		"channelName": parsedInput.ChannelName,

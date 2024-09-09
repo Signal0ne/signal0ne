@@ -1,6 +1,6 @@
-typeName: confluence
+type: confluence
+name: Confluence
 imageUri: ../logos/confluence.svg
-displayName: Confluence
 config:
   url: string
   email: string
