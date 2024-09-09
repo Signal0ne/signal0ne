@@ -1,27 +1,49 @@
-export interface AvailableIntegration {
-  icon: string;
-  name: string;
-}
+import { Integration } from '../contexts/IntegrationsProvider/IntegrationsProvider';
 
-export const DUMMY_AVAILABLE_INTEGRATIONS: AvailableIntegration[] = [
+
+export const DUMMY_AVAILABLE_INTEGRATIONS: Integration[] = [
   {
-    icon: 'backstage',
-    name: 'Backstage'
+    config: {
+      apiKey: 'string',
+      host: 'string',
+      port: 'string'
+    },
+    imageUri: '../logos/backstage.svg',
+    name: 'Backstage',
+    type: 'backstage'
   },
   {
-    icon: 'jaeger',
-    name: 'Jaeger'
+    config: {
+      host: 'string',
+      port: 'string'
+    },
+    imageUri: '../logos/jaeger.svg',
+    name: 'Jaeger',
+    type: 'jaeger'
   },
   {
-    icon: 'prometheus',
-    name: 'Prometheus'
+    config: {
+      host: 'string',
+      port: 'string'
+    },
+    imageUri: '../logos/alertmanager.svg',
+    name: 'Alertmanager',
+    type: 'alertmanager'
   },
   {
-    icon: 'signal0ne',
-    name: 'Signal0ne'
+    config: null,
+    imageUri: '../logos/signal0ne.svg',
+    name: 'Signal0ne',
+    type: 'signal0ne'
   },
   {
-    icon: 'slack',
-    name: 'Slack'
+    config: {
+      host: 'string',
+      port: 'string',
+      workspaceId: 'string'
+    },
+    imageUri: '../logos/slack.svg',
+    name: 'Slack',
+    type: 'slack'
   }
 ];

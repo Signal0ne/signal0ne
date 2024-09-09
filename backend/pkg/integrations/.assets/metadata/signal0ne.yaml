@@ -1,3 +1,4 @@
-typeName: signal0ne
+type: signal0ne
+name: Signal0ne
 imageUri: '../logos/signal0ne.svg'
 config:

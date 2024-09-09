@@ -51,7 +51,7 @@ const WorkflowsSidePanel = () => {
   const FILTERED_WORKFLOWS = useMemo(
     () =>
       workflows.filter(workflow =>
-        workflow.name.toLowerCase().includes(search.toLowerCase())
+        workflow.name?.toLowerCase().includes(search.trim().toLowerCase())
       ),
     [search, workflows]
   );

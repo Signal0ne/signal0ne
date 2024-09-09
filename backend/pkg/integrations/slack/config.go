@@ -1,7 +1,6 @@
 package slack
 
 type Config struct {
-	Host        string `json:"host"`
-	Port        string `json:"port"`
-	WorkspaceID string `json:"workspaceId"`
+	Url         string `json:"url" bson:"url"`
+	WorkspaceID string `json:"workspaceId" bson:"workspaceId"`
 }

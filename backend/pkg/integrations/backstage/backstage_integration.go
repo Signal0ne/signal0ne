@@ -19,7 +19,7 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 
 type BackstageIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 func (integration BackstageIntegration) Execute(
@@ -45,12 +45,10 @@ func (integration BackstageIntegration) Execute(
 }
 
 func (integration BackstageIntegration) Validate() error {
-	if integration.Config.Host == "" {
-		return fmt.Errorf("host cannot be empty")
+	if integration.Config.Url == "" {
+		return fmt.Errorf("url cannot be empty")
 	}
-	if integration.Config.Port == "" {
-		return fmt.Errorf("port cannot be empty")
-	}
+
 	return nil
 }
 
@@ -88,16 +86,15 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 
 	assertedIntegration := integration.(BackstageIntegration)
 
-	host := assertedIntegration.Config.Host
-	port := assertedIntegration.Config.Port
+	url := assertedIntegration.Config.Url
 	apiKey := assertedIntegration.Config.ApiKey
 	apiPath := "/api/catalog/entities/by-query?filter="
 
-	url := fmt.Sprintf("http://%s:%s%s%s", host, port, apiPath, parsedInput.Filter)
+	fullUrl := fmt.Sprintf("%s%s%s", url, apiPath, parsedInput.Filter)
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", fullUrl, nil)
 	if err != nil {
 		return output, err
 	}

@@ -58,7 +58,7 @@ func GetInstallableIntegrationsLib() (map[string]map[string]any, error) {
 				if err != nil {
 					fmt.Printf("Warning: failed to read integration metadata from: %s, error: %s", integrationMDFSObject.Name(), err)
 				}
-				installableIntegrationsLib[integration["typeName"].(string)] = integration
+				installableIntegrationsLib[integration["type"].(string)] = integration
 			}
 		}
 	})

@@ -12,17 +12,17 @@ import (
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
-	"post_message": models.WorkflowFunctionDefinition{
-		Function: postMessage,
-		Input:    PostMessageInput{},
+	"add_users_to_channel": models.WorkflowFunctionDefinition{
+		Function: addUsersToTheChannel,
+		Input:    AddUsersToTheChannelInput{},
 	},
 	"create_channel": models.WorkflowFunctionDefinition{
 		Function: createChannel,
 		Input:    CreateChannelInput{},
 	},
-	"add_users_to_channel": models.WorkflowFunctionDefinition{
-		Function: addUsersToTheChannel,
-		Input:    AddUsersToTheChannelInput{},
+	"post_message": models.WorkflowFunctionDefinition{
+		Function: postMessage,
+		Input:    PostMessageInput{},
 	},
 }
 
@@ -39,7 +39,7 @@ func NewSlackIntegrationInventory(alertTitle string) SlackIntegrationInventory {
 type SlackIntegration struct {
 	Inventory          SlackIntegrationInventory
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 func (integration SlackIntegration) Execute(
@@ -65,9 +65,14 @@ func (integration SlackIntegration) Execute(
 }
 
 func (integration SlackIntegration) Validate() error {
-	if integration.Config.WorkspaceID == "" {
-		return fmt.Errorf("host cannot be empty")
+	if integration.Config.Url == "" {
+		return fmt.Errorf("url cannot be empty")
 	}
+
+	if integration.Config.WorkspaceID == "" {
+		return fmt.Errorf("workspaceID cannot be empty")
+	}
+
 	return nil
 }
 
@@ -122,7 +127,7 @@ func postMessage(input any, integration any) (output []any, err error) {
 		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
 	}
 
-	url := fmt.Sprintf("http://%s:%s/api/post_message", assertedIntegration.Host, assertedIntegration.Port)
+	finalUrl := fmt.Sprintf("%s/api/post_message", assertedIntegration.Url)
 	title := assertedIntegration.Inventory.AlertTitle
 	id := parsedAlert.Id.Hex()
 
@@ -144,7 +149,7 @@ func postMessage(input any, integration any) (output []any, err error) {
 		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
 
-	_, err = http.Post(url, "application/json", bytes.NewBuffer(prettyJSON))
+	_, err = http.Post(finalUrl, "application/json", bytes.NewBuffer(prettyJSON))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %v", err)
 

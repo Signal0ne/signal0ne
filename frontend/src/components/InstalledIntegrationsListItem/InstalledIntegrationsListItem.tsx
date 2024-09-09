@@ -1,10 +1,10 @@
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import { InstalledIntegration } from '../../data/dummyInstalledIntegrations';
+import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import './InstalledIntegrationsListItem.scss';
 
 interface InstalledIntegrationsListItemProps {
-  integration: InstalledIntegration;
+  integration: Integration;
 }
 
 const InstalledIntegrationsListItem = ({
@@ -23,7 +23,7 @@ const InstalledIntegrationsListItem = ({
       tabIndex={0}
     >
       <div className="integration-icon">
-        {getIntegrationIcon(integration.icon)}
+        {getIntegrationIcon(integration.type)}
       </div>
       <span className="integration-name">{integration.name}</span>
     </li>

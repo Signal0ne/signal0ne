@@ -14,13 +14,13 @@ import (
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
-	"get_properties_values": models.WorkflowFunctionDefinition{
-		Function: getPropertiesValues,
-		Input:    GetPropertiesValuesInput{},
-	},
 	"compare_traces": models.WorkflowFunctionDefinition{
 		Function: compareTraces,
 		Input:    CompareTracesInput{},
+	},
+	"get_properties_values": models.WorkflowFunctionDefinition{
+		Function: getPropertiesValues,
+		Input:    GetPropertiesValuesInput{},
 	},
 }
 
@@ -37,7 +37,7 @@ func NewJaegerIntegrationInventory(pyInterface net.Conn) JaegerIntegrationInvent
 type JaegerIntegration struct {
 	Inventory          JaegerIntegrationInventory
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 func (integration JaegerIntegration) Execute(
@@ -63,12 +63,10 @@ func (integration JaegerIntegration) Execute(
 }
 
 func (integration JaegerIntegration) Validate() error {
-	if integration.Config.Host == "" {
-		return fmt.Errorf("host cannot be empty")
+	if integration.Config.Url == "" {
+		return fmt.Errorf("url cannot be empty")
 	}
-	if integration.Config.Port == "" {
-		return fmt.Errorf("port cannot be empty")
-	}
+
 	return nil
 }
 
@@ -124,13 +122,12 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 
 	assertedIntegration := integration.(JaegerIntegration)
 
-	host := assertedIntegration.Host
-	port := assertedIntegration.Port
+	url := assertedIntegration.Url
 	apiPath := fmt.Sprintf("/api/traces?service=%s%s&tags=%s", parsedInput.Service, parsedInput.Query, parsedInput.Tags)
 
-	url := fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+	finalUrl := fmt.Sprintf("%s%s", url, apiPath)
 
-	intermediateTracesOutput, err := getJaegerObjects(url)
+	intermediateTracesOutput, err := getJaegerObjects(finalUrl)
 	if err != nil {
 		return output, err
 	}
@@ -259,17 +256,17 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 	assertedIntegration := integration.(JaegerIntegration)
 
-	host := assertedIntegration.Host
-	port := assertedIntegration.Port
+	url := assertedIntegration.Url
 
 	var operations []any
 	var apiPath string
-	var url string
+	var finalUrl string
+
 	if parsedInput.Operation == "all" {
 		apiPath = fmt.Sprintf("/api/services/%s/operations", parsedInput.Service)
-		url = fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+		finalUrl = fmt.Sprintf("%s%s", url, apiPath)
 
-		operations, err = getJaegerObjects(url)
+		operations, err = getJaegerObjects(finalUrl)
 		if err != nil {
 			return output, err
 		}
@@ -289,9 +286,9 @@ func compareTraces(input any, integration any) ([]any, error) {
 		for _, tag := range tracesTags {
 			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.BaseTraceQuery, operation, tag)
 
-			url = fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+			finalUrl = fmt.Sprintf("%s%s", url, apiPath)
 
-			traces, err = getJaegerObjects(url)
+			traces, err = getJaegerObjects(finalUrl)
 			if err != nil {
 				break
 			}
@@ -304,9 +301,9 @@ func compareTraces(input any, integration any) ([]any, error) {
 		for _, tag := range tracesToCompareTags {
 			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.ComparedTraceQuery, operation, tag)
 
-			url = fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+			finalUrl = fmt.Sprintf("%s%s", url, apiPath)
 
-			tracesToCompare, err = getJaegerObjects(url)
+			tracesToCompare, err = getJaegerObjects(finalUrl)
 			if err != nil {
 				break
 			}

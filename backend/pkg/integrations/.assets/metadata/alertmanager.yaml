@@ -1,6 +1,5 @@
-typeName: alertmanager
+type: alertmanager
+name: Alertmanager
 imageUri: ../logos/alertmanager.svg
 config:
-  host: string
-  port: string
-  
+  url: url

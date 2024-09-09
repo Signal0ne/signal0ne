@@ -20,7 +20,7 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 
 type AlertmanagerIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 func (integration AlertmanagerIntegration) Execute(
@@ -46,12 +46,10 @@ func (integration AlertmanagerIntegration) Execute(
 }
 
 func (integration AlertmanagerIntegration) Validate() error {
-	if integration.Config.Host == "" {
-		return fmt.Errorf("host cannot be empty")
+	if integration.Config.Url == "" {
+		return fmt.Errorf("url cannot be empty")
 	}
-	if integration.Config.Port == "" {
-		return fmt.Errorf("port cannot be empty")
-	}
+
 	return nil
 }
 
@@ -88,11 +86,9 @@ func getRelevantAlerts(input any, integration any) ([]any, error) {
 	fmt.Printf("###\nExecuting Jaeger integration function...\n")
 
 	assertedIntegration := integration.(AlertmanagerIntegration)
-
-	host := assertedIntegration.Host
-	port := assertedIntegration.Port
 	apiPath := "/api/v2/alerts?"
-	url := fmt.Sprintf("http://%s:%s%s", host, port, apiPath)
+
+	url := fmt.Sprintf("%s%s", assertedIntegration.Url, apiPath)
 
 	filters := strings.Split(parsedInput.Filter, ",")
 

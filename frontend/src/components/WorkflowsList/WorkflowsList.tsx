@@ -1,3 +1,4 @@
+import { checkDisplayScrollOffset } from '../../utils/utils';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import { Workflow } from '../../data/dummyWorkflows';
@@ -25,17 +26,14 @@ const WorkflowsList = ({
   const { activeWorkflow, setActiveWorkflow } = useWorkflowsContext();
 
   useEffect(() => {
-    checkDisplayScrollOffset();
-  }, [workflows]);
+    if (!workflowsListRef.current) return;
 
-  const checkDisplayScrollOffset = () => {
-    if (!workflowsListRef.current) return setShouldDisplayScrollOffset(false);
-
-    setShouldDisplayScrollOffset(
-      workflowsListRef.current.scrollHeight >
-        workflowsListRef.current.clientHeight
+    const shouldDisplayOffset = checkDisplayScrollOffset(
+      workflowsListRef.current
     );
-  };
+
+    setShouldDisplayScrollOffset(shouldDisplayOffset);
+  }, [workflows]);
 
   const handleListItemClick = (workflow: Workflow) =>
     setActiveWorkflow(workflow);

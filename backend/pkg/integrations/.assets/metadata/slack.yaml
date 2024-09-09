@@ -1,6 +1,6 @@
-typeName: slack
+type: slack
+name: Slack
 imageUri: '../logos/slack.svg'
 config:
-  host: string
-  port: string
+  url: url
   workspaceId: string

@@ -1,20 +1,21 @@
-import {
-  AvailableIntegration,
-  DUMMY_AVAILABLE_INTEGRATIONS
-} from '../../data/dummyAvailableIntegrations';
+
 import { createContext, ReactNode, useState } from 'react';
-import {
-  DUMMY_INSTALLED_INTEGRATIONS,
-  InstalledIntegration
-} from '../../data/dummyInstalledIntegrations';
+
+export interface Integration {
+  config: Record<string, string> | null;
+  id?: string;
+  imageUri: string;
+  name: string;
+  type: string;
+}
 
 export interface IntegrationsContextType {
-  availableIntegrations: AvailableIntegration[];
-  installedIntegrations: InstalledIntegration[];
-  selectedIntegration: AvailableIntegration | InstalledIntegration | null;
-  setSelectedIntegration: (
-    integration: AvailableIntegration | InstalledIntegration
-  ) => void;
+  availableIntegrations: Integration[];
+  installedIntegrations: Integration[];
+  selectedIntegration: Integration | null;
+  setAvailableIntegrations: (integrations: Integration[]) => void;
+  setInstalledIntegrations: (integrations: Integration[]) => void;
+  setSelectedIntegration: (integration: Integration | null) => void;
 }
 
 interface IntegrationsProviderProps {
@@ -28,14 +29,21 @@ const IntegrationsContext = createContext<IntegrationsContextType | undefined>(
 export const IntegrationsProvider = ({
   children
 }: IntegrationsProviderProps) => {
-  const [selectedIntegration, setSelectedIntegration] = useState<
-    AvailableIntegration | InstalledIntegration | null
-  >(null);
+  const [availableIntegrations, setAvailableIntegrations] = useState<
+    Integration[]
+  >([]);
+  const [installedIntegrations, setInstalledIntegrations] = useState<
+    Integration[]
+  >([]);
+  const [selectedIntegration, setSelectedIntegration] =
+    useState<Integration | null>(null);
 
   const VALUE = {
-    availableIntegrations: DUMMY_AVAILABLE_INTEGRATIONS,
-    installedIntegrations: DUMMY_INSTALLED_INTEGRATIONS,
+    availableIntegrations,
+    installedIntegrations,
     selectedIntegration,
+    setAvailableIntegrations,
+    setInstalledIntegrations,
     setSelectedIntegration
   };
 

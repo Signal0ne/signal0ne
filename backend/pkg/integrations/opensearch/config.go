@@ -1,8 +1,6 @@
 package opensearch
 
 type Config struct {
-	Host  string `json:"host" bson:"host"`
+	Url   string `json:"url" bson:"url"`
 	Index string `json:"index" bson:"index"`
-	Port  string `json:"port" bson:"port"`
-	Ssl   bool   `json:"ssl" bson:"ssl"`
 }
