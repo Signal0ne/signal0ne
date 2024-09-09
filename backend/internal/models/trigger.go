@@ -10,7 +10,8 @@ type WebhookTrigger struct {
 }
 
 type Webhook struct {
-	Output map[string]string `json:"output"`
+	Output    map[string]string `json:"output"`
+	Condition string            `json:"condition"`
 }
 
 type SchedulerTrigger struct {

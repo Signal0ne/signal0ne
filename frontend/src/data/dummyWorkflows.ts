@@ -7,6 +7,7 @@ export interface IWorkflowStep {
   integration: string;
   integrationType: string;
   name: string;
+  displayName: string;
   output?: {
     [key: string]: string;
   };
@@ -14,16 +15,17 @@ export interface IWorkflowStep {
 
 export type IWorkflowTrigger =
   | {
-      webhook: {
-        output: Record<string, string>;
-      };
-    }
-  | {
-      scheduled: {
-        interval: string;
-        output: Record<string, string>;
-      };
+    webhook: {
+      output: Record<string, string>;
+      condition?: string;
     };
+  }
+  | {
+    scheduled: {
+      interval: string;
+      output: Record<string, string>;
+    };
+  };
 
 export interface Workflow {
   description: string;
@@ -40,7 +42,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     name: 'Workflow 1',
     steps: [
       {
-        name: 'Get ownership',
+        displayName: 'Get ownership',
+        name: 'get-ownership',
         integration: 'backstage',
         integrationType: 'backstage',
         function: 'get_properties_values',
@@ -55,7 +58,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         }
       },
       {
-        name: 'Inspect traces',
+        displayName: 'Inspect traces',
+        name: 'inspect-traces',
         integration: 'jaeger',
         integrationType: 'jaeger',
         function: 'log_occurrences',
@@ -70,7 +74,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'empty(additional_context.log_occurrences)'
       },
       {
-        name: 'Send to slack channel',
+        displayName: 'Send to slack channel',
+        name: 'send-slack-message',
         integration: 'slack',
         integrationType: 'slack',
         function: 'post_message',
@@ -97,7 +102,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     name: 'Workflow 2',
     steps: [
       {
-        name: 'Get ownership',
+        displayName: 'Get ownership',
+        name: 'get-ownership',
         integration: 'backstage',
         integrationType: 'backstage',
         function: 'get_properties_values',
@@ -110,7 +116,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         }
       },
       {
-        name: 'Inspect traces',
+        displayName: 'Inspect traces',
+        name: 'inspect-traces',
         integration: 'jaeger',
         integrationType: 'jaeger',
         function: 'log_occurrences',
@@ -125,7 +132,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'empty(additional_context.log_occurrences)'
       },
       {
-        name: 'Send to slack channel',
+        displayName: 'Send to slack channel',
+        name: 'send-slack-message',
         integration: 'slack',
         integrationType: 'slack',
         function: 'post_message',
@@ -153,7 +161,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     name: 'Workflow 3',
     steps: [
       {
-        name: 'Get ownership',
+        displayName: 'Get ownership',
+        name: 'get-ownership',
         integration: 'backstage',
         integrationType: 'backstage',
         function: 'get_properties_values',
@@ -166,7 +175,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         }
       },
       {
-        name: 'Inspect traces',
+        displayName: 'Inspect traces',
+        name: 'inspect-traces',
         integration: 'jaeger',
         integrationType: 'jaeger',
         function: 'log_occurrences',
@@ -181,7 +191,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'empty(additional_context.log_occurrences)'
       },
       {
-        name: 'Send to slack channel',
+        displayName: 'Send to slack channel',
+        name: 'send-slack-message',
         integration: 'slack',
         integrationType: 'slack',
         function: 'post_message',
@@ -208,7 +219,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     name: 'Workflow 4',
     steps: [
       {
-        name: 'Get ownership',
+        displayName: 'Get ownership',
+        name: 'get-ownership',
         integration: 'backstage',
         integrationType: 'backstage',
         function: 'get_properties_values',
@@ -221,7 +233,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         }
       },
       {
-        name: 'Inspect traces',
+        displayName: 'Inspect traces',
+        name: 'inspect-traces',
         integration: 'jaeger',
         integrationType: 'jaeger',
         function: 'log_occurrences',
@@ -236,7 +249,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'empty(additional_context.log_occurrences)'
       },
       {
-        name: 'Send to slack channel',
+        displayName: 'Send to slack channel',
+        name: 'send-slack-message',
         integration: 'slack',
         integrationType: 'slack',
         function: 'post_message',
@@ -264,7 +278,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
 
     steps: [
       {
-        name: 'Get ownership',
+        displayName: 'Get ownership',
+        name: 'get-ownership',
         integration: 'backstage',
         integrationType: 'backstage',
         function: 'get_properties_values',
@@ -277,7 +292,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         }
       },
       {
-        name: 'Inspect traces',
+        displayName: 'Inspect traces',
+        name: 'inspect-traces',
         integration: 'jaeger',
         integrationType: 'jaeger',
         function: 'log_occurrences',
@@ -292,7 +308,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'empty(additional_context.log_occurrences)'
       },
       {
-        name: 'Send to slack channel',
+        displayName: 'Send to slack channel',
+        name: 'send-slack-message',
         integration: 'slack',
         integrationType: 'slack',
         function: 'post_message',
@@ -320,7 +337,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
 
     steps: [
       {
-        name: 'Get ownership',
+        displayName: 'Get ownership',
+        name: 'get-ownership',
         integration: 'backstage',
         integrationType: 'backstage',
         function: 'get_properties_values',
@@ -333,7 +351,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         }
       },
       {
-        name: 'Inspect traces',
+        displayName: 'Inspect traces',
+        name: 'inspect-traces',
         integration: 'jaeger',
         integrationType: 'jaeger',
         function: 'log_occurrences',
@@ -348,7 +367,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'empty(additional_context.log_occurrences)'
       },
       {
-        name: 'Send to slack channel',
+        displayName: 'Send to slack channel',
+        name: 'send-slack-message',
         integration: 'slack',
         integrationType: 'slack',
         function: 'post_message',
@@ -376,7 +396,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
 
     steps: [
       {
-        name: 'Get ownership',
+        displayName: 'Get ownership',
+        name: 'get-ownership',
         integration: 'backstage',
         integrationType: 'backstage',
         function: 'get_properties_values',
@@ -389,7 +410,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         }
       },
       {
-        name: 'Inspect traces',
+        displayName: 'Inspect traces',
+        name: 'inspect-traces',
         integration: 'jaeger',
         integrationType: 'jaeger',
         function: 'log_occurrences',
@@ -404,7 +426,8 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
         condition: 'empty(additional_context.log_occurrences)'
       },
       {
-        name: 'Send to slack channel',
+        displayName: 'Send to slack channel',
+        name: 'send-slack-message',
         integration: 'slack',
         integrationType: 'slack',
         function: 'post_message',

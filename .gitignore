@@ -4,3 +4,4 @@ backend/scripts/python_interface/__pycache__
 sockets
 *.log
 *.env
+*.zip

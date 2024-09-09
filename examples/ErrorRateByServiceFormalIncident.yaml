@@ -9,14 +9,16 @@ trigger:
       timestamp: "startsAt"
       category: "category"
 steps:
-  - name: Get ownership
+  - displayName: Get ownership
+    name: get-ownership
     integration: backstage
     function: get_properties_values
     input:
       filter: kind=component,metadata.name={{.TriggerProperties.service}}
     output:
       owner: "spec.owner"
-  - name: Get relevant logs
+  - displayName: Get relevant logs
+    name: get-relevant-logs
     integration: opensearch
     function: get_log_occurrences
     input:
@@ -28,7 +30,8 @@ steps:
       count: "count"
       body: "body"
       hostname: "resource.host.name"
-  - name: Inspect traces
+  - displayName: Inspect traces
+    name: inspect-traces
     integration: jaeger
     function: get_properties_values
     input:
@@ -40,8 +43,9 @@ steps:
       output_source: "output_source"
       count: "count"
       log: "logs.exception.stacktrace, tags.grpc.error_message"
-    condition: "{{isempty .AdditionalContext.opensearch_get_log_occurrences.Output }}"
-  - name: Compare traces
+    condition: "{{isempty .AdditionalContext.opensearch_get-relevant-logs.Output }}"
+  - displayName: Compare traces
+    name: compare-traces
     integration: jaeger
     function: compare_traces
     input:
@@ -55,15 +59,17 @@ steps:
       output_source: "output_source"
       operation: "operation"
       processes_diff: "processes"
-  - name: Get containers status
+  - displayName: Get containers status
+    name: get-containers-status
     integration: alertmanager
     function: get_relevant_alerts
     input:
-      filter: "{{range .AdditionalContext.jaeger_compare_traces.Output}}name={{.processes_diff.processName}},{{end}}"
+      filter: "{{range .AdditionalContext.jaeger_compare-traces.Output}}name={{.processes_diff.processName}},{{end}}"
     output:
       output_source: "output_source"
       alert: "alert"
-  - name: Summarize issue content
+  - displayName: Summarize issue content
+    name: summarize-issue-content
     integration: openai
     function: summarize_context
     input:
@@ -71,7 +77,8 @@ steps:
     output:
       summary: "summary"
 # ===================================== Signal0ne =====================================
-  - name: Create incident
+  - displayName: Create incident
+    name: create-incidents
     integration: signal0ne
     function: create_incident
     input:
@@ -84,28 +91,36 @@ steps:
       assignee: "assignee"
     condition: "{{ if eq .TriggerProperties.category \"core\" }}true{{ else }}false{{ end }}"
 # ===================================== PagerDuty =====================================
-#  - name: Create incident
-# ===================================== ServiceNow =====================================
-#  - name: Create incident
-
-
-# - name: Create slack channel
-#   integration: slack
-#   function: create_channel
-#   input:
-#     channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
-#     is_private: "false"
-# - name: Add all stakeholders
-#   integration: slack
-#   function: add_users_to_channel
-#   input:
-#     user_handles: "{{range .AdditionalContext.backstage_get_properties_values.Output}}{{.owner}},{{end}}"
-#     channel_name: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
-# - name: Send to slack channel
-#   integration: slack
-#   function: post_message
-#   input:
-#     slack_channel: "{{ (index .AdditionalContext.signal0ne_create_incident).Output 0).name}}"
-#     parsable_context_object: "{{root}}"
-#     post_message_payload: "{{ .TriggerProperties }}"
+#  - displayName: Create incident
+#    integration: pagerduty
+#    function: create_incident
+#    input:
+#      type: "incident"
+#      title: "Error rate by service"
+#      service_name: "{{.TriggerProperties.service}}"
+#      parsable_context_object: "{{root}}"
+#    condition: "{{ if eq .TriggerProperties.category \"core\" }}true{{ else }}false{{ end }}"
+# =====================================  =====================================
+  - displayName: Create slack channel
+    name: create-slack-channel
+    integration: slack
+    function: create_channel
+    input:
+      channel_name: "{{ (index .AdditionalContext.signal0ne_create-incident).Output 0).name}}"
+      is_private: "false"
+  - displayName: Add all stakeholders
+    name: add-stakeholders
+    integration: slack
+    function: add_users_to_channel
+    input:
+      user_handles: "{{range .AdditionalContext.backstage_get-ownership.Output}}{{.owner}},{{end}}"
+      channel_name: "{{ (index .AdditionalContext.signal0ne_create-incident).Output 0).name}}"
+  - displayName: Send message to slack channel
+    name: send-message
+    integration: slack
+    function: post_message
+    input:
+      slack_channel: "{{ (index .AdditionalContext.signal0ne_create-incident).Output 0).name}}"
+      parsable_context_object: "{{root}}"
+      post_message_payload: "{{ .TriggerProperties }}"
 

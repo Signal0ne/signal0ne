@@ -15,6 +15,8 @@ import (
 	"signal0ne/pkg/integrations"
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/confluence"
+	"signal0ne/pkg/integrations/github"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
@@ -313,6 +315,15 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &alertmanager.AlertmanagerIntegration{}
 		case "backstage":
 			integration = &backstage.BackstageIntegration{}
+		case "confluence":
+			inventory := confluence.NewConfluenceIntegrationInventory(
+				c.PyInterface,
+			)
+			integration = &confluence.ConfluenceIntegration{
+				Inventory: inventory,
+			}
+		case "github":
+			integration = &github.GithubIntegration{}
 		case "jaeger":
 			inventory := jaeger.NewJaegerIntegrationInventory(
 				c.PyInterface,
@@ -422,6 +433,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			switch i := integration.(type) {
 			case *backstage.BackstageIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *confluence.ConfluenceIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *github.GithubIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *pagerduty.PagerdutyIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *servicenow.ServicenowIntegration:
@@ -447,7 +462,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			localErrorMessage = fmt.Sprintf("%v", err)
 		}
 
-		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Function)] = models.Outputs{
+		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = models.Outputs{
 			Output: execResult,
 		}
 	}
