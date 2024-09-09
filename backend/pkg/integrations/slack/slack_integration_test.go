@@ -32,7 +32,7 @@ func Test_PostMessage(t *testing.T) {
 			AlertTitle: "Test Alert",
 		},
 		Config: Config{
-			Url:         "localhost:8091",
+			Url:         "http://localhost:8091",
 			WorkspaceID: "workspace_123",
 		},
 	}
@@ -49,8 +49,7 @@ func Test_CreateChannel(t *testing.T) {
 
 	integration := SlackIntegration{
 		Config: Config{
-			Host:        "localhost",
-			Port:        "8091",
+			Url:         "http://localhost:8091",
 			WorkspaceID: "workspace_123",
 		},
 	}
@@ -74,8 +73,7 @@ func Test_AddUsersToTheChannel(t *testing.T) {
 
 	integration := SlackIntegration{
 		Config: Config{
-			Host:        "localhost",
-			Port:        "8091", // Ensure your service is running on this port
+			Url:         "http://localhost:8091", // Ensure your service is running on this port
 			WorkspaceID: "workspace_123",
 		},
 	}

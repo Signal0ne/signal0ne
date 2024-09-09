@@ -1,7 +1,6 @@
-typeName: pagerduty
+type: pagerduty
+name: PagerDuty
 imageUri: ../logos/pagerduty.svg
-displayName: PagerDuty
 config:
   url: string
   apiKey: string
-  

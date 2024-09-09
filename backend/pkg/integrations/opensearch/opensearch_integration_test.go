@@ -26,12 +26,11 @@ func Test_GetLogOccurrences(t *testing.T) {
 		Inventory: inventory,
 		Config: Config{
 			Index: "otel",
-			Url:   "20.127.192.216:9200",
+			Url:   "http://20.127.192.216:9200",
 		},
 	}
 
 	output, err := getLogOccurrences(mockedGetLogOccurrencesInput, integration)
 	assert.NoError(t, err)
 	assert.NotNil(t, output)
-
 }

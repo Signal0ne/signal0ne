@@ -11,6 +11,7 @@ import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import { useEffect, useMemo, useState } from 'react';
 import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
+import './InstallIntegrationModal.scss';
 
 interface Error {
   message: string;
@@ -78,7 +79,7 @@ const InstallIntegrationModal = () => {
 
       if (selectedIntegration.id) {
         res = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${selectedIntegration.id}/update`,
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${selectedIntegration.id}`,
           {
             body: JSON.stringify(newIntegration),
             headers: {
@@ -89,7 +90,7 @@ const InstallIntegrationModal = () => {
         );
       } else {
         res = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/create`,
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration`,
           {
             body: JSON.stringify(newIntegration),
             headers: {
@@ -113,7 +114,9 @@ const InstallIntegrationModal = () => {
       setInstalledIntegrations(data.installedIntegrations);
       setSelectedIntegration(null);
 
-      toast.success(`Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`);
+      toast.success(
+        `Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`
+      );
     } catch (err) {
       toast.error('Failed to install integration');
 

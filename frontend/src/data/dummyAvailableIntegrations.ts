@@ -1,12 +1,10 @@
 import { Integration } from '../contexts/IntegrationsProvider/IntegrationsProvider';
 
-
 export const DUMMY_AVAILABLE_INTEGRATIONS: Integration[] = [
   {
     config: {
       apiKey: 'string',
-      host: 'string',
-      port: 'string'
+      url: 'url'
     },
     imageUri: '../logos/backstage.svg',
     name: 'Backstage',
@@ -14,8 +12,7 @@ export const DUMMY_AVAILABLE_INTEGRATIONS: Integration[] = [
   },
   {
     config: {
-      host: 'string',
-      port: 'string'
+      url: 'url'
     },
     imageUri: '../logos/jaeger.svg',
     name: 'Jaeger',
@@ -23,8 +20,7 @@ export const DUMMY_AVAILABLE_INTEGRATIONS: Integration[] = [
   },
   {
     config: {
-      host: 'string',
-      port: 'string'
+      url: 'url'
     },
     imageUri: '../logos/alertmanager.svg',
     name: 'Alertmanager',
@@ -38,8 +34,7 @@ export const DUMMY_AVAILABLE_INTEGRATIONS: Integration[] = [
   },
   {
     config: {
-      host: 'string',
-      port: 'string',
+      url: 'url',
       workspaceId: 'string'
     },
     imageUri: '../logos/slack.svg',
