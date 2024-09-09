@@ -84,11 +84,15 @@ func (integration ConfluenceIntegration) ValidateStep(
 type SearchInput struct {
 	Query          string `json:"query" bson:"query"`
 	SimilarityCase string `json:"similarity_case" bson:"similarity_case"`
+	Limit          int    `json:"limit" bson:"limit"`
 }
 
 func search(input any, integration any) ([]any, error) {
 	var parsedInput SearchInput
 	var output []any
+
+	var LIMIT_UPPER_THRESHOLD = 6
+	var LIMIT_LOWER_THRESHOLD = 2
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "search")
 	if err != nil {
@@ -97,8 +101,15 @@ func search(input any, integration any) ([]any, error) {
 
 	assertedIntegration, _ := integration.(ConfluenceIntegration)
 
-	//Hardcoded limit for UX readability reasons
-	url := fmt.Sprintf("%s/wiki/rest/api/content/search?limit=6&expand=body.view&cql=%s", assertedIntegration.Url, parsedInput.Query)
+	if parsedInput.Limit < LIMIT_LOWER_THRESHOLD {
+		parsedInput.Limit = LIMIT_LOWER_THRESHOLD
+	}
+
+	if parsedInput.Limit > LIMIT_UPPER_THRESHOLD {
+		parsedInput.Limit = LIMIT_UPPER_THRESHOLD
+	}
+
+	url := fmt.Sprintf("%s/wiki/rest/api/content/search?limit=%d&expand=body.view&cql=%s", assertedIntegration.Url, parsedInput.Limit, parsedInput.Query)
 	basicCredentials := base64.RawStdEncoding.EncodeToString([]byte(assertedIntegration.Email + ":" + assertedIntegration.ApiKey))
 
 	contents, err := getPageContent(url, basicCredentials)
