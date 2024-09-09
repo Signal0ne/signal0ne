@@ -5,7 +5,7 @@ services:
     build:
       dockerfile: Dockerfile.test
       context: ./backend
-    command: [""]
+    command: ["./pkg/integrations/confluence"]
     ports:
       - 8080:8080
     depends_on:

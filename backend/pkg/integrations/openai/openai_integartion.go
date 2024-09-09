@@ -17,6 +17,10 @@ type OpenaiIntegration struct {
 }
 
 var functions = map[string]models.WorkflowFunctionDefinition{
+	"propose_resolution_steps": models.WorkflowFunctionDefinition{
+		Function: proposeResolutions,
+		Input:    ProposeResolutionsInput{},
+	},
 	"summarize_context": models.WorkflowFunctionDefinition{
 		Function: summarizeContext,
 		Input:    SummarizeContextInput{},
@@ -72,18 +76,54 @@ type SummarizeContextInput struct {
 	Context string `json:"context"`
 }
 
-func summarizeContext(input any, integration any) ([]any, error) {
-	var parsedInput SummarizeContextInput
+type ProposeResolutionsInput struct {
+	AdditionalContext string `json:"additional_context"`
+	Logs              string `json:"logs"`
+}
+
+func proposeResolutions(input any, integration any) ([]any, error) {
+	var parsedInput ProposeResolutionsInput
 	var output []any
 
-	err := helpers.ValidateInputParameters(input, &parsedInput, "compare_traces")
+	err := helpers.ValidateInputParameters(input, &parsedInput, "propose_resolution_steps")
 	if err != nil {
 		return output, err
 	}
 
 	assertedIntegration := integration.(OpenaiIntegration)
 
-	fmt.Printf("Executing OpenAi integration function...")
+	fmt.Printf("###\nExecuting OpenAi integration function...\n")
+	model := assertedIntegration.Model
+	apiKey := assertedIntegration.ApiKey
+	prompt := fmt.Sprintf(`You are on-call engineer Based on the logs and additional context like documentation or runbooks propose resolutions.
+		Response must contain up to 3 steps with resolutions.
+		Logs: %s
+		Additional Context %s`, parsedInput.Logs, parsedInput.AdditionalContext)
+
+	resolutions, err := callOpenAiApi(prompt, model, apiKey)
+	if err != nil {
+		return output, err
+	}
+
+	output = append(output, map[string]any{
+		"content": resolutions,
+	})
+
+	return output, nil
+}
+
+func summarizeContext(input any, integration any) ([]any, error) {
+	var parsedInput SummarizeContextInput
+	var output []any
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "summarize_context")
+	if err != nil {
+		return output, err
+	}
+
+	assertedIntegration := integration.(OpenaiIntegration)
+
+	fmt.Printf("###\nExecuting OpenAi integration function...\n")
 	model := assertedIntegration.Model
 	apiKey := assertedIntegration.ApiKey
 	prompt := fmt.Sprintf(`You are on-call engineer Based on the full context from the investigation summarize investigation context for other engineers.

@@ -13,7 +13,7 @@ func ConnectToSocket() net.Conn {
 	var cfg = config.GetInstance()
 	for conn == nil {
 		conn, err = net.DialTimeout("unix", cfg.IPCSocket, (60 * time.Second))
-		if err != nil {
+		if err != nil || conn == nil {
 			fmt.Printf("Failed to establish connection, error: %s, retrying in 5 seconds\n",
 				err)
 			time.Sleep(5 * time.Second)

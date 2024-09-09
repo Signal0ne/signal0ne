@@ -82,7 +82,7 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	fmt.Printf("Executing backstage getPropertiesValues\n")
+	fmt.Printf("###\nExecuting backstage getPropertiesValues\n")
 
 	assertedIntegration := integration.(BackstageIntegration)
 

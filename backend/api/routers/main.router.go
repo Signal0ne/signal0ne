@@ -45,9 +45,15 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		authGroup.POST("/token/refresh")
 	}
 
-	incidentGroup := rg.Group("/:namespaceid/incident")
+	incidentGroup := rg.Group("/:namespaceid/incident", middlewares.CheckAuthorization)
 	{
-		incidentGroup.GET("/:incidentid")
+		// All incident types
+		incidentGroup.POST("/create", r.IncidentController.CreateIncident)
+
+		// Signal0ne incident only
+		incidentGroup.PATCH("/:incidentid", r.IncidentController.UpdateIncident)
+		incidentGroup.GET("/:incidentid", r.IncidentController.GetIncident)
+		incidentGroup.POST("/:incidentid/register-history-event/:updatetype", r.IncidentController.RegisterHistoryEvent)
 	}
 
 	integrationGroup := rg.Group("/:namespaceid/integration", middlewares.CheckAuthorization)

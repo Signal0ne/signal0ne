@@ -6,9 +6,13 @@ import (
 	"reflect"
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
+	"signal0ne/pkg/integrations/confluence"
+	"signal0ne/pkg/integrations/github"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/opensearch"
+	"signal0ne/pkg/integrations/pagerduty"
+	"signal0ne/pkg/integrations/servicenow"
 	"signal0ne/pkg/integrations/signal0ne"
 	"signal0ne/pkg/integrations/slack"
 	"sync"
@@ -25,9 +29,13 @@ var globalErrorHandle error = nil
 var InstallableIntegrationTypesLibrary = map[string]reflect.Type{
 	"alertmanager": reflect.TypeOf(alertmanager.AlertmanagerIntegration{}),
 	"backstage":    reflect.TypeOf(backstage.BackstageIntegration{}),
+	"confluence":   reflect.TypeOf(confluence.ConfluenceIntegration{}),
+	"github":       reflect.TypeOf(github.GithubIntegration{}),
 	"jaeger":       reflect.TypeOf(jaeger.JaegerIntegration{}),
 	"openai":       reflect.TypeOf(openai.OpenaiIntegration{}),
 	"opensearch":   reflect.TypeOf(opensearch.OpenSearchIntegration{}),
+	"pagerduty":    reflect.TypeOf(pagerduty.PagerdutyIntegration{}),
+	"servicenow":   reflect.TypeOf(servicenow.ServicenowIntegration{}),
 	"signal0ne":    reflect.TypeOf(signal0ne.Signal0neIntegration{}),
 	"slack":        reflect.TypeOf(slack.SlackIntegration{}),
 }

@@ -118,7 +118,7 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		comparedFieldParamSpliced[idx] = strings.Trim(field, " ")
 	}
 
-	fmt.Printf("Executing Jaeger integration function...\n")
+	fmt.Printf("###\nExecuting Jaeger integration function...\n")
 
 	assertedIntegration := integration.(JaegerIntegration)
 
@@ -252,7 +252,7 @@ func compareTraces(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	fmt.Printf("Executing Jaeger integration function...")
+	fmt.Printf("###\nExecuting Jaeger integration function...\n")
 
 	assertedIntegration := integration.(JaegerIntegration)
 
