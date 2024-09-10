@@ -242,11 +242,11 @@ func createIncident(input any, integration any) ([]any, error) {
 		}
 
 		task := models.Task{
-			TaskName: step.Name,
-			Priority: si,
 			Assignee: models.User{},
 			IsDone:   isDone,
 			Items:    make([]models.Item, 0),
+			Priority: si,
+			TaskName: step.Name,
 		}
 
 		for _, stepOutput := range stepOutputs {
@@ -268,11 +268,11 @@ func createIncident(input any, integration any) ([]any, error) {
 
 	incident := models.Incident{
 		Id:       parsedAlert.Id,
-		Title:    assertedIntegration.Inventory.WorkflowProperties.Name,
 		Assignee: assignee,
+		History:  []models.IncidentUpdate[models.Update]{},
 		Severity: parsedInput.Severity,
 		Tasks:    tasks,
-		History:  []models.IncidentUpdate[models.Update]{},
+		Title:    assertedIntegration.Inventory.WorkflowProperties.Name,
 	}
 
 	assertedIntegration.Inventory.IncidentCollection.InsertOne(context.Background(), incident)
