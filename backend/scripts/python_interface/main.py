@@ -21,44 +21,28 @@ logger = logging.getLogger(__name__)
 
 bufferSizePrefix = 4
 
-def main():
 
-    load_dotenv(dotenv_path='.default.env')
-    print("loading...")
-    socket_path = os.getenv('IPC_SOCKET', "/net/socket")
-
+def handle_connection(connection, client_address):
     try:
-        os.unlink(socket_path)
-    except OSError:
-        if os.path.exists(socket_path):
-            raise
-
-    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-
-    server.bind(socket_path)
-
-    server.listen(1)
-
-    print('Server is listening for incoming connections...')
-    connection, client_address = server.accept()
-
-    try:
-
         print('Connection from', str(connection).split(", ")[0][-8:])
         payload = b''
         payloadBatchBuffer = float('-inf')
 
         while True:
+            try:
+                if payloadBatchBuffer < 0 :
+                    batchSizeHeader = connection.recv(bufferSizePrefix)
+                    if not batchSizeHeader:
+                        break
+                    
+                    payloadSize = struct.unpack('>I', batchSizeHeader)[0]
+                    payloadBatchBuffer = float(payloadSize)
 
-            if payloadBatchBuffer < 0 :
-                batchSizeHeader = connection.recv(bufferSizePrefix)
-                if not batchSizeHeader:
-                    break
-            
-                payloadSize = struct.unpack('>I', batchSizeHeader)[0]
-                payloadBatchBuffer = float(payloadSize)
-
-            payload += connection.recv(payloadSize)
+                payload += connection.recv(payloadSize)
+            except Exception:
+                print("Error receiving data", traceback.print_exc())
+                print("Recovering....")
+                break
 
             if len(payload) >= int(payloadBatchBuffer):
                 data = json.loads(payload)
@@ -111,9 +95,37 @@ def main():
             connection.sendall(response)
 
     finally:
-
         connection.close()
+
+def main():
+
+    load_dotenv(dotenv_path='.default.env')
+    print("loading...")
+    socket_path = os.getenv('IPC_SOCKET', "/net/socket")
+
+    try:
         os.unlink(socket_path)
+    except OSError:
+        if os.path.exists(socket_path):
+            raise
+
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+    server.bind(socket_path)
+
+    server.listen(1)
+
+    while True:
+        try:
+            connection, client_address = server.accept()
+            print('Server is listening for incoming connections...')
+
+            handle_connection(connection, client_address)
+        except KeyboardInterrupt:
+            break
+        except Exception:
+            connection.close()
+    server.close()
 
 if __name__ == '__main__':
     main()

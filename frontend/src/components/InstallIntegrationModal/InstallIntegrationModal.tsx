@@ -116,6 +116,7 @@ const InstallIntegrationModal = () => {
 
       setInstalledIntegrations(data.installedIntegrations);
       setSelectedIntegration(null);
+      setIsModalOpen(false);
 
       toast.success(
         `Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`
@@ -208,9 +209,9 @@ const InstallIntegrationModal = () => {
                         pattern:
                           key === 'url'
                             ? {
-                                message: 'Invalid URL address',
-                                value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
-                              }
+                              message: 'Invalid URL address',
+                              value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
+                            }
                             : undefined,
                         required: 'This field is required'
                       })}
