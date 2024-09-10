@@ -13,8 +13,8 @@ const AvailableIntegrationsListItem = ({
   const { setIsModalOpen, setSelectedIntegration } = useIntegrationsContext();
 
   const handleAvailableIntegrationClick = () => {
-    setIsModalOpen(true);
     setSelectedIntegration(integration);
+    setIsModalOpen(true);
   };
 
   return (
