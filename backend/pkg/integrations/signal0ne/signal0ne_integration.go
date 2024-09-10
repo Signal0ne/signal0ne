@@ -242,21 +242,21 @@ func createIncident(input any, integration any) ([]any, error) {
 		}
 
 		task := models.Task{
-			StepName: step.Name,
-			Priority: si,
 			Assignee: models.User{},
 			IsDone:   isDone,
 			Items:    make([]models.Item, 0),
+			Priority: si,
+			TaskName: step.Name,
 		}
 
 		for _, stepOutput := range stepOutputs {
 			item := models.Item{
-				Fields: make([]models.Field, 0),
+				Content: make([]models.ItemContent, 0),
+				Source:  step.Integration,
 			}
 			for key, value := range stepOutput.(map[string]any) {
-				item.Fields = append(item.Fields, models.Field{
+				item.Content = append(item.Content, models.ItemContent{
 					Key:       key,
-					Source:    step.Integration,
 					Value:     value,
 					ValueType: "markdown",
 				})
@@ -267,13 +267,12 @@ func createIncident(input any, integration any) ([]any, error) {
 	}
 
 	incident := models.Incident{
-		Id:            parsedAlert.Id,
-		Title:         assertedIntegration.Inventory.WorkflowProperties.Name,
-		Assignee:      assignee,
-		Severity:      parsedInput.Severity,
-		PrimaryFields: parsedAlert.TriggerProperties,
-		Tasks:         tasks,
-		History:       []models.IncidentUpdate[models.Update]{},
+		Id:       parsedAlert.Id,
+		Assignee: assignee,
+		History:  []models.IncidentUpdate[models.Update]{},
+		Severity: parsedInput.Severity,
+		Tasks:    tasks,
+		Title:    assertedIntegration.Inventory.WorkflowProperties.Name,
 	}
 
 	assertedIntegration.Inventory.IncidentCollection.InsertOne(context.Background(), incident)

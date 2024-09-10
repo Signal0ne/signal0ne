@@ -13,7 +13,7 @@ services:
   backend:
     container_name: s0backend
     build:
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       context: ./backend
     ports:
       - 8080:8080
@@ -22,6 +22,7 @@ services:
       - mongo-db
     volumes:
       - ./sockets:/var/run:rw
+      - ./backend:/app
 
   python-service:
     container_name: python-service
