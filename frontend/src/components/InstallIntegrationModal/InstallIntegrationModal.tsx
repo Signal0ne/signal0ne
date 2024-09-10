@@ -210,9 +210,9 @@ const InstallIntegrationModal = () => {
                         pattern:
                           key === 'url'
                             ? {
-                                message: 'Invalid URL address',
-                                value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
-                              }
+                              message: 'Invalid URL address',
+                              value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
+                            }
                             : undefined,
                         required: 'This field is required'
                       })}
