@@ -115,7 +115,6 @@ const InstallIntegrationModal = () => {
       const data: GetInstalledIntegrationsResponse = await response.json();
 
       setInstalledIntegrations(data.installedIntegrations);
-      setSelectedIntegration(null);
       setIsModalOpen(false);
 
       toast.success(
@@ -163,10 +162,12 @@ const InstallIntegrationModal = () => {
   return (
     <ReactModal
       isOpen={isModalOpen}
-      onRequestClose={() => {
-        setIsModalOpen(false);
+      onAfterClose={() => {
         setSelectedIntegration(null);
         reset();
+      }}
+      onRequestClose={() => {
+        setIsModalOpen(false);
       }}
       style={CUSTOM_STYLES}
     >
