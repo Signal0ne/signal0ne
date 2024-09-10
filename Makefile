@@ -1,5 +1,9 @@
 .PHONY: build
 build:
+	docker compose -f docker-compose.yaml up --build
+
+.PHONY: dev
+build:
 	docker compose -f docker-compose.dev.yaml up --build
 
 .PHONY: test

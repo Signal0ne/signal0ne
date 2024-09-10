@@ -218,7 +218,7 @@ func (ic *IncidentController) UpdateIncident(ctx *gin.Context) {
 	objectID, err := primitive.ObjectIDFromHex(incidentId)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": "invalid incident ID tasdjhasdjhgs",
+			"error": "invalid incident ID",
 		})
 		return
 	}

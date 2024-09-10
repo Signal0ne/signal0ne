@@ -1,11 +1,11 @@
 package models
 
 type Task struct {
-	TaskName string `json:"taskName" bson:"taskName"`
-	Priority int    `json:"priority" bson:"priority"`
 	Assignee User   `json:"assignee" bson:"assignee"`
 	IsDone   bool   `json:"isDone" bson:"isDone"`
 	Items    []Item `json:"items" bson:"items"`
+	Priority int    `json:"priority" bson:"priority"`
+	TaskName string `json:"taskName" bson:"taskName"`
 }
 
 type Item struct {
@@ -22,6 +22,6 @@ type ItemContent struct {
 type ValueType string
 
 const (
-	Markdown ValueType = "markdown"
 	Graph    ValueType = "graph"
+	Markdown ValueType = "markdown"
 )
