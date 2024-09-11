@@ -109,6 +109,8 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
+	fmt.Printf("###\nExecuting OpenSearch integration function...\n")
+
 	comparedFieldParamSpliced := strings.Split(parsedInput.CompareBy, ",")
 	for idx, field := range comparedFieldParamSpliced {
 		comparedFieldParamSpliced[idx] = strings.Trim(field, " ")
@@ -211,9 +213,9 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		errorMsg, _ := intermediateOutput["error"].(string)
 		return output, fmt.Errorf("cannot retrieve results %s", errorMsg)
 	}
-	resultsEncoded, exists := intermediateOutput["result"].(string)
+	resultsEncoded := intermediateOutput["result"].(string)
 	if !exists {
-		return output, fmt.Errorf("cannot retrieve results")
+		return output, fmt.Errorf("cannot retrieve results, results not found")
 	}
 
 	err = json.Unmarshal([]byte(resultsEncoded), &output)

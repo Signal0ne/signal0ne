@@ -48,7 +48,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 	incidentGroup := rg.Group("/:namespaceid/incident", middlewares.CheckAuthorization)
 	{
 		// All incident types
-		incidentGroup.POST("/create", r.IncidentController.CreateIncident)
+		incidentGroup.POST("", r.IncidentController.CreateIncident)
 
 		// Signal0ne incident only
 		incidentGroup.PATCH("/:incidentid", r.IncidentController.UpdateIncident)

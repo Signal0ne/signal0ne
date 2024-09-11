@@ -62,14 +62,12 @@ steps:
 			"timestamp": "2021-09-01T00:00:00Z",
 			"category":  "core",
 		},
-		AdditionalContext: map[string]models.Outputs{
-			"opensearch_get_log_occurrences": models.Outputs{
-				Output: []any{
-					map[string]any{
-						"occurrences": 1,
-						"body":        "Test body",
-						"hostname":    "Test hostname",
-					},
+		AdditionalContext: map[string]any{
+			"opensearch_get_log_occurrences": []any{
+				map[string]any{
+					"occurrences": 1,
+					"body":        "Test body",
+					"hostname":    "Test hostname",
 				},
 			},
 		},

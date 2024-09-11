@@ -230,12 +230,14 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var alert = models.EnrichedAlert{
 		Id:                primitive.NewObjectID(),
 		TriggerProperties: map[string]any{},
-		AdditionalContext: map[string]models.Outputs{},
+		AdditionalContext: map[string]any{},
 	}
 
 	namespaceId := ctx.Param("namespaceid")
 	workflowId := ctx.Param("workflowid")
 	salt := ctx.Param("salt")
+
+	alert.WorkflowId = workflowId
 
 	ID, err := primitive.ObjectIDFromHex(workflowId)
 	if err != nil {
@@ -462,9 +464,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			localErrorMessage = fmt.Sprintf("%v", err)
 		}
 
-		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = models.Outputs{
-			Output: execResult,
-		}
+		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult
 	}
 	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 
@@ -473,6 +473,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err,
 		})
+		return
 	}
 
 	ctx.JSON(http.StatusOK, nil)

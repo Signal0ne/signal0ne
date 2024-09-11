@@ -69,17 +69,6 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 		return
 	}
 
-	workflow, err := db.GetWorkflowById(createIncidentRequest.BaseAlertId,
-		ctx,
-		ic.WorkflowsCollection,
-	)
-	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "workflow not found",
-		})
-		return
-	}
-
 	alert, err := db.GetEnrichedAlertById(
 		createIncidentRequest.BaseAlertId,
 		ctx,
@@ -88,6 +77,17 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"error": "alert not found",
+		})
+		return
+	}
+
+	workflow, err := db.GetWorkflowById(alert.WorkflowId,
+		ctx,
+		ic.WorkflowsCollection,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "workflow not found",
 		})
 		return
 	}
@@ -119,7 +119,7 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 		"name": createIncidentRequest.Integration,
 	}
 	result := ic.IntegrationsCollection.FindOne(ctx, filter)
-	err = result.Decode(&integration)
+	err = result.Decode(integration)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"error": "integration not found",
@@ -131,10 +131,16 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 		bytes, _ := json.Marshal(alert)
 		input := map[string]any{
 			"severity":                "",
-			"assignee":                models.User{},
+			"assignee":                models.User{}.Id,
 			"parsable_context_object": string(bytes),
 		}
-		i.Execute(input, nil, "create_incident")
+		_, err := i.Execute(input, nil, "create_incident")
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("error executing integration: %v", err),
+			})
+			return
+		}
 	case *pagerduty.PagerdutyIntegration:
 		bytes, _ := json.Marshal(alert)
 		input := map[string]any{
@@ -143,7 +149,13 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 			"service_name":            alert.TriggerProperties["service"],
 			"parsable_context_object": string(bytes),
 		}
-		i.Execute(input, nil, "create_incident")
+		_, err := i.Execute(input, nil, "create_incident")
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("error executing integration: %v", err),
+			})
+			return
+		}
 	case *servicenow.ServicenowIntegration:
 		// Create incident in ServiceNow
 	}
