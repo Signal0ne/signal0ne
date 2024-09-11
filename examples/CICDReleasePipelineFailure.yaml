@@ -10,7 +10,7 @@ trigger:
       result: "workflow_run.conclusion"
       status: "workflow_run.status"
       commit: "workflow_run.head_commit.id"
-    condition: "{{if and (ne .result \"success\") (eq .status \"completed\")}}true{{else}}false{{end}}"
+    condition: "{{if and (ne .TriggerProperties..result \"success\") (eq .TriggerProperties..status \"completed\")}}true{{else}}false{{end}}"
 steps:
   - displayName: Inspect pipeline logs
     name: inspect_logs
