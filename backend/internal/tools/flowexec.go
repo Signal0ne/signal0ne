@@ -91,24 +91,12 @@ func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string
 		desiredPropertiesWithValues[key] = TraverseOutput(incomingTriggerPayload, key, mapping)
 	}
 
-	parsedTemplate, err := template.New("").Parse(workflow.Trigger.WebhookTrigger.Webhook.Condition)
-	if err != nil {
-		return desiredPropertiesWithValues, fmt.Errorf("cannot parse condition %s", err)
+	alertWithTriggerProperties := models.EnrichedAlert{
+		TriggerProperties: desiredPropertiesWithValues,
 	}
 
-	buf := new(bytes.Buffer)
-
-	err = parsedTemplate.Execute(buf, desiredPropertiesWithValues)
-	if err != nil {
-		return desiredPropertiesWithValues, fmt.Errorf("cannot evaluate condition")
-	}
-
-	execute, err := strconv.ParseBool(strings.TrimSpace(buf.String()))
-	if err != nil {
-		return desiredPropertiesWithValues, fmt.Errorf("cannot evaluate condition: %v", err)
-	}
-
-	if !execute {
+	if !EvaluateCondition(workflow.Trigger.WebhookTrigger.Webhook.Condition,
+		alertWithTriggerProperties) {
 		return desiredPropertiesWithValues, fmt.Errorf("condition not satisfied")
 	}
 
@@ -171,24 +159,12 @@ func EvaluateCondition(conditionExpression string, alert models.EnrichedAlert) b
 		return satisfied
 	}
 
-	t, err := template.New("EvaluateCondition").Funcs(template.FuncMap{
-		"isempty": func(rawValue any) bool {
-			switch value := rawValue.(type) {
-			case string:
-				return !(value == "")
-			case []any:
-				return !(len(value) == 0)
-			default:
-				return !(value == nil)
-			}
-
-		},
-	}).Parse(conditionExpression)
+	parsedTemplate, err := template.New("").Parse(conditionExpression)
 	if err != nil {
-		fmt.Printf("Error %v", err)
 		return satisfied
 	}
-	err = t.Execute(buf, alert)
+
+	err = parsedTemplate.Execute(buf, alert)
 	if err != nil {
 		fmt.Printf("Error %v", err)
 		return satisfied

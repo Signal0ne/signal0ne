@@ -7,10 +7,9 @@ trigger:
       service: "job"
       span: "span_name"
       timestamp: "startsAt"
-    condition: "{{result != 'success' && status == 'completed'}}"
 steps:
 - displayName: Get ownership
-  name: get-ownership
+  name: get_ownership
   integration: backstage
   function: get_properties_values
   input:
@@ -19,7 +18,7 @@ steps:
     owner: "spec.owner"
     slack_channel: "metadata.labels.slack_channel"
 - displayName: Get relevant logs
-  name: get-relevant-logs
+  name: get_relevant_logs
   integration: opensearch
   function: get_log_occurrences
   input:
@@ -32,7 +31,7 @@ steps:
     body: "body"
     hostname: "resource.host.name"
 - displayName: Inspect traces
-  name: inspect-traces
+  name: inspect_traces
   integration: jaeger
   function: get_properties_values
   input:
@@ -44,9 +43,9 @@ steps:
     output_source: "output_source"
     count: "count"
     log: "logs.exception.stacktrace, tags.grpc.error_message"
-  condition: "{{isempty .AdditionalContext.opensearch_get-relevant-logs.Output }}"
+  condition: "{{isempty .AdditionalContext.opensearch_get_relevant_logs.Output }}"
 - displayName: Compare traces
-  name: compare-traces
+  name: compare_traces
   integration: jaeger
   function: compare_traces
   input:
@@ -65,28 +64,28 @@ steps:
     # errors_diff:
     # duration_diff: 
 - displayName: Get containers status
-  name: get-containers-status
+  name: get_containers_status
   integration: alertmanager
   function: get_relevant_alerts
   input:
-    filter: "{{range .AdditionalContext.jaeger_compare-traces.Output}}name={{.processes_diff.processName}},{{end}}"
+    filter: "{{range .AdditionalContext.jaeger_compare_traces.Output}}name={{.processes_diff.processName}},{{end}}"
   output:
     output_source: "output_source"
     alert: "alert"
 - displayName: Summarize issue content
-  name: summarize-issue-content
+  name: summarize_issue_content
   integration: openai
   function: summarize_context
   input:
     context: "{{root}}"
   output:
     summary: "summary"
-- displayName: Send to slack channel
-  name: send-to-slack
-  integration: slack
-  function: post_message
-  input:
-    slack_channel: "{{range .AdditionalContext.backstage_get-ownership.Output}}{{.slack_channel}},{{end}}"
-    parsable_context_object: "{{root}}"
-    post_message_payload: "{\"startedAt\": \"{{.TriggerProperties.timestamp}}\", \"service\": \"{{.TriggerProperties.service}}\", \"summary\": \"{{( index .AdditionalContext.openai_summarize-issue-content.Output 0).summary}}\"}"
+# - displayName: Send to slack channel
+#   name: send_to_slack
+#   integration: slack
+#   function: post_message
+#   input:
+#     slack_channel: "{{range .AdditionalContext.backstage_get_ownership.Output}}{{.slack_channel}},{{end}}"
+#     parsable_context_object: "{{root}}"
+#     post_message_payload: "{\"startedAt\": \"{{.TriggerProperties.timestamp}}\", \"service\": \"{{.TriggerProperties.service}}\", \"summary\": \"{{( index .AdditionalContext.openai_summarize-issue-content.Output 0).summary}}\"}"
 

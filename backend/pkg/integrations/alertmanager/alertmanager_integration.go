@@ -83,7 +83,7 @@ func getRelevantAlerts(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	fmt.Printf("###\nExecuting Jaeger integration function...\n")
+	fmt.Printf("###\nExecuting Alertmanager integration function...\n")
 
 	assertedIntegration := integration.(AlertmanagerIntegration)
 	apiPath := "/api/v2/alerts?"

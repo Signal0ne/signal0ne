@@ -48,6 +48,7 @@ def handle_connection(connection, client_address):
                 data = json.loads(payload)
                 command = data["command"]
                 params = data["params"]
+                command = command.strip()
 
             
                 try:
@@ -56,40 +57,43 @@ def handle_connection(connection, client_address):
                         parsedResult = json.dumps(result)
                         responseTemplate = json.dumps({"status":"0", "result":parsedResult})
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
-                        print("Success!!!")
+                        print("Success!!!", command)
                         connection.sendall(response)
-                    if command == "correlate_ongoing_alerts":
-                        result = correlate_ongoing_alerts(params["collectedEntities"], params["comparedFields"])
-                        parsedResult = json.dumps(result)
-                        responseTemplate = json.dumps({"status":"0", "result":parsedResult})
-                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
-                        print("Success!!!")
-                        connection.sendall(response)    
-                    if command == "contents_similarity":
-                        result = contents_similarity(params["similarityCase"], params["contents"])
-                        parsedResult = json.dumps(result)
-                        responseTemplate = json.dumps({"status":"0", "result":parsedResult})
-                        response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
-                        print("Success!!!")
-                        connection.sendall(response)
-                    if command == "ping":
+                    # elif command == "correlate_ongoing_alerts":
+                    #     result = correlate_ongoing_alerts(params["collectedEntities"], params["comparedFields"])
+                    #     parsedResult = json.dumps(result)
+                    #     responseTemplate = json.dumps({"status":"0", "result":parsedResult})
+                    #     response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                    #     print("Success!!!", command)
+                    #     connection.sendall(response)
+                    # elif command == "contents_similarity":
+                    #     result = contents_similarity(params["similarityCase"], params["contents"])
+                    #     parsedResult = json.dumps(result)
+                    #     responseTemplate = json.dumps({"status":"0", "result":parsedResult})
+                    #     response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
+                    #     print("Success!!!", command)
+                    #     connection.sendall(response)
+                    elif command == "ping":
                         result = ping(1)
                         responseTemplate = json.dumps({"status":"0", "result":result})
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         connection.sendall(response)
+                        print("Success!!!", command)
                     else:
                         result = "Unknown command"
                         responseTemplate = json.dumps({"status":"1", "error":result})
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         connection.sendall(response)
+                        print("Failure, Unknown command")
                 except Exception:
                         traceback.print_exc()
                         responseTemplate = json.dumps({"status":"1", "error":traceback.format_exc()})
                         response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
                         connection.sendall(response)
+                finally:
+                    payload = b''
+                    payloadBatchBuffer = float('-inf')
 
-                payload = b''
-                payloadBatchBuffer = float('-inf')
             responseTemplate = json.dumps({"status":"0"})
             response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
             connection.sendall(response)

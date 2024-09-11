@@ -234,8 +234,10 @@ func createIncident(input any, integration any) ([]any, error) {
 	for si, step := range assertedIntegration.Inventory.WorkflowProperties.Steps {
 		isDone := true
 
-		stepOutputs, _ := parsedAlert.AdditionalContext[fmt.Sprintf("%s_%s", step.Integration, step.Name)].Output.([]any)
-
+		stepOutputs, exists := parsedAlert.AdditionalContext[fmt.Sprintf("%s_%s", step.Integration, step.Name)].([]any)
+		if !exists {
+			isDone = false
+		}
 		// Check if is done
 		if len(stepOutputs) == 0 {
 			isDone = false
@@ -254,6 +256,7 @@ func createIncident(input any, integration any) ([]any, error) {
 				Content: make([]models.ItemContent, 0),
 				Source:  step.Integration,
 			}
+			fmt.Printf("\nStep output %s_%s %v", step.Integration, step.Name, stepOutput)
 			for key, value := range stepOutput.(map[string]any) {
 				item.Content = append(item.Content, models.ItemContent{
 					Key:       key,

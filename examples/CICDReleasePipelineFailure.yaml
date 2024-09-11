@@ -10,10 +10,10 @@ trigger:
       result: "workflow_run.conclusion"
       status: "workflow_run.status"
       commit: "workflow_run.head_commit.id"
-    condition: "{{result != 'success' && status == 'completed'}}"
+    condition: "{{if and (ne .TriggerProperties..result \"success\") (eq .TriggerProperties..status \"completed\")}}true{{else}}false{{end}}"
 steps:
   - displayName: Inspect pipeline logs
-    name: inspect-logs
+    name: inspect_logs
     integration: github
     function: get_content
     input:
@@ -23,7 +23,7 @@ steps:
       content: "content"
     condition: "{{.TriggerProperties.status != 'success' && .TriggerProperties.logs_url != ''}}"
   - displayName: Get pipeline definition
-    name: get-pipeline-definition
+    name: get_pipeline_definition
     integration: github
     function: get_content
     input:
@@ -33,20 +33,20 @@ steps:
     output:
       content: "content"
   - displayName: Search for runbooks and wiki pages
-    name: search-runbooks
+    name: search_runbooks
     integration: confluence
     function: search
     input:
       query: "type=page and (text~build)"
-      similarity_case: "{{.AdditionalContext.github_inspect-logs.Output}}"
+      similarity_case: "{{.AdditionalContext.github_inspect_logs.Output}}"
     output:
       page: "page"
   - displayName: Propose issue resolution
-    name: propose-resolution
+    name: propose_resolution
     integration: openai
     function: propose_resolution_steps
     input:
-      logs: "{{ (index .AdditionalContext.github_inspect-logs.Output 0).logs}}"
+      logs: "{{ (index .AdditionalContext.github_inspect_logs.Output 0).logs}}"
       additional_context: "{{.AdditionalContext.confluence_search.Output}}" # Stuff like doc pages or runbooks
     output:
       content: "content"

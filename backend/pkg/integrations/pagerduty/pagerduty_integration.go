@@ -201,7 +201,10 @@ func createIncident(input any, integration any) ([]any, error) {
 		var note = Note{}
 		isDone := true
 
-		stepOutputs, _ := parsedAlert.AdditionalContext[fmt.Sprintf("%s_%s", step.Integration, step.Name)].Output.([]any)
+		stepOutputs, exists := parsedAlert.AdditionalContext[fmt.Sprintf("%s_%s", step.Integration, step.Name)].([]any)
+		if !exists {
+			isDone = false
+		}
 
 		if len(stepOutputs) == 0 {
 			isDone = false

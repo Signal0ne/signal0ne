@@ -126,5 +126,20 @@ func main() {
 		panic(err)
 	}
 
+	headerBuffer := make([]byte, 4)
+
+	_, err = conn.Read(headerBuffer)
+	if err != nil {
+		panic(err)
+	}
+
+	size := binary.BigEndian.Uint32(headerBuffer)
+
+	payloadBuffer := make([]byte, size)
+	_, err = conn.Read(payloadBuffer)
+	if err != nil {
+		panic(err)
+	}
+
 	server.Run(":" + cfg.Server.ServerPort)
 }
