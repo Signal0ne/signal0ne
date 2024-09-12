@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"reflect"
@@ -25,6 +26,7 @@ import (
 	"signal0ne/pkg/integrations/signal0ne"
 	"signal0ne/pkg/integrations/slack"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -35,11 +37,12 @@ import (
 )
 
 type WorkflowController struct {
+	AlertsCollection    *mongo.Collection
+	DebugLogger         *log.Logger
+	IncidentsCollection *mongo.Collection
+	PyInterface         net.Conn
 	WebhookServerRef    config.Server
 	WorkflowsCollection *mongo.Collection
-	PyInterface         net.Conn
-	IncidentsCollection *mongo.Collection
-	AlertsCollection    *mongo.Collection
 	// ==== Use as readonly ====
 	NamespaceCollection    *mongo.Collection
 	IntegrationsCollection *mongo.Collection
@@ -53,7 +56,8 @@ func NewWorkflowController(
 	incidentsCollection *mongo.Collection,
 	alertsCollection *mongo.Collection,
 	webhookServerRef config.Server,
-	pyInterface net.Conn) *WorkflowController {
+	pyInterface net.Conn,
+	debugLogger *log.Logger) *WorkflowController {
 	return &WorkflowController{
 		WorkflowsCollection:    workflowsCollection,
 		NamespaceCollection:    namespaceCollection,
@@ -62,6 +66,7 @@ func NewWorkflowController(
 		AlertsCollection:       alertsCollection,
 		WebhookServerRef:       webhookServerRef,
 		PyInterface:            pyInterface,
+		DebugLogger:            debugLogger,
 	}
 }
 
@@ -114,7 +119,13 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	workflowID := insResult.InsertedID.(primitive.ObjectID)
+	workflowID, exists := insResult.InsertedID.(primitive.ObjectID)
+	if !exists {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "cannot parse inserted id",
+		})
+		return
+	}
 
 	httpPrefix := "http://"
 	if c.WebhookServerRef.ServerIsSecure {
@@ -290,6 +301,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	// Steps execution
 	for _, step := range workflow.Steps {
 		var integrationTemplate models.Integration
+		localErrorMessage = ""
 
 		// 1. Get integration
 		filter := bson.M{
@@ -423,11 +435,18 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			}
 			err = t.Execute(buf, alert)
 			if err != nil {
+				fmt.Printf("failed to execute template INS, %s", err)
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
 			step.Input[key] = buf.String()
+			fmt.Printf("Step input KEY: %v", step.Input[key])
+			if strings.Contains(step.Input[key], "{{") {
+				step.Input[key] = ""
+			}
 		}
+
+		fmt.Printf("Step input: %v", step.Input)
 
 		// 4. Execute
 		execResult := []map[string]any{}
@@ -462,6 +481,25 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		if err != nil {
 			fmt.Printf("failed to execute %s, error: %s", step.Function, err)
 			localErrorMessage = fmt.Sprintf("%v", err)
+
+			tools.LogStep(
+				c.DebugLogger,
+				step.Function,
+				integrationTemplate.Name,
+				localErrorMessage,
+				"failure",
+				step.Input,
+				execResult)
+		} else {
+
+			tools.LogStep(
+				c.DebugLogger,
+				step.Function,
+				integrationTemplate.Name,
+				localErrorMessage,
+				"success",
+				step.Input,
+				execResult)
 		}
 
 		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult

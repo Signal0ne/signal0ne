@@ -23,6 +23,7 @@ services:
     volumes:
       - ./sockets:/var/run:rw
       - ./backend:/app
+      - ./logs:/logs:rw
 
   python-service:
     container_name: python-service

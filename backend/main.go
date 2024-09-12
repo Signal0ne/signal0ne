@@ -5,7 +5,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"signal0ne/api/routers"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/controllers"
@@ -50,6 +52,17 @@ func main() {
 	conn = utils.ConnectToSocket()
 	defer conn.Close()
 
+	var logger *log.Logger = nil
+	if cfg.Debug {
+		logFile, err := os.OpenFile("/logs/workflow.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			panic(err)
+		}
+		defer logFile.Close()
+
+		logger = log.New(logFile, "", 0)
+	}
+
 	err = tools.Initialize(ctx, namespacesCollection)
 	if err != nil {
 		panic(err)
@@ -85,6 +98,7 @@ func main() {
 		alertsCollection,
 		cfg.Server,
 		conn,
+		logger,
 	)
 	integrationsController := controllers.NewIntegrationController(
 		integrationsCollection,

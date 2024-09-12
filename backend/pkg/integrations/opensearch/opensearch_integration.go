@@ -213,7 +213,7 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		errorMsg, _ := intermediateOutput["error"].(string)
 		return output, fmt.Errorf("cannot retrieve results %s", errorMsg)
 	}
-	resultsEncoded := intermediateOutput["result"].(string)
+	resultsEncoded, exists := intermediateOutput["result"].(string)
 	if !exists {
 		return output, fmt.Errorf("cannot retrieve results, results not found")
 	}

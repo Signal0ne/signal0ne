@@ -152,7 +152,10 @@ func getAndDecodeFileContent(url string, token string) (string, error) {
 		return "", err
 	}
 
-	base64EncodedContent := parsedResponseBody["content"].(string)
+	base64EncodedContent, exists := parsedResponseBody["content"].(string)
+	if !exists {
+		return "", fmt.Errorf("cannot parse file content")
+	}
 
 	content, err := base64.StdEncoding.DecodeString(base64EncodedContent)
 	if err != nil {

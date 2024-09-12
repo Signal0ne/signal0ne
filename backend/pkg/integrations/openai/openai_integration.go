@@ -203,5 +203,9 @@ func callOpenAiApi(prompt string, model string, apiKey string) (string, error) {
 		return "", err
 	}
 
+	if len(response.Choices) == 0 {
+		return "", fmt.Errorf("empty response")
+	}
+
 	return response.Choices[0].Message.Content, nil
 }

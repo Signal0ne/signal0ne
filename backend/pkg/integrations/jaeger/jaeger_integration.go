@@ -145,7 +145,10 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 	var spans []any
 	for _, trace := range intermediateTracesOutput {
 		for _, span := range trace.(map[string]any)["spans"].([]any) {
-			assertedSpan := span.(map[string]any)
+			assertedSpan, exists := span.(map[string]any)
+			if !exists {
+				continue
+			}
 			var spanWithDesiredValue = make(map[string]any)
 			if assertedSpan["processID"] == serviceProcess {
 				var intermediateSpan = make(map[string]any)
@@ -154,7 +157,10 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 
 				for _, tag := range assertedSpan["tags"].([]any) {
 					var parsedTag = make(map[string]any)
-					assertedTag := tag.(map[string]any)
+					assertedTag, exists := tag.(map[string]any)
+					if !exists {
+						continue
+					}
 					parsedTag[assertedTag["key"].(string)] = assertedTag["value"]
 					intermediateSpan["tags"] = append(intermediateSpan["tags"].([]map[string]any), parsedTag)
 				}
@@ -162,7 +168,10 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 				for _, log := range assertedSpan["logs"].([]any) {
 					var parsedLog = make(map[string]any)
 					for _, field := range log.(map[string]any)["fields"].([]any) {
-						assertedField := field.(map[string]any)
+						assertedField, exists := field.(map[string]any)
+						if !exists {
+							continue
+						}
 						parsedLog[assertedField["key"].(string)] = assertedField["value"]
 					}
 					intermediateSpan["logs"] = append(intermediateSpan["logs"].([]map[string]any), parsedLog)
