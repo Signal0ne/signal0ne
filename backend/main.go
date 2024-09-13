@@ -137,6 +137,7 @@ func main() {
 		batchSizeHeader := make([]byte, 4)
 		binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
 		payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
+
 		_, err = conn.Write(payloadBytesWithHeaders)
 		if err != nil {
 			panic(err)

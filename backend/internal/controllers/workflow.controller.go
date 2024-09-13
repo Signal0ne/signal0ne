@@ -435,7 +435,6 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			}
 			err = t.Execute(buf, alert)
 			if err != nil {
-				fmt.Printf("failed to execute template INS, %s", err)
 				localErrorMessage = fmt.Sprintf("%v", err)
 				continue
 			}
