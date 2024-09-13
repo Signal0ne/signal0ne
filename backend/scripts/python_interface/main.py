@@ -94,10 +94,6 @@ def handle_connection(connection, client_address):
                     payload = b''
                     payloadBatchBuffer = float('-inf')
 
-            responseTemplate = json.dumps({"status":"0"})
-            response = len(responseTemplate).to_bytes(4, 'big') + bytes(responseTemplate, encoding="utf-8")
-            connection.sendall(response)
-
     finally:
         connection.close()
 

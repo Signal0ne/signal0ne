@@ -440,13 +440,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				continue
 			}
 			step.Input[key] = buf.String()
-			fmt.Printf("Step input KEY: %v", step.Input[key])
 			if strings.Contains(step.Input[key], "{{") {
 				step.Input[key] = ""
 			}
 		}
-
-		fmt.Printf("Step input: %v", step.Input)
 
 		// 4. Execute
 		execResult := []map[string]any{}
