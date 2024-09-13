@@ -230,10 +230,16 @@ func getPageContent(url string, credentials string) ([]string, error) {
 		return contents, err
 	}
 
-	results = interfaceResults["results"].([]any)
+	results, exists := interfaceResults["results"].([]any)
+	if !exists {
+		return contents, fmt.Errorf("cannot parse confluence response body")
+	}
 
 	for _, result := range results {
-		content := result.(map[string]any)["body"].(map[string]any)["view"].(map[string]any)["value"].(string)
+		content, exists := result.(map[string]any)["body"].(map[string]any)["view"].(map[string]any)["value"].(string)
+		if !exists {
+			continue
+		}
 		contents = append(contents, content)
 	}
 

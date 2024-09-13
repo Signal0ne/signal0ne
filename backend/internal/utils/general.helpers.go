@@ -1,6 +1,8 @@
 package utils
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 func GenerateRandomString() string {
 	var length int = 6

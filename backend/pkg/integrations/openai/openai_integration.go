@@ -193,6 +193,10 @@ func callOpenAiApi(prompt string, model string, apiKey string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("unexpected status code: %s", resp.Status)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
@@ -201,6 +205,10 @@ func callOpenAiApi(prompt string, model string, apiKey string) (string, error) {
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return "", err
+	}
+
+	if len(response.Choices) == 0 {
+		return "", fmt.Errorf("empty response")
 	}
 
 	return response.Choices[0].Message.Content, nil

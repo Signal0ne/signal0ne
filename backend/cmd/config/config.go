@@ -14,9 +14,10 @@ type Server struct {
 }
 
 type Config struct {
-	Server          Server `mapstructure:",squash"`
+	Debug           bool   `mapstructure:"DEBUG"`
 	IPCSocket       string `mapstructure:"IPC_SOCKET"`
 	MongoUri        string `mapstructure:"MONGO_URI"`
+	Server          Server `mapstructure:",squash"`
 	SignalOneSecret string `mapstructure:"SIGNAL_ONE_SECRET"`
 	SkipAuth        bool   `mapstructure:"SKIP_AUTH"`
 }

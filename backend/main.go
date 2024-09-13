@@ -5,7 +5,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"signal0ne/api/routers"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/controllers"
@@ -48,7 +50,17 @@ func main() {
 
 	var conn net.Conn = nil
 	conn = utils.ConnectToSocket()
-	defer conn.Close()
+
+	var logger *log.Logger = nil
+	if cfg.Debug {
+		logFile, err := os.OpenFile("/logs/workflow.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			panic(err)
+		}
+		defer logFile.Close()
+
+		logger = log.New(logFile, "", 0)
+	}
 
 	err = tools.Initialize(ctx, namespacesCollection)
 	if err != nil {
@@ -85,6 +97,7 @@ func main() {
 		alertsCollection,
 		cfg.Server,
 		conn,
+		logger,
 	)
 	integrationsController := controllers.NewIntegrationController(
 		integrationsCollection,
@@ -118,27 +131,36 @@ func main() {
 		panic(err)
 	}
 
-	batchSizeHeader := make([]byte, 4)
-	binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
-	payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
-	_, err = conn.Write(payloadBytesWithHeaders)
-	if err != nil {
-		panic(err)
-	}
+	if conn != nil {
+		defer conn.Close()
 
-	headerBuffer := make([]byte, 4)
+		batchSizeHeader := make([]byte, 4)
+		binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
+		payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
 
-	_, err = conn.Read(headerBuffer)
-	if err != nil {
-		panic(err)
-	}
+		_, err = conn.Write(payloadBytesWithHeaders)
+		if err != nil {
+			panic(err)
+		}
 
-	size := binary.BigEndian.Uint32(headerBuffer)
+		headerBuffer := make([]byte, 4)
 
-	payloadBuffer := make([]byte, size)
-	_, err = conn.Read(payloadBuffer)
-	if err != nil {
-		panic(err)
+		_, err = conn.Read(headerBuffer)
+		if err != nil {
+			panic(err)
+		}
+
+		size := binary.BigEndian.Uint32(headerBuffer)
+
+		payloadBuffer := make([]byte, size)
+		_, err = conn.Read(payloadBuffer)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		fmt.Println("---------------------- WARNING! ----------------------------")
+		fmt.Println("Failed to establish connection to python interface.\n It is possible that the interface is not running. \n Enable it to use the full functionality of the application.")
+		fmt.Println("---------------------- WARNING! ----------------------------")
 	}
 
 	server.Run(":" + cfg.Server.ServerPort)

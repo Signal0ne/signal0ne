@@ -125,7 +125,11 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	output = items.([]any)
+	output, exists = items.([]any)
+	if !exists {
+		err = fmt.Errorf("cannot parse %s response body", assertedIntegration.Name)
+		return output, err
+	}
 
 	return output, err
 }

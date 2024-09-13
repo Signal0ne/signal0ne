@@ -10,6 +10,7 @@ dev:
 dev-cleanup:
 	docker compose -f docker-compose.dev.yaml down
 	rm -rf ./sockets/d.sock
+	rm -rf ./logs/workflow.log
 
 .PHONY: test
 test:
