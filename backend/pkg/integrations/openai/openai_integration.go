@@ -193,6 +193,10 @@ func callOpenAiApi(prompt string, model string, apiKey string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("unexpected status code: %s", resp.Status)
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
