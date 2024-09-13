@@ -50,7 +50,6 @@ func main() {
 
 	var conn net.Conn = nil
 	conn = utils.ConnectToSocket()
-	defer conn.Close()
 
 	var logger *log.Logger = nil
 	if cfg.Debug {
@@ -132,27 +131,35 @@ func main() {
 		panic(err)
 	}
 
-	batchSizeHeader := make([]byte, 4)
-	binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
-	payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
-	_, err = conn.Write(payloadBytesWithHeaders)
-	if err != nil {
-		panic(err)
-	}
+	if conn != nil {
+		defer conn.Close()
 
-	headerBuffer := make([]byte, 4)
+		batchSizeHeader := make([]byte, 4)
+		binary.BigEndian.PutUint32(batchSizeHeader, uint32(len(payloadBytes)))
+		payloadBytesWithHeaders := append(batchSizeHeader, payloadBytes...)
+		_, err = conn.Write(payloadBytesWithHeaders)
+		if err != nil {
+			panic(err)
+		}
 
-	_, err = conn.Read(headerBuffer)
-	if err != nil {
-		panic(err)
-	}
+		headerBuffer := make([]byte, 4)
 
-	size := binary.BigEndian.Uint32(headerBuffer)
+		_, err = conn.Read(headerBuffer)
+		if err != nil {
+			panic(err)
+		}
 
-	payloadBuffer := make([]byte, size)
-	_, err = conn.Read(payloadBuffer)
-	if err != nil {
-		panic(err)
+		size := binary.BigEndian.Uint32(headerBuffer)
+
+		payloadBuffer := make([]byte, size)
+		_, err = conn.Read(payloadBuffer)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		fmt.Println("---------------------- WARNING! ----------------------------")
+		fmt.Println("Failed to establish connection to python interface.\n It is possible that the interface is not running. \n Enable it to use the full functionality of the application.")
+		fmt.Println("---------------------- WARNING! ----------------------------")
 	}
 
 	server.Run(":" + cfg.Server.ServerPort)
