@@ -2,11 +2,28 @@ package models
 
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
+type IncidentStatus string
+
+const (
+	IncidentStatusOpen     IncidentStatus = "open"
+	IncidentStatusResolved IncidentStatus = "resolved"
+)
+
+type IncidentSeverity string
+
+const (
+	IncidentSeverityCritical IncidentSeverity = "critical"
+	IncidentSeverityError    IncidentSeverity = "error"
+	IncidentSeverityWarning  IncidentSeverity = "warning"
+	IncidentSeverityInfo     IncidentSeverity = "info"
+)
+
 type Incident struct {
 	Id       primitive.ObjectID       `json:"id" bson:"_id"`
 	Assignee User                     `json:"assignee" bson:"assignee"`
 	History  []IncidentUpdate[Update] `json:"history" bson:"history"`
-	Severity string                   `json:"severity" bson:"severity"`
+	Status   IncidentStatus           `json:"status" bson:"status"`
+	Severity IncidentSeverity         `json:"severity" bson:"severity"`
 	Summary  string                   `json:"summary" bson:"summary"`
 	Tasks    []Task                   `json:"tasks" bson:"tasks"`
 	Title    string                   `json:"title" bson:"title"`

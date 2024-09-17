@@ -290,7 +290,9 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	}
 
 	//Trigger execution
-	alert.TriggerProperties, err = tools.WebhookTriggerExec(ctx, workflow)
+	alert.Integration = workflow.Trigger.Webhook.Integration
+
+	alert.TriggerProperties, alert.State, err = tools.WebhookTriggerExec(ctx, workflow)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		localErrorMessage = fmt.Sprintf("%v", err)

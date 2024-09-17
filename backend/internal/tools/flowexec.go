@@ -74,17 +74,17 @@ func TraverseOutput(
 	}
 }
 
-func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string]any, error) {
+func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string]any, models.AlertStatus, error) {
 	var incomingTriggerPayload map[string]any
 	var desiredPropertiesWithValues = map[string]any{}
 	body, err := ctx.GetRawData()
 	if err != nil || len(body) == 0 {
-		return desiredPropertiesWithValues, fmt.Errorf("cannot get body %s", err)
+		return desiredPropertiesWithValues, models.AlertStatusActive, fmt.Errorf("cannot get body %s", err)
 	}
 
 	err = json.Unmarshal(body, &incomingTriggerPayload)
 	if err != nil {
-		return desiredPropertiesWithValues, fmt.Errorf("cannot decode body %s", err)
+		return desiredPropertiesWithValues, models.AlertStatusActive, fmt.Errorf("cannot decode body %s", err)
 	}
 
 	for key, mapping := range workflow.Trigger.WebhookTrigger.Webhook.Output {
@@ -97,10 +97,10 @@ func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string
 
 	if !EvaluateCondition(workflow.Trigger.WebhookTrigger.Webhook.Condition,
 		alertWithTriggerProperties) {
-		return desiredPropertiesWithValues, fmt.Errorf("condition not satisfied")
+		return desiredPropertiesWithValues, models.AlertStatusActive, fmt.Errorf("condition not satisfied")
 	}
 
-	return desiredPropertiesWithValues, nil
+	return desiredPropertiesWithValues, models.AlertStatusActive, nil
 }
 
 func RecordExecution(
@@ -175,4 +175,13 @@ func EvaluateCondition(conditionExpression string, alert models.EnrichedAlert) b
 	}
 
 	return satisfied
+}
+
+func MapAlertState(integrationType string, triggerPayload map[string]any) models.AlertStatus {
+	if integrationType == "alertmanager" {
+		return models.AlertStatus(.TriggerStateMapping["firing"])
+	}
+
+	return models.AlertStatusActive
+
 }

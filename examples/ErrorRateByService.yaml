@@ -3,10 +3,12 @@ name: ErrorRateByService
 lookback: 15m
 trigger:
   webhook:
+    integration: alertmanager
     output:
       service: "job"
       span: "span_name"
       timestamp: "startsAt"
+    condition: "{{.status == 'firing' }}"
 steps:
 - displayName: Get ownership
   name: get_ownership

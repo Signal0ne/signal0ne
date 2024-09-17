@@ -273,7 +273,8 @@ func createIncident(input any, integration any) ([]any, error) {
 		Id:       parsedAlert.Id,
 		Assignee: assignee,
 		History:  []models.IncidentUpdate[models.Update]{},
-		Severity: parsedInput.Severity,
+		Status:   models.IncidentStatusOpen,
+		Severity: models.IncidentSeverityInfo,
 		Tasks:    tasks,
 		Title:    assertedIntegration.Inventory.WorkflowProperties.Name,
 	}
