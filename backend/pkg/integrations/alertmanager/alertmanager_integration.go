@@ -1,14 +1,19 @@
 package alertmanager
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"signal0ne/internal/db"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -18,9 +23,21 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 	},
 }
 
+type AlertmanagerIntegrationInventory struct {
+	AlertsCollection *mongo.Collection `json:"-" bson:"-"`
+}
+
+func NewAlertmanagerIntegrationInventory(
+	alertsCollection *mongo.Collection) AlertmanagerIntegrationInventory {
+	return AlertmanagerIntegrationInventory{
+		AlertsCollection: alertsCollection,
+	}
+}
+
 type AlertmanagerIntegration struct {
-	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:"config" bson:"config"`
+	Inventory          AlertmanagerIntegrationInventory
+	models.Integration `json:",inline" bson:",inline"`
 }
 
 func (integration AlertmanagerIntegration) Trigger(
@@ -28,6 +45,7 @@ func (integration AlertmanagerIntegration) Trigger(
 	alert *models.EnrichedAlert,
 	workflow *models.Workflow) (err error) {
 	var StateKey = "status"
+	var StartTimeKey = "startsAt"
 
 	alert.TriggerProperties, err = tools.WebhookTriggerExec(payload, workflow)
 	if err != nil {
@@ -37,6 +55,36 @@ func (integration AlertmanagerIntegration) Trigger(
 	alert.State, err = tools.MapAlertState(payload, StateKey, TriggerStateMapping)
 	if err != nil {
 		return err
+	}
+
+	alert.StartTime, err = tools.GetStartTime(payload, StartTimeKey)
+	if err != nil {
+		return err
+	}
+
+	alertsHistory, err := db.GetEnrichedAlertsByWorkflowId(workflow.Id.String(),
+		context.Background(),
+		integration.Inventory.AlertsCollection,
+		bson.M{
+			"timestamp": alert.StartTime,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if len(alertsHistory) > 0 {
+		var anyUpdates = false
+		for _, alertFromHistory := range alertsHistory {
+			alertFromHistory.State = alert.State
+			err = db.UpdateEnrichedAlert(alertFromHistory, context.Background(), integration.Inventory.AlertsCollection)
+			if err != nil {
+				continue
+			}
+		}
+		if anyUpdates && alert.State == models.AlertStatusActive {
+			return fmt.Errorf("alert already existing in active state")
+		}
 	}
 
 	return nil

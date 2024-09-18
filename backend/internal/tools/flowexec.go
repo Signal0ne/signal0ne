@@ -178,3 +178,12 @@ func MapAlertState(payload map[string]any, stateKey string, triggerStateMapping 
 
 	return models.AlertStatus(mappedStateValue), nil
 }
+
+func GetStartTime(payload map[string]any, startTimeKey string) (int64, error) {
+	startTime, exists := payload[startTimeKey].(int64)
+	if !exists {
+		return 0, fmt.Errorf("cannot find start time key in alert payload")
+	}
+
+	return startTime, nil
+}

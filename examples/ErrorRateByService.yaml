@@ -7,7 +7,6 @@ trigger:
     output:
       service: "job"
       span: "span_name"
-      timestamp: "startsAt"
     condition: "{{.status == 'firing' }}"
 steps:
 - displayName: Get ownership
