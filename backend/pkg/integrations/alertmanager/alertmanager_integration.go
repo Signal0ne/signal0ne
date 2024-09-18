@@ -23,6 +23,25 @@ type AlertmanagerIntegration struct {
 	Config             `json:"config" bson:"config"`
 }
 
+func (integration AlertmanagerIntegration) Trigger(
+	payload map[string]any,
+	alert *models.EnrichedAlert,
+	workflow *models.Workflow) (err error) {
+	var StateKey = "status"
+
+	alert.TriggerProperties, err = tools.WebhookTriggerExec(payload, workflow)
+	if err != nil {
+		return err
+	}
+
+	alert.State, err = tools.MapAlertState(payload, StateKey, TriggerStateMapping)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (integration AlertmanagerIntegration) Execute(
 	input any,
 	output map[string]string,

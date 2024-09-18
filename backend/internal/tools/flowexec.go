@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"signal0ne/internal/models" //only internal import allowed
 	"strconv"
@@ -13,7 +12,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -74,21 +72,11 @@ func TraverseOutput(
 	}
 }
 
-func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string]any, models.AlertStatus, error) {
-	var incomingTriggerPayload map[string]any
+func WebhookTriggerExec(payload map[string]any, workflow *models.Workflow) (map[string]any, error) {
 	var desiredPropertiesWithValues = map[string]any{}
-	body, err := ctx.GetRawData()
-	if err != nil || len(body) == 0 {
-		return desiredPropertiesWithValues, models.AlertStatusActive, fmt.Errorf("cannot get body %s", err)
-	}
-
-	err = json.Unmarshal(body, &incomingTriggerPayload)
-	if err != nil {
-		return desiredPropertiesWithValues, models.AlertStatusActive, fmt.Errorf("cannot decode body %s", err)
-	}
 
 	for key, mapping := range workflow.Trigger.WebhookTrigger.Webhook.Output {
-		desiredPropertiesWithValues[key] = TraverseOutput(incomingTriggerPayload, key, mapping)
+		desiredPropertiesWithValues[key] = TraverseOutput(payload, key, mapping)
 	}
 
 	alertWithTriggerProperties := models.EnrichedAlert{
@@ -97,10 +85,10 @@ func WebhookTriggerExec(ctx *gin.Context, workflow *models.Workflow) (map[string
 
 	if !EvaluateCondition(workflow.Trigger.WebhookTrigger.Webhook.Condition,
 		alertWithTriggerProperties) {
-		return desiredPropertiesWithValues, models.AlertStatusActive, fmt.Errorf("condition not satisfied")
+		return desiredPropertiesWithValues, fmt.Errorf("condition not satisfied")
 	}
 
-	return desiredPropertiesWithValues, models.AlertStatusActive, nil
+	return desiredPropertiesWithValues, nil
 }
 
 func RecordExecution(
@@ -177,11 +165,16 @@ func EvaluateCondition(conditionExpression string, alert models.EnrichedAlert) b
 	return satisfied
 }
 
-func MapAlertState(integrationType string, triggerPayload map[string]any) models.AlertStatus {
-	if integrationType == "alertmanager" {
-		return models.AlertStatus(.TriggerStateMapping["firing"])
+func MapAlertState(payload map[string]any, stateKey string, triggerStateMapping map[string]string) (models.AlertStatus, error) {
+	stateValue, exists := payload[stateKey].(string)
+	if !exists {
+		return "", fmt.Errorf("cannot find state key in alert payload")
 	}
 
-	return models.AlertStatusActive
+	mappedStateValue, exists := triggerStateMapping[stateValue]
+	if !exists {
+		return "", fmt.Errorf("cannot find mapping for state value %s", stateValue)
+	}
 
+	return models.AlertStatus(mappedStateValue), nil
 }
