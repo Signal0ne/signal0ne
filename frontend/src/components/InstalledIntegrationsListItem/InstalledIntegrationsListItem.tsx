@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import './InstalledIntegrationsListItem.scss';
+import classNames from 'classnames';
 
 interface InstalledIntegrationsListItemProps {
   integration: Integration;
@@ -17,7 +18,8 @@ const InstalledIntegrationsListItem = ({
   integration
 }: InstalledIntegrationsListItemProps) => {
   const { namespaceId } = useAuthContext();
-  const { setIsModalOpen, setSelectedIntegration } = useIntegrationsContext();
+  const { selectedIntegration, setIsModalOpen, setSelectedIntegration } =
+    useIntegrationsContext();
 
   const handleInstalledIntegrationClick = async () => {
     if (!namespaceId) return;
@@ -48,7 +50,9 @@ const InstalledIntegrationsListItem = ({
 
   return (
     <li
-      className="installed-integrations-list-item"
+      className={classNames('installed-integrations-list-item', {
+        active: selectedIntegration?.id === integration.id
+      })}
       onClick={handleInstalledIntegrationClick}
       onKeyDown={handleKeyDown(handleInstalledIntegrationClick)}
       tabIndex={0}
