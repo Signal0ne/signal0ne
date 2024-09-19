@@ -1,0 +1,66 @@
+.textarea-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+
+  &:focus-within {
+    .textarea-field {
+      border-color: #fff;
+      color: #fff;
+    }
+
+    .textarea-label {
+      color: #fff;
+    }
+  }
+
+  &.error {
+    .textarea-field {
+      border-color: #da4e31 !important;
+    }
+
+    .textarea-label {
+      color: #da4e31;
+    }
+  }
+
+  .textarea-error-message {
+    color: #da4e31;
+    font-size: 12px;
+  }
+
+  .textarea-field {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    color: #e4e4e4;
+    padding: 8px 16px;
+    outline-offset: 4px;
+    width: 100%;
+    @include customScrollbar;
+
+    &:focus {
+      border-color: #fff;
+      box-shadow: 0 1px 3px 0 rgba(255, 255, 255, 0.15);
+      color: #fff;
+      outline: none;
+    }
+
+    &.no-resize {
+      resize: none;
+    }
+  }
+  
+  .textarea-label {
+    background-color: #393939;
+    color: #ccc;
+    font-size: 12px;
+    left: 12px;
+    padding: 0 2px;
+    position: absolute;
+    text-transform: capitalize;
+    top: -9px;
+    z-index: 1;
+  }
+}
