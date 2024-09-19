@@ -95,6 +95,7 @@ func main() {
 		integrationsCollection,
 		alertsCollection,
 		workflowsCollection,
+		namespacesCollection,
 		conn,
 	)
 	userAuthController := controllers.NewUserAuthController()

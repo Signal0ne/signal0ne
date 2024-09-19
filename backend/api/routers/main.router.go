@@ -49,6 +49,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 	{
 		// All incident types
 		incidentGroup.POST("", r.IncidentController.CreateIncident)
+		incidentGroup.GET("incidents", r.IncidentController.GetIncidents)
 
 		// Signal0ne incident only
 		incidentGroup.PATCH("/:incidentid", r.IncidentController.UpdateIncident)

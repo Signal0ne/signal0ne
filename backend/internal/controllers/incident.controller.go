@@ -26,6 +26,7 @@ type IncidentController struct {
 	AlertsCollection       *mongo.Collection
 	IncidentsCollection    *mongo.Collection
 	IntegrationsCollection *mongo.Collection
+	NamespacesCollection   *mongo.Collection
 	PyInterface            net.Conn
 	WorkflowsCollection    *mongo.Collection
 }
@@ -35,12 +36,14 @@ func NewIncidentController(
 	integrationsCollection *mongo.Collection,
 	alertsCollection *mongo.Collection,
 	workflowsCollection *mongo.Collection,
+	namespacesCollection *mongo.Collection,
 	pyInterface net.Conn) *IncidentController {
 	return &IncidentController{
 		IncidentsCollection:    incidentsCollection,
 		IntegrationsCollection: integrationsCollection,
 		AlertsCollection:       alertsCollection,
 		WorkflowsCollection:    workflowsCollection,
+		NamespacesCollection:   namespacesCollection,
 		PyInterface:            pyInterface,
 	}
 }
@@ -174,6 +177,45 @@ func (ic *IncidentController) GetIncident(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, incident)
+}
+
+func (ic *IncidentController) GetIncidents(ctx *gin.Context) {
+	var incidents []models.Incident
+	var namespace *models.Namespace
+
+	namespaceId := ctx.Param("namespaceid")
+
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := ic.NamespacesCollection.FindOne(ctx, primitive.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find namespace: %v", err),
+		})
+		return
+	}
+
+	cursor, err := ic.IncidentsCollection.Find(ctx, bson.M{"namespaceId": namespaceId})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("cannot find incidents, %s", err),
+		})
+		return
+	}
+
+	err = cursor.All(ctx, &incidents)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("cannot decode incidents, %s", err),
+		})
+		return
+	}
+
+	if incidents == nil {
+		incidents = []models.Incident{}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"incidents": incidents})
 }
 
 func (ic *IncidentController) RegisterHistoryEvent(ctx *gin.Context) {
