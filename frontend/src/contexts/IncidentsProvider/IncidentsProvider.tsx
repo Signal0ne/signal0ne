@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useEffect, useState } from 'react';
-import { useAuthContext } from '../../hooks/useAuthContext';
 import { toast } from 'react-toastify';
+import { useAuthContext } from '../../hooks/useAuthContext';
 
 export interface Incident {
   assignee: IncidentAssignee;
@@ -23,9 +23,11 @@ interface IncidentAssignee {
 
 export interface IncidentsContextType {
   incidents: Incident[];
-  isLoading: boolean;
+  isIncidentListLoading: boolean;
+  isIncidentPreviewLoading: boolean;
   selectedIncident: Incident | null;
   setIncidents: (incidents: Incident[]) => void;
+  setIsIncidentPreviewLoading: (isLoading: boolean) => void;
   setSelectedIncident: (incident: Incident | null) => void;
 }
 
@@ -35,10 +37,18 @@ interface IncidentsProviderProps {
 
 export interface IIncidentTask {
   assignee: IncidentAssignee;
+  comments: IncidentComment[];
+  id: string;
   isDone: boolean;
   items: IncidentTaskItem[];
   priority: number;
   taskName: string;
+}
+
+export interface IncidentComment {
+  content: IncidentTaskItemContent;
+  source: IncidentAssignee;
+  timestamp: number;
 }
 
 export interface IncidentTaskItem {
@@ -62,7 +72,9 @@ export const IncidentsContext = createContext<IncidentsContextType | null>(
 
 export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isIncidentListLoading, setIsIncidentListLoading] = useState(false);
+  const [isIncidentPreviewLoading, setIsIncidentPreviewLoading] =
+    useState(false);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
     null
   );
@@ -72,7 +84,7 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
   useEffect(() => {
     if (!namespaceId) return;
 
-    setIsLoading(true);
+    setIsIncidentListLoading(true);
 
     const fetchIncidents = async () => {
       try {
@@ -93,7 +105,7 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
           toast.error('An unexpected error occurred. Please try again later.');
         }
       } finally {
-        setIsLoading(false);
+        setIsIncidentListLoading(false);
       }
     };
 
@@ -102,9 +114,11 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
 
   const VALUE = {
     incidents,
-    isLoading,
+    isIncidentListLoading,
+    isIncidentPreviewLoading,
     selectedIncident,
     setIncidents,
+    setIsIncidentPreviewLoading,
     setSelectedIncident
   };
 

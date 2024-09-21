@@ -3,8 +3,8 @@ import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsPro
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
-import './InstalledIntegrationsListItem.scss';
 import classNames from 'classnames';
+import './InstalledIntegrationsListItem.scss';
 
 interface InstalledIntegrationsListItemProps {
   integration: Integration;
