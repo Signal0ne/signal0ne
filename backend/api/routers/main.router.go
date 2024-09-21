@@ -50,6 +50,9 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		// All incident types
 		incidentGroup.POST("", r.IncidentController.CreateIncident)
 		incidentGroup.GET("incidents", r.IncidentController.GetIncidents)
+		incidentGroup.POST("/:incidentid/tasks", r.IncidentController.AddNewTask)
+		incidentGroup.POST("/:incidentid/:taskid/add-task-comment", r.IncidentController.AddTaskComment)
+		incidentGroup.PATCH("/:incidentid/:taskid/status", r.IncidentController.UpdateTaskStatus)
 
 		// Signal0ne incident only
 		incidentGroup.PATCH("/:incidentid", r.IncidentController.UpdateIncident)

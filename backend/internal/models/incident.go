@@ -10,8 +10,8 @@ type Incident struct {
 	Severity    string                   `json:"severity" bson:"severity"`
 	Summary     string                   `json:"summary" bson:"summary"`
 	Tasks       []Task                   `json:"tasks" bson:"tasks"`
+	Timestamp   int64                    `json:"timestamp" bson:"timestamp"`
 	Title       string                   `json:"title" bson:"title"`
-	Timestamp   int32                    `json:"timestamp" bson:"timestamp"`
 }
 
 type IncidentUpdate[T Update] struct {
