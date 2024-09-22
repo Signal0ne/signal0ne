@@ -180,10 +180,17 @@ func MapAlertState(payload map[string]any, stateKey string, triggerStateMapping 
 }
 
 func GetStartTime(payload map[string]any, startTimeKey string) (int64, error) {
-	startTime, exists := payload[startTimeKey].(int64)
+	startTime, exists := payload[startTimeKey].(string)
 	if !exists {
 		return 0, fmt.Errorf("cannot find start time key in alert payload")
 	}
 
-	return startTime, nil
+	parsedTime, err := time.Parse(time.RFC3339, startTime)
+	if err != nil {
+		return 0, fmt.Errorf("error parsing start time: %v", err)
+	}
+
+	startTimeUnix := parsedTime.Unix()
+
+	return startTimeUnix, nil
 }

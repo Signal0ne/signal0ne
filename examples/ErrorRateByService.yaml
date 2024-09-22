@@ -6,8 +6,9 @@ trigger:
     integration: alertmanager
     output:
       service: "job"
+      alertname: "labels.alertname"
       span: "span_name"
-    condition: "{{.status == 'firing' }}"
+    condition: "{{ .TriggerProperties.alertname == 'ErrorRateByService' }}"
 steps:
 - displayName: Get ownership
   name: get_ownership

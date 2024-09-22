@@ -315,7 +315,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 	switch alert.Integration {
 	case "alertmanager":
-		integration := &alertmanager.AlertmanagerIntegration{}
+		inventory := alertmanager.NewAlertmanagerIntegrationInventory(
+			c.AlertsCollection,
+		)
+		integration := &alertmanager.AlertmanagerIntegration{
+			Inventory: inventory,
+		}
 		err = integration.Trigger(incomingTriggerPayload, &alert, workflow)
 	case "datadog":
 		// integration := &datadog.DatadogIntegration{}

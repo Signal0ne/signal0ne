@@ -44,29 +44,44 @@ func (integration AlertmanagerIntegration) Trigger(
 	payload map[string]any,
 	alert *models.EnrichedAlert,
 	workflow *models.Workflow) (err error) {
+
 	var StateKey = "status"
+
+	//incoming in RFC3339 format string with timezone UTC
 	var StartTimeKey = "startsAt"
 
-	alert.TriggerProperties, err = tools.WebhookTriggerExec(payload, workflow)
+	//TBD: WE DO NOT SUPPORT ALERT GROUPING FOR ALERTMANAGER
+	//supported alertmanager config signal0ne receiver:
+	//```
+	//route:
+	//   receiver: "singal0ne"
+	//   group_by: ['...']
+	//```
+	alertPayload, exists := payload["alerts"].([]any)[0].(map[string]any)
+	if !exists {
+		return fmt.Errorf("cannot find alerts in payload")
+	}
+
+	alert.TriggerProperties, err = tools.WebhookTriggerExec(alertPayload, workflow)
 	if err != nil {
 		return err
 	}
 
-	alert.State, err = tools.MapAlertState(payload, StateKey, TriggerStateMapping)
+	alert.State, err = tools.MapAlertState(alertPayload, StateKey, TriggerStateMapping)
 	if err != nil {
 		return err
 	}
 
-	alert.StartTime, err = tools.GetStartTime(payload, StartTimeKey)
+	alert.StartTime, err = tools.GetStartTime(alertPayload, StartTimeKey)
 	if err != nil {
 		return err
 	}
 
-	alertsHistory, err := db.GetEnrichedAlertsByWorkflowId(workflow.Id.String(),
+	alertsHistory, err := db.GetEnrichedAlertsByWorkflowId(workflow.Id.Hex(),
 		context.Background(),
 		integration.Inventory.AlertsCollection,
 		bson.M{
-			"timestamp": alert.StartTime,
+			"startTime": alert.StartTime,
 		},
 	)
 	if err != nil {
@@ -80,10 +95,12 @@ func (integration AlertmanagerIntegration) Trigger(
 			err = db.UpdateEnrichedAlert(alertFromHistory, context.Background(), integration.Inventory.AlertsCollection)
 			if err != nil {
 				continue
+			} else {
+				anyUpdates = true
 			}
 		}
-		if anyUpdates && alert.State == models.AlertStatusActive {
-			return fmt.Errorf("alert already existing in active state")
+		if anyUpdates && alert.State == models.AlertStatusInactive {
+			return fmt.Errorf("alert already inactive")
 		}
 	}
 
