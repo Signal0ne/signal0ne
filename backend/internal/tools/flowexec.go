@@ -154,9 +154,9 @@ func EvaluateCondition(conditionExpression string, alert models.EnrichedAlert) b
 
 	err = parsedTemplate.Execute(buf, alert)
 	if err != nil {
-		fmt.Printf("Error %v", err)
 		return satisfied
 	}
+
 	satisfied, err = strconv.ParseBool(buf.String())
 	if err != nil {
 		return satisfied
