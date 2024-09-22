@@ -13,13 +13,14 @@
     width: 80%;
 
     .error-msg {
-      border: 1px solid #da4e31;
+      background-color: #9c2b2e;
+      border: 1px solid #e84e4f;
       border-radius: 8px;
-      color: #da4e31;
+      color: white;
       font-size: 12px;
       margin: 0;
       max-width: 240px;
-      padding: 8px;
+      padding: 4px 8px;
     }
 
     .form-field {

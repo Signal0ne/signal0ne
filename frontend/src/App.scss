@@ -12,6 +12,59 @@
 }
 
 .ReactModalPortal {
+  .incident-add-task-modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    .incident-task-form {
+      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      .button {
+        margin-top: 8px;
+
+        &:disabled {
+          background-color: #303030;
+
+          &:hover {
+            background-color: #303030;
+          }
+        }
+      }
+
+      .error-msg {
+        background-color: #9c2b2e;
+        border: 1px solid #e84e4f;
+        border-radius: 8px;
+        color: white;
+        font-size: 12px;
+        margin: 0;
+        max-width: 240px;
+        padding: 4px 8px;
+      }
+
+      .input-container {
+        max-width: 280px;
+      }
+    }
+
+    .incident-task-modal-title {
+      font-size: 20px;
+      font-weight: 500;
+      margin: 0;
+      max-width: 360px;
+      text-align: center;
+      word-break: break-word;
+
+      .incident-title {
+        font-weight: bold;
+      }
+    }
+  }
+
   .webhook-modal-content {
     background: #ffffff;
     border: 1px solid #cccccc;

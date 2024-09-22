@@ -3,13 +3,15 @@ package models
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Incident struct {
-	Id       primitive.ObjectID       `json:"id" bson:"_id"`
-	Assignee User                     `json:"assignee" bson:"assignee"`
-	History  []IncidentUpdate[Update] `json:"history" bson:"history"`
-	Severity string                   `json:"severity" bson:"severity"`
-	Summary  string                   `json:"summary" bson:"summary"`
-	Tasks    []Task                   `json:"tasks" bson:"tasks"`
-	Title    string                   `json:"title" bson:"title"`
+	Id          primitive.ObjectID       `json:"id" bson:"_id"`
+	Assignee    User                     `json:"assignee" bson:"assignee"`
+	History     []IncidentUpdate[Update] `json:"history" bson:"history"`
+	NamespaceId string                   `json:"namespaceId" bson:"namespaceId"`
+	Severity    string                   `json:"severity" bson:"severity"`
+	Summary     string                   `json:"summary" bson:"summary"`
+	Tasks       []Task                   `json:"tasks" bson:"tasks"`
+	Timestamp   int64                    `json:"timestamp" bson:"timestamp"`
+	Title       string                   `json:"title" bson:"title"`
 }
 
 type IncidentUpdate[T Update] struct {

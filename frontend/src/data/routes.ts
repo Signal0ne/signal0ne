@@ -1,4 +1,5 @@
 import AlertsPage from '../pages/AlertsPage/AlertsPage';
+import IncidentsPage from '../pages/IncidentsPage/IncidentsPage';
 import IntegrationsPage from '../pages/IntegrationsPage/IntegrationsPage';
 import LoginPage from '../pages/LoginPage/LoginPage';
 import SignUpPage from '../pages/SignUpPage/SignUpPage';
@@ -11,6 +12,13 @@ export const ROUTES = [
     path: '/alerts',
     redirectTo: '/login',
     title: 'Alerts',
+    unAuthed: false
+  },
+  {
+    Component: IncidentsPage,
+    path: '/incidents',
+    title: 'Incidents',
+    redirectTo: '/login',
     unAuthed: false
   },
   {

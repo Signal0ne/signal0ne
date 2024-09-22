@@ -1,0 +1,15 @@
+.incidents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  list-style: none;
+  margin: 0;
+  overflow-y: scroll;
+  padding: 0;
+  @include customScrollbar;
+  
+  &.scroll-offset {
+    padding-right: 8px;
+  }
+}

@@ -35,6 +35,16 @@ export const AccountIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+export const ChevronIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg fill="currentColor" version="1.1" viewBox="0 0 330 330" {...props}>
+    <path
+      d="M325.607,79.393c-5.857-5.857-15.355-5.858-21.213,0.001l-139.39,139.393L25.607,79.393
+	c-5.857-5.857-15.355-5.858-21.213,0.001c-5.858,5.858-5.858,15.355,0,21.213l150.004,150c2.813,2.813,6.628,4.393,10.606,4.393
+	s7.794-1.581,10.606-4.394l149.996-150C331.465,94.749,331.465,85.251,325.607,79.393z"
+    />
+  </svg>
+);
+
 export const CopyIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg
     fill="none"
@@ -207,6 +217,23 @@ export const UploadIcon = (props: SVGProps<SVGSVGElement>) => (
       strokeLinecap="round"
       strokeMiterlimit="10"
       strokeWidth="1.5"
+    />
+  </svg>
+);
+
+export const UserIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg
+    fill="none"
+    viewBox="0 0 26 26"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M25 25V22.3333C25 20.9188 24.3679 19.5623 23.2426 18.5621C22.1174 17.5619 20.5913 17 19 17H7C5.4087 17 3.88258 17.5619 2.75736 18.5621C1.63214 19.5623 1 20.9188 1 22.3333V25M19 6.33333C19 9.27885 16.3137 11.6667 13 11.6667C9.68629 11.6667 7 9.27885 7 6.33333C7 3.38781 9.68629 1 13 1C16.3137 1 19 3.38781 19 6.33333Z"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
