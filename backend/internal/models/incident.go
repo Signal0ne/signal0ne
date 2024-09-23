@@ -19,14 +19,16 @@ const (
 )
 
 type Incident struct {
-	Id       primitive.ObjectID       `json:"id" bson:"_id"`
-	Assignee User                     `json:"assignee" bson:"assignee"`
-	History  []IncidentUpdate[Update] `json:"history" bson:"history"`
-	Status   IncidentStatus           `json:"status" bson:"status"`
-	Severity IncidentSeverity         `json:"severity" bson:"severity"`
-	Summary  string                   `json:"summary" bson:"summary"`
-	Tasks    []Task                   `json:"tasks" bson:"tasks"`
-	Title    string                   `json:"title" bson:"title"`
+	Id          primitive.ObjectID       `json:"id" bson:"_id"`
+	Assignee    User                     `json:"assignee" bson:"assignee"`
+	History     []IncidentUpdate[Update] `json:"history" bson:"history"`
+	NamespaceId string                   `json:"namespaceId" bson:"namespaceId"`
+	Severity    string                   `json:"severity" bson:"severity"`
+  Status   IncidentStatus           `json:"status" bson:"status"`
+	Summary     string                   `json:"summary" bson:"summary"`
+	Tasks       []Task                   `json:"tasks" bson:"tasks"`
+	Timestamp   int64                    `json:"timestamp" bson:"timestamp"`
+	Title       string                   `json:"title" bson:"title"`
 }
 
 type IncidentUpdate[T Update] struct {

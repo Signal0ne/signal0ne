@@ -1,0 +1,68 @@
+.incident-preview-container {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  padding: 32px;
+  width: 100%;
+
+  .incident-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: 100%;
+    @include customScrollbar;
+
+    .incident-preview-content {
+      .add-task-btn {
+        margin: 16px 0 8px;
+      }
+
+      .incident-preview-tasks-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin: 0;
+        padding: 0 8px 0 0;
+      }
+    }
+
+    .incident-preview-header {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      .incident-preview-header-summary {  
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .incident-preview-header-summary-content {
+          font-size: 14px;
+          margin: 0;
+        }
+
+        .incident-preview-header-summary-title {
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0;
+        }
+      }
+      
+      .incident-preview-header-title {
+        font-size: 28px;
+        margin: 0;
+      }
+    }
+  }
+
+  .incident-preview--empty {
+    align-items: center;
+    display: flex;
+    font-size: 18px;
+    justify-content: center;
+  }
+}

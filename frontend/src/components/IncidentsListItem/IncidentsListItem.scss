@@ -1,0 +1,52 @@
+.incidents-list-item {
+  align-items: center;
+  background-color: #424242;
+  border: 1px solid #888;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  min-height: 80px;
+  overflow: hidden;
+  width: 100%;
+
+  &:hover {
+    background-color: #383838;
+  }
+
+  &.active {
+    background-color: #383838;
+    box-shadow: 0 2px 3px rgba(255, 255, 255 , 0.1);
+  }
+
+  .incidents-list-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    width: 100%;
+
+    .incidents-list-item-time {
+      font-size: 12px;
+    }
+
+    .incidents-list-item-title {
+      font-size: 16px;
+    }
+  }
+
+  .incidents-list-item-severity {
+    background-color: #888888;
+    height: 100%;
+    width: 20px;
+
+    &.critical {
+      background-color: #e00f41;
+    }
+    &.error {
+      background-color: #C76E00;
+    }
+    &.warning {
+      background-color: #F1C232;
+    }
+  }
+}

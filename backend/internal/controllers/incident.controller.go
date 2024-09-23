@@ -10,11 +10,13 @@ import (
 	"signal0ne/pkg/integrations/pagerduty"
 	"signal0ne/pkg/integrations/servicenow"
 	"signal0ne/pkg/integrations/signal0ne"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type CreateIncidentRequest struct {
@@ -26,6 +28,7 @@ type IncidentController struct {
 	AlertsCollection       *mongo.Collection
 	IncidentsCollection    *mongo.Collection
 	IntegrationsCollection *mongo.Collection
+	NamespacesCollection   *mongo.Collection
 	PyInterface            net.Conn
 	WorkflowsCollection    *mongo.Collection
 }
@@ -35,14 +38,166 @@ func NewIncidentController(
 	integrationsCollection *mongo.Collection,
 	alertsCollection *mongo.Collection,
 	workflowsCollection *mongo.Collection,
+	namespacesCollection *mongo.Collection,
 	pyInterface net.Conn) *IncidentController {
 	return &IncidentController{
 		IncidentsCollection:    incidentsCollection,
 		IntegrationsCollection: integrationsCollection,
 		AlertsCollection:       alertsCollection,
 		WorkflowsCollection:    workflowsCollection,
+		NamespacesCollection:   namespacesCollection,
 		PyInterface:            pyInterface,
 	}
+}
+
+func (ic *IncidentController) AddNewTask(ctx *gin.Context) {
+	var namespace models.Namespace
+	var newTask models.Task
+	var updatedIncident models.Incident
+
+	incidentId := ctx.Param("incidentid")
+	namespaceId := ctx.Param("namespaceid")
+
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := ic.NamespacesCollection.FindOne(ctx, primitive.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find namespace: %v", err),
+		})
+
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&newTask); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Invalid request body: %v", err),
+		})
+
+		return
+	}
+
+	incidID, _ := primitive.ObjectIDFromHex(incidentId)
+
+	filter := bson.M{"_id": incidID, "namespaceId": namespaceId}
+	update := bson.M{
+		"$push": bson.M{"tasks": newTask},
+	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	result := ic.IncidentsCollection.FindOneAndUpdate(
+		ctx,
+		filter,
+		update,
+		opts,
+	)
+
+	err = result.Decode(&updatedIncident)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot update incident: %v", err),
+		})
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"updatedIncident": updatedIncident})
+}
+
+func (ic *IncidentController) AddTaskComment(ctx *gin.Context) {
+	var addTaskCommentRequest struct {
+		Content string `json:"content" binding:"required"`
+		Title   string `json:"title" binding:"required"`
+	}
+	var incident models.Incident
+	var namespace models.Namespace
+	var updatedIncident models.Incident
+
+	if err := ctx.ShouldBindJSON(&addTaskCommentRequest); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Invalid request body: %v", err),
+		})
+
+		return
+	}
+
+	incidentId := ctx.Param("incidentid")
+	namespaceId := ctx.Param("namespaceid")
+	taskId := ctx.Param("taskid")
+
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+
+	res := ic.NamespacesCollection.FindOne(ctx, primitive.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find namespace: %v", err),
+		})
+
+		return
+	}
+
+	incidID, _ := primitive.ObjectIDFromHex(incidentId)
+	res = ic.IncidentsCollection.FindOne(ctx, primitive.M{"_id": incidID, "namespaceId": namespaceId})
+	err = res.Decode(&incident)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find incident: %v", err),
+		})
+
+		return
+	}
+
+	tId, _ := primitive.ObjectIDFromHex(taskId)
+
+	filter := bson.M{
+		"_id":         incidID,
+		"namespaceId": namespaceId,
+		"tasks": bson.M{
+			"$elemMatch": bson.M{"_id": tId},
+		},
+	}
+
+	//TODO: Use real user ID
+	userID, err := primitive.ObjectIDFromHex("000000000000000000000000")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Invalid user ID: %v", err),
+		})
+		return
+	}
+
+	var newTaskComment = models.Comment{
+		Content: models.ItemContent{
+			Key:       addTaskCommentRequest.Title,
+			Value:     addTaskCommentRequest.Content,
+			ValueType: models.Markdown,
+		},
+		Source: models.User{
+			Id:   userID,
+			Name: "User",
+		},
+		Timestamp: time.Now().Unix(),
+	}
+
+	update := bson.M{
+		"$push": bson.M{"tasks.$.comments": newTaskComment},
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	err = ic.IncidentsCollection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&updatedIncident)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Failed to update the task: %v", err),
+		})
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"updatedIncident": updatedIncident,
+	})
 }
 
 func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
@@ -170,10 +325,52 @@ func (ic *IncidentController) GetIncident(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{
 			"error": "incident not found",
 		})
+
 		return
 	}
 
-	ctx.JSON(http.StatusOK, incident)
+	ctx.JSON(http.StatusOK, gin.H{
+		"incident": incident,
+	})
+}
+
+func (ic *IncidentController) GetIncidents(ctx *gin.Context) {
+	var incidents []models.Incident
+	var namespace *models.Namespace
+
+	namespaceId := ctx.Param("namespaceid")
+
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := ic.NamespacesCollection.FindOne(ctx, primitive.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find namespace: %v", err),
+		})
+		return
+	}
+
+	cursor, err := ic.IncidentsCollection.Find(ctx, bson.M{"namespaceId": namespaceId})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("cannot find incidents, %s", err),
+		})
+		return
+	}
+
+	err = cursor.All(ctx, &incidents)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("cannot decode incidents, %s", err),
+		})
+		return
+	}
+
+	if incidents == nil {
+		incidents = []models.Incident{}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"incidents": incidents})
 }
 
 func (ic *IncidentController) RegisterHistoryEvent(ctx *gin.Context) {
@@ -246,4 +443,77 @@ func (ic *IncidentController) UpdateIncident(ctx *gin.Context) {
 		})
 		return
 	}
+}
+
+func (ic *IncidentController) UpdateTaskStatus(ctx *gin.Context) {
+	var incident models.Incident
+	var namespace models.Namespace
+	var updatedIncident models.Incident
+	var updatedStatusRequest struct {
+		UpdatedTaskStatus *bool `json:"updatedTaskStatus" binding:"required"`
+	}
+
+	if err := ctx.ShouldBindJSON(&updatedStatusRequest); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Invalid request body: %v", err),
+		})
+
+		return
+	}
+
+	incidentId := ctx.Param("incidentid")
+	namespaceId := ctx.Param("namespaceid")
+	taskId := ctx.Param("taskid")
+
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+
+	res := ic.NamespacesCollection.FindOne(ctx, primitive.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find namespace: %v", err),
+		})
+
+		return
+	}
+
+	incidID, _ := primitive.ObjectIDFromHex(incidentId)
+	res = ic.IncidentsCollection.FindOne(ctx, primitive.M{"_id": incidID, "namespaceId": namespaceId})
+	err = res.Decode(&incident)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Cannot find incident: %v", err),
+		})
+
+		return
+	}
+
+	tId, _ := primitive.ObjectIDFromHex(taskId)
+
+	filter := bson.M{
+		"_id":         incidID,
+		"namespaceId": namespaceId,
+		"tasks": bson.M{
+			"$elemMatch": bson.M{"_id": tId},
+		},
+	}
+
+	update := bson.M{
+		"$set": bson.M{"tasks.$.isDone": updatedStatusRequest.UpdatedTaskStatus},
+	}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	err = ic.IncidentsCollection.FindOneAndUpdate(ctx, filter, update, opts).Decode(&updatedIncident)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("Failed to update task status: %v", err),
+		})
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"updatedIncident": updatedIncident,
+	})
 }
