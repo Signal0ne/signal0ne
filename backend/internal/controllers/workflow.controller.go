@@ -298,6 +298,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		})
 		localErrorMessage = fmt.Sprintf("%v", err)
 		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+
 		return
 	}
 
@@ -309,6 +310,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		localErrorMessage = fmt.Sprintf("%v", err)
 		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
 		return
+
 	}
 
 	alert.Integration = workflow.Trigger.Webhook.Integration

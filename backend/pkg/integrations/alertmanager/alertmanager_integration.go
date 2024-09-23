@@ -99,6 +99,7 @@ func (integration AlertmanagerIntegration) Trigger(
 				anyUpdates = true
 			}
 		}
+
 		if anyUpdates && alert.State == models.AlertStatusInactive {
 			return fmt.Errorf("alert already inactive")
 		}
