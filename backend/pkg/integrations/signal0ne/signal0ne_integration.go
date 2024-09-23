@@ -8,6 +8,7 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -211,6 +212,7 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 func createIncident(input any, integration any) ([]any, error) {
 	var parsedInput CreateIncidentInput
 	var parsedAlert models.EnrichedAlert
+	var severity models.IncidentSeverity
 	var output []any
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "create_incident")
@@ -269,14 +271,23 @@ func createIncident(input any, integration any) ([]any, error) {
 		tasks = append(tasks, task)
 	}
 
+	if parsedInput.Severity != "" {
+		severity = models.IncidentSeverity(parsedInput.Severity)
+	} else {
+		severity = models.IncidentSeverityLow
+	}
+
 	incident := models.Incident{
-		Id:       parsedAlert.Id,
-		Assignee: assignee,
-		History:  []models.IncidentUpdate[models.Update]{},
-		Status:   models.IncidentStatusOpen,
-		Severity: models.IncidentSeverityInfo,
-		Tasks:    tasks,
-		Title:    assertedIntegration.Inventory.WorkflowProperties.Name,
+		Id:          parsedAlert.Id,
+		Assignee:    assignee,
+		Summary:     "",
+		History:     []models.IncidentUpdate[models.Update]{},
+		NamespaceId: assertedIntegration.Inventory.WorkflowProperties.NamespaceId,
+		Status:      models.IncidentStatusOpen,
+		Severity:    severity,
+		Tasks:       tasks,
+		Title:       assertedIntegration.Inventory.WorkflowProperties.Name,
+		Timestamp:   time.Now().Unix(),
 	}
 
 	assertedIntegration.Inventory.IncidentCollection.InsertOne(context.Background(), incident)
