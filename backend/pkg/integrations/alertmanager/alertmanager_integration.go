@@ -1,14 +1,19 @@
 package alertmanager
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"signal0ne/internal/db"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -18,9 +23,89 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 	},
 }
 
+type AlertmanagerIntegrationInventory struct {
+	AlertsCollection *mongo.Collection `json:"-" bson:"-"`
+}
+
+func NewAlertmanagerIntegrationInventory(
+	alertsCollection *mongo.Collection) AlertmanagerIntegrationInventory {
+	return AlertmanagerIntegrationInventory{
+		AlertsCollection: alertsCollection,
+	}
+}
+
 type AlertmanagerIntegration struct {
-	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:"config" bson:"config"`
+	Inventory          AlertmanagerIntegrationInventory
+	models.Integration `json:",inline" bson:",inline"`
+}
+
+func (integration AlertmanagerIntegration) Trigger(
+	payload map[string]any,
+	alert *models.EnrichedAlert,
+	workflow *models.Workflow) (err error) {
+
+	var StateKey = "status"
+
+	//incoming in RFC3339 format string with timezone UTC
+	var StartTimeKey = "startsAt"
+
+	//TBD: WE DO NOT SUPPORT ALERT GROUPING FOR ALERTMANAGER
+	//supported alertmanager config signal0ne receiver:
+	//```
+	//route:
+	//   receiver: "singal0ne"
+	//   group_by: ['...']
+	//```
+	alertPayload, exists := payload["alerts"].([]any)[0].(map[string]any)
+	if !exists {
+		return fmt.Errorf("cannot find alerts in payload")
+	}
+
+	alert.TriggerProperties, err = tools.WebhookTriggerExec(alertPayload, workflow)
+	if err != nil {
+		return err
+	}
+
+	alert.State, err = tools.MapAlertState(alertPayload, StateKey, TriggerStateMapping)
+	if err != nil {
+		return err
+	}
+
+	alert.StartTime, err = tools.GetStartTime(alertPayload, StartTimeKey)
+	if err != nil {
+		return err
+	}
+
+	alertsHistory, err := db.GetEnrichedAlertsByWorkflowId(workflow.Id.Hex(),
+		context.Background(),
+		integration.Inventory.AlertsCollection,
+		bson.M{
+			"startTime": alert.StartTime,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if len(alertsHistory) > 0 {
+		var anyUpdates = false
+		for _, alertFromHistory := range alertsHistory {
+			alertFromHistory.State = alert.State
+			err = db.UpdateEnrichedAlert(alertFromHistory, context.Background(), integration.Inventory.AlertsCollection)
+			if err != nil {
+				continue
+			} else {
+				anyUpdates = true
+			}
+		}
+
+		if anyUpdates && alert.State == models.AlertStatusInactive {
+			return fmt.Errorf("alert already inactive")
+		}
+	}
+
+	return nil
 }
 
 func (integration AlertmanagerIntegration) Execute(

@@ -238,6 +238,7 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var workflow *models.Workflow
 	var localErrorMessage = ""
+	var incomingTriggerPayload map[string]any
 	var alert = models.EnrichedAlert{
 		Id:                primitive.NewObjectID(),
 		TriggerProperties: map[string]any{},
@@ -290,7 +291,43 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	}
 
 	//Trigger execution
-	alert.TriggerProperties, err = tools.WebhookTriggerExec(ctx, workflow)
+	body, err := ctx.GetRawData()
+	if err != nil || len(body) == 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+
+		return
+	}
+
+	err = json.Unmarshal(body, &incomingTriggerPayload)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		localErrorMessage = fmt.Sprintf("%v", err)
+		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		return
+
+	}
+
+	alert.Integration = workflow.Trigger.Webhook.Integration
+
+	switch alert.Integration {
+	case "alertmanager":
+		inventory := alertmanager.NewAlertmanagerIntegrationInventory(
+			c.AlertsCollection,
+		)
+		integration := &alertmanager.AlertmanagerIntegration{
+			Inventory: inventory,
+		}
+		err = integration.Trigger(incomingTriggerPayload, &alert, workflow)
+	case "datadog":
+		// integration := &datadog.DatadogIntegration{}
+		// err = integration.Trigger(ctx, &alert, workflow)
+	}
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		localErrorMessage = fmt.Sprintf("%v", err)

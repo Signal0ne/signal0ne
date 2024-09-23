@@ -3,11 +3,12 @@ name: ErrorRateByService - Incident
 lookback: 15m
 trigger:
   webhook:
+    integration: alertmanager
     output:
       service: "job"
+      alertname: "labels.alertname"
       span: "span_name"
-      timestamp: "startsAt"
-      category: "category"
+    condition: "{{ if eq .TriggerProperties.alertname \"ErrorRateByService\" }}true{{ else }}false{{ end }}"
 steps:
   - displayName: Get ownership
     name: get_ownership
@@ -43,7 +44,7 @@ steps:
       output_source: "output_source"
       count: "count"
       log: "logs.exception.stacktrace, tags.grpc.error_message"
-    condition: "{{isempty .AdditionalContext.opensearch_get_relevant_logs }}"
+    condition: "{{if eq (len .AdditionalContext.opensearch_get_relevant_logs) 0}}true{{else}}false{{end}}"
   - displayName: Compare traces
     name: compare_traces
     integration: jaeger
@@ -82,7 +83,7 @@ steps:
     integration: signal0ne
     function: create_incident
     input:
-      severity: "critical"
+      severity: "{{ if eq .TriggerProperties.span \"/api/auth\" }}critical{{else}}moderate{{end}}"
       parsable_context_object: "{{root}}"
     output:
       url: "url"

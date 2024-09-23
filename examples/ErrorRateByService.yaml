@@ -3,10 +3,12 @@ name: ErrorRateByService
 lookback: 15m
 trigger:
   webhook:
+    integration: alertmanager
     output:
       service: "job"
+      alertname: "labels.alertname"
       span: "span_name"
-      timestamp: "startsAt"
+    condition: "{{ if eq .TriggerProperties.alertname \"ErrorRateByService\" }}true{{ else }}false{{ end }}"
 steps:
 - displayName: Get ownership
   name: get_ownership
@@ -43,7 +45,7 @@ steps:
     output_source: "output_source"
     count: "count"
     log: "logs.exception.stacktrace, tags.grpc.error_message"
-  condition: "{{isempty .AdditionalContext.opensearch_get_relevant_logs }}"
+  condition: "{{if eq (len .AdditionalContext.opensearch_get_relevant_logs) 0}}true{{else}}false{{end}}"
 - displayName: Compare traces
   name: compare_traces
   integration: jaeger
