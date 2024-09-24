@@ -11,6 +11,7 @@ var TriggerStateMapping = map[string]string{
 }
 
 type Config struct {
-	ApiKey string `json:"apiKey "bson:"apiKey"`
-	Url    string `json:"url" bson:"url"`
+	ApiKey         string `json:"apiKey" bson:"apiKey"`
+	ApplicationKey string `json:"applicationKey" bson:"applicationKey"`
+	Url            string `json:"url" bson:"url"`
 }
