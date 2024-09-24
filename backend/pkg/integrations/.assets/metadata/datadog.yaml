@@ -1,0 +1,7 @@
+type: datadog
+name: DataDog
+imageUri: ../logos/datadog.svg
+config:
+  url: string
+  apiKey: secret
+  applicationKey: secret

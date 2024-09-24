@@ -9,7 +9,7 @@ import (
 
 // Test_GetLogOccurrences tests the function getLogOccurrences
 
-// You need to run lab01 -  https://portal.azure.com/#@szymonst2808gmail.onmicrosoft.com/resource/subscriptions/fb775820-301c-4a7d-af99-83285b864825/resourceGroups/rg01-lab01/providers/Microsoft.Compute/virtualMachines/lab01/overview
+// You need to run lab01
 // In order to run this test without mocking
 func Test_GetLogOccurrences(t *testing.T) {
 	mockConn := utils.ConnectToSocket()

@@ -17,6 +17,7 @@ import (
 	"signal0ne/pkg/integrations/alertmanager"
 	"signal0ne/pkg/integrations/backstage"
 	"signal0ne/pkg/integrations/confluence"
+	"signal0ne/pkg/integrations/datadog"
 	"signal0ne/pkg/integrations/github"
 	"signal0ne/pkg/integrations/jaeger"
 	"signal0ne/pkg/integrations/openai"
@@ -325,8 +326,15 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 		err = integration.Trigger(incomingTriggerPayload, &alert, workflow)
 	case "datadog":
-		// integration := &datadog.DatadogIntegration{}
-		// err = integration.Trigger(ctx, &alert, workflow)
+		inventory := datadog.NewDataDogIntegrationInventory(
+			c.PyInterface,
+			c.AlertsCollection,
+			workflow,
+		)
+		integration := &datadog.DataDogIntegration{
+			Inventory: inventory,
+		}
+		err = integration.Trigger(incomingTriggerPayload, &alert, workflow)
 	}
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
@@ -371,6 +379,15 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				c.PyInterface,
 			)
 			integration = &confluence.ConfluenceIntegration{
+				Inventory: inventory,
+			}
+		case "datadog":
+			inventory := datadog.NewDataDogIntegrationInventory(
+				c.PyInterface,
+				c.AlertsCollection,
+				workflow,
+			)
+			integration = &datadog.DataDogIntegration{
 				Inventory: inventory,
 			}
 		case "github":
@@ -488,6 +505,8 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			case *backstage.BackstageIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *confluence.ConfluenceIntegration:
+				execResult, err = i.Execute(step.Input, step.Output, step.Function)
+			case *datadog.DataDogIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)
 			case *github.GithubIntegration:
 				execResult, err = i.Execute(step.Input, step.Output, step.Function)

@@ -1,7 +1,7 @@
 package alertmanager
 
 var TriggerStateMapping = map[string]string{
-	"firing":   "active",
+	"firing":   "open",
 	"resolved": "inactive",
 }
 
