@@ -13,9 +13,9 @@ type IncidentSeverity string
 
 const (
 	IncidentSeverityCritical IncidentSeverity = "critical"
-	IncidentSeverityError    IncidentSeverity = "error"
-	IncidentSeverityWarning  IncidentSeverity = "warning"
-	IncidentSeverityInfo     IncidentSeverity = "info"
+	IncidentSeverityHigh     IncidentSeverity = "high"
+	IncidentSeverityModerate IncidentSeverity = "moderate"
+	IncidentSeverityLow      IncidentSeverity = "low"
 )
 
 type Incident struct {
@@ -23,8 +23,8 @@ type Incident struct {
 	Assignee    User                     `json:"assignee" bson:"assignee"`
 	History     []IncidentUpdate[Update] `json:"history" bson:"history"`
 	NamespaceId string                   `json:"namespaceId" bson:"namespaceId"`
-	Severity    string                   `json:"severity" bson:"severity"`
-  Status   IncidentStatus           `json:"status" bson:"status"`
+	Severity    IncidentSeverity         `json:"severity" bson:"severity"`
+	Status      IncidentStatus           `json:"status" bson:"status"`
 	Summary     string                   `json:"summary" bson:"summary"`
 	Tasks       []Task                   `json:"tasks" bson:"tasks"`
 	Timestamp   int64                    `json:"timestamp" bson:"timestamp"`
