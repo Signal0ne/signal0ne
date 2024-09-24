@@ -177,9 +177,10 @@ func getRelevantLogs(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	fmt.Printf("###\nExecuting OpenSearch integration function...\n")
+	fmt.Printf("###\nExecuting DataDog integration function...\n")
 
 	comparedFieldParamSpliced := strings.Split(parsedInput.CompareBy, ",")
+
 	for idx, field := range comparedFieldParamSpliced {
 		comparedFieldParamSpliced[idx] = strings.Trim(field, " ")
 	}
@@ -224,14 +225,17 @@ func getRelevantLogs(input any, integration any) ([]any, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("DD-API-KEY", assertedIntegration.ApiKey)
 	req.Header.Set("DD-APPLICATION-KEY", assertedIntegration.ApplicationKey)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	var bodyHandler map[string]any
 
 	if resp.StatusCode != 200 {
@@ -249,6 +253,7 @@ func getRelevantLogs(input any, integration any) ([]any, error) {
 		err = fmt.Errorf("cannot parse response body, error %v", err)
 		return nil, err
 	}
+
 	intermediateLogsOutput, exists := bodyHandler["data"].([]any)
 	if !exists {
 		err = fmt.Errorf("cannot parse response body")
@@ -265,9 +270,11 @@ func getRelevantLogs(input any, integration any) ([]any, error) {
 		if !exists {
 			return output, err
 		}
+
 		for _, mapping := range comparedFieldParamSpliced {
 			parsedIntermediateHit[mapping] = tools.TraverseOutput(intermediateHit, mapping, mapping)
 		}
+
 		allLogObjects = append(allLogObjects, parsedIntermediateHit)
 	}
 
@@ -278,6 +285,7 @@ func getRelevantLogs(input any, integration any) ([]any, error) {
 			"comparedFields": comparedFieldParamSpliced,
 		},
 	}
+
 	payloadBytes, err := json.Marshal(pyInterfacePayload)
 	if err != nil {
 		return output, err
@@ -297,9 +305,11 @@ func getRelevantLogs(input any, integration any) ([]any, error) {
 	if err != nil {
 		return output, err
 	}
+
 	size := binary.BigEndian.Uint32(headerBuffer)
 
 	payloadBuffer := make([]byte, size)
+
 	n, err := assertedIntegration.Inventory.PyInterface.Read(payloadBuffer)
 	if err != nil {
 		return output, err
@@ -310,11 +320,13 @@ func getRelevantLogs(input any, integration any) ([]any, error) {
 	if err != nil {
 		return output, err
 	}
+
 	statusCode, exists := intermediateOutput["status"].(string)
 	if !exists || statusCode != "0" {
 		errorMsg, _ := intermediateOutput["error"].(string)
 		return output, fmt.Errorf("cannot retrieve results %s", errorMsg)
 	}
+
 	resultsEncoded, exists := intermediateOutput["result"].(string)
 	if !exists {
 		return output, fmt.Errorf("cannot retrieve results, results not found")
