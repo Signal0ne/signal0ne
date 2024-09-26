@@ -8,12 +8,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+func CreateUser(
+	ctx context.Context,
+	usersCollection *mongo.Collection,
+	user models.User,
+) error {
+	_, err := usersCollection.InsertOne(ctx, user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetUser(
 	ctx context.Context,
 	usersCollection *mongo.Collection,
 	filter bson.M,
 ) (models.User, error) {
-
 	var user models.User
 
 	res := usersCollection.FindOne(ctx, filter)
@@ -27,18 +39,4 @@ func GetUser(
 	}
 
 	return user, nil
-}
-
-func CreateUser(
-	ctx context.Context,
-	usersCollection *mongo.Collection,
-	user models.User,
-) error {
-
-	_, err := usersCollection.InsertOne(ctx, user)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

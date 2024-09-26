@@ -13,31 +13,6 @@ import (
 const ACCESS_TOKEN_EXPIRATION_TIME = time.Minute * 10
 const REFRESH_TOKEN_EXPIRATION_TIME = time.Hour * 24
 
-func VerifyToken(tokenString string) (string, error) {
-	var cfg = config.GetInstance()
-	var claims = &models.JWTClaimsWithUserData{}
-	var SECRET_KEY = []byte(cfg.SignalOneSecret)
-
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return SECRET_KEY, nil
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	if !token.Valid {
-		return "", fmt.Errorf("invalid token")
-	}
-
-	return claims.Id, nil
-}
-
-func HashPassword(password string) (string, error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(hashedPassword), err
-}
-
 func ComparePasswordHashes(hashedPassword string, password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 	return err == nil
@@ -70,4 +45,29 @@ func CreateToken(user models.User, tokenType string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func HashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(hashedPassword), err
+}
+
+func VerifyToken(tokenString string) (string, error) {
+	var cfg = config.GetInstance()
+	var claims = &models.JWTClaimsWithUserData{}
+	var SECRET_KEY = []byte(cfg.SignalOneSecret)
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return SECRET_KEY, nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if !token.Valid {
+		return "", fmt.Errorf("invalid token")
+	}
+
+	return claims.Id, nil
 }

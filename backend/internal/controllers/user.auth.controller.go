@@ -88,7 +88,7 @@ func (c *UserAuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	token, err := utils.CreateToken(user, "access")
+	accessToken, err := utils.CreateToken(user, "access")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -102,10 +102,9 @@ func (c *UserAuthController) Register(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"user":         user,
-		"token":        token,
+		"accessToken":  accessToken,
 		"refreshToken": refreshToken,
 	})
-
 }
 
 func (c *UserAuthController) Login(ctx *gin.Context) {
@@ -130,7 +129,7 @@ func (c *UserAuthController) Login(ctx *gin.Context) {
 		return
 	}
 
-	token, err := utils.CreateToken(user, "access")
+	accessToken, err := utils.CreateToken(user, "access")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -144,7 +143,7 @@ func (c *UserAuthController) Login(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"user":         user,
-		"token":        token,
+		"accessToken":  accessToken,
 		"refreshToken": refreshToken,
 	})
 }
@@ -176,7 +175,7 @@ func (c *UserAuthController) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	token, err := utils.CreateToken(user, "access")
+	accessToken, err := utils.CreateToken(user, "access")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -189,7 +188,7 @@ func (c *UserAuthController) RefreshToken(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"token":        token,
+		"accessToken":  accessToken,
 		"refreshToken": refreshToken,
 	})
 }
