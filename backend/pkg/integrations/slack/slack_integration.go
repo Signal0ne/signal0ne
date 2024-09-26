@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
@@ -252,4 +253,77 @@ func addUsersToTheChannel(input any, integration any) (output []any, err error) 
 
 	output = append(output, response)
 	return output, err
+}
+
+var AppManifestJSON = `{
+	"display_information": {
+		 "name": "Signal0ne-{{.OrgName}}"
+	 },
+	 "features": {
+		 "bot_user": {
+			 "display_name": "Signal0ne-{{.OrgName}}",
+			 "always_online": true
+		 },
+		 "slash_commands": []
+	 },
+	 "oauth_config": {
+		 "scopes": {
+			 "bot": [
+				 "channels:join",
+				 "channels:manage",
+				 "channels:read",
+				 "channels:write",
+				 "channels:write.invites",
+				 "files:write",
+				 "incoming-webhook",
+				 "links:write",
+				 "usergroups:write",
+				 "users:read",
+				 "users:read.email",
+				 "usergroups:read"
+			 ]
+		 }
+	 },
+	 "settings": {
+		 "event_subscriptions": {
+			 "request_url": "{{.UrlPrefix}}/slack/events",
+			 "bot_events": [
+				 "app_mention"
+			 ]
+		 },
+		 "interactivity": {
+			 "is_enabled": true,
+			 "request_url": "{{.UrlPrefix}}/slack/events"
+		 },
+		 "org_deploy_enabled": false,
+		 "socket_mode_enabled": false,
+		 "token_rotation_enabled": false
+	 }
+ }`
+
+func (integration SlackIntegration) GenerateSlackManifest(orgName, urlPrefix string) (string, error) {
+	// First, validate the integration
+	if err := integration.Validate(); err != nil {
+		return "", fmt.Errorf("invalid slack integration: %v", err)
+	}
+
+	// Prepare the template data
+	data := map[string]string{
+		"OrgName":   orgName,
+		"UrlPrefix": urlPrefix,
+	}
+
+	// Parse the template and execute it with the provided data
+	tmpl, err := template.New("slackManifest").Parse(AppManifestJSON)
+	if err != nil {
+		return "", fmt.Errorf("error parsing manifest template: %v", err)
+	}
+
+	var manifestBuffer bytes.Buffer
+	if err := tmpl.Execute(&manifestBuffer, data); err != nil {
+		return "", fmt.Errorf("error executing manifest template: %v", err)
+	}
+
+	// Return the generated manifest as a string
+	return manifestBuffer.String(), nil
 }
