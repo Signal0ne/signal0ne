@@ -1,3 +1,4 @@
+import { CopyIcon } from '../Icons/Icons';
 import {
   getFormattedFormLabel,
   getInputType,
@@ -76,13 +77,18 @@ const InstallIntegrationModal = () => {
     resetSteps();
   }, [selectedIntegration]);
 
-  const resetSteps = () => {
-    setInstallationStep(0);
-  }
-
   const acknowledgeConfigData = () => {
     resetSteps();
     setIsModalOpen(false);
+  }
+
+  const handleContentCopy = (content: string, key: string) => {
+    navigator.clipboard.writeText(content);
+    toast.success(key + ' copied to clipboard');
+  };
+
+  const resetSteps = () => {
+    setInstallationStep(0);
   }
 
   const submitForm: SubmitHandler<FormData> = async data => {
@@ -256,13 +262,24 @@ const InstallIntegrationModal = () => {
               </button>
             </form> :
             <div className="config-data">
-              <h4>Configuration data</h4>
+              <h4>Save the configuration data for later. It won't be shown again.</h4>
               <ul>
                 {configData && Object.entries(configData).map(([key, value]) => (
                   <div key={key}>
                     <span className="key">{key}</span>
                     <div className="value">
-                      <pre>{JSON.stringify(JSON.parse(value), null, 2)}</pre>
+                      <pre>{JSON.stringify(JSON.parse(value), null, 2)}
+                        <CopyIcon
+                          className="modal-copy-icon"
+                          data-tooltip-class-name="copy-tooltip"
+                          data-tooltip-content="Copy Webhook URL"
+                          data-tooltip-id="global"
+                          height={28}
+                          onClick={() => { handleContentCopy(value, key) }}
+                          tabIndex={0}
+                          width={28}
+                        />
+                      </pre>
                     </div>
                   </div>
                 ))}

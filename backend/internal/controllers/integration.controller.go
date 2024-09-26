@@ -262,6 +262,8 @@ func (ic *IntegrationController) UpdateIntegration(ctx *gin.Context) {
 		return
 	}
 
+	configData := integration.Initialize()
+
 	updatedIntegration := bson.M{"$set": integrationTemplate}
 
 	integID, _ := primitive.ObjectIDFromHex(integrationId)
@@ -274,5 +276,8 @@ func (ic *IntegrationController) UpdateIntegration(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, integration)
+	ctx.JSON(http.StatusOK, gin.H{
+		"integration": integration,
+		"configData":  configData,
+	})
 }
