@@ -8,29 +8,32 @@ import (
 )
 
 type MainRouter struct {
+	IncidentController    *controllers.IncidentController
 	IntegrationController *controllers.IntegrationController
 	MainController        *controllers.MainController
 	NamespaceController   *controllers.NamespaceController
+	RBACController        *controllers.RBACController
 	UserAuthController    *controllers.UserAuthController
 	WorkflowController    *controllers.WorkflowController
-	IncidentController    *controllers.IncidentController
 }
 
 func NewMainRouter(
+	IncidentController *controllers.IncidentController,
+	IntegrationController *controllers.IntegrationController,
 	MainController *controllers.MainController,
 	NamespaceController *controllers.NamespaceController,
-	WorkflowController *controllers.WorkflowController,
-	IntegrationController *controllers.IntegrationController,
-	IncidentController *controllers.IncidentController,
+	RBACController *controllers.RBACController,
 	UserAuthController *controllers.UserAuthController,
+	WorkflowController *controllers.WorkflowController,
 ) *MainRouter {
 	return &MainRouter{
+		IncidentController:    IncidentController,
 		IntegrationController: IntegrationController,
 		MainController:        MainController,
 		NamespaceController:   NamespaceController,
+		RBACController:        RBACController,
 		UserAuthController:    UserAuthController,
 		WorkflowController:    WorkflowController,
-		IncidentController:    IncidentController,
 	}
 }
 
@@ -38,11 +41,15 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 
 	authGroup := rg.Group("/auth")
 	{
-		authGroup.POST("/email-confirmation")
-		authGroup.POST("/email-confirmation-link-resend")
-		authGroup.POST("/login")
-		authGroup.POST("/register")
-		authGroup.POST("/token/refresh")
+		authGroup.POST("/login", r.UserAuthController.Login)
+		authGroup.POST("/register", r.UserAuthController.Register)
+		authGroup.POST("/token/refresh", r.UserAuthController.RefreshToken)
+	}
+
+	rbacGroup := rg.Group("/rbac", middlewares.CheckAuthorization)
+	{
+		rbacGroup.POST("/request-namespace-access", r.RBACController.RequestToJoinNamespace)
+		rbacGroup.POST("/namespace-access-response", r.RBACController.TriageNamespaceJoinRequest)
 	}
 
 	incidentGroup := rg.Group("/:namespaceid/incident", middlewares.CheckAuthorization)
@@ -70,7 +77,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		integrationGroup.PATCH("/:integrationid", r.IntegrationController.UpdateIntegration)
 	}
 
-	namespaceGroup := rg.Group("/namespace")
+	namespaceGroup := rg.Group("/namespace", middlewares.CheckAuthorization)
 	{
 		namespaceGroup.GET("/search-by-name", r.NamespaceController.GetNamespaceByName)
 		namespaceGroup.POST("/create")
@@ -84,7 +91,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		webhookGroup.POST("/:namespaceid/:workflowid/:salt", r.WorkflowController.WebhookTriggerHandler)
 	}
 
-	workflowGroup := rg.Group("/:namespaceid/workflow")
+	workflowGroup := rg.Group("/:namespaceid/workflow", middlewares.CheckAuthorization)
 	{
 		workflowGroup.POST("/create", r.WorkflowController.ApplyWorkflow)
 		workflowGroup.DELETE("/:workflowid")

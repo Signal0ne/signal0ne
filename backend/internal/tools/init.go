@@ -10,9 +10,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error {
+func OnboardAdmin(
+	ctx context.Context,
+	mongoNamespaceColl *mongo.Collection,
+	admin models.User) error {
 
-	// Info: Not guarded default namespace for development and testing usage only
 	var namespace models.Namespace
 	filter := bson.M{
 		"name": "default",
@@ -22,8 +24,14 @@ func Initialize(ctx context.Context, mongoNamespaceColl *mongo.Collection) error
 		namespace = models.Namespace{
 			Name:      "default",
 			Workflows: make([]string, 0),
-			Users:     make([]string, 0),
+			Users:     []models.NamespaceUserRef{},
 		}
+		nsUser := models.NamespaceUserRef{
+			Id:       admin.Id,
+			Username: admin.Name,
+			Accepted: true,
+		}
+		namespace.Users = append(namespace.Users, nsUser)
 		res, err := mongoNamespaceColl.InsertOne(ctx, namespace)
 		if err != nil {
 			return err

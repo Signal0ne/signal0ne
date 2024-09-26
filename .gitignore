@@ -1,5 +1,5 @@
 .vscode
-mongo-data
+mongo-data*
 backend/scripts/python_interface/__pycache__
 backend/tmp
 sockets

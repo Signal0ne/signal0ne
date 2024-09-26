@@ -9,6 +9,6 @@ func NewMainController() *MainController {
 	return &MainController{}
 }
 
-func (c *NamespaceController) HealthCheck(ctx *gin.Context) {
+func (c *MainController) HealthCheck(ctx *gin.Context) {
 
 }
