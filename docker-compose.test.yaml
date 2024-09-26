@@ -5,7 +5,7 @@ services:
     build:
       dockerfile: Dockerfile.test
       context: ./backend
-    command: ["./pkg/integrations/datadog"]
+    command: [""]
     ports:
       - 8080:8080
     depends_on:

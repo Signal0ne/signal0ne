@@ -43,10 +43,11 @@ func main() {
 	defer mongoConn.Disconnect(ctx)
 
 	alertsCollection := mongoConn.Database("signalone").Collection("alerts")
-	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
-	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
-	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
 	incidentsCollection := mongoConn.Database("signalone").Collection("incidents")
+	integrationsCollection := mongoConn.Database("signalone").Collection("integrations")
+	namespacesCollection := mongoConn.Database("signalone").Collection("namespaces")
+	usersCollection := mongoConn.Database("signalone").Collection("users")
+	workflowsCollection := mongoConn.Database("signalone").Collection("workflows")
 
 	var conn net.Conn = nil
 	conn = utils.ConnectToSocket()
@@ -60,11 +61,6 @@ func main() {
 		defer logFile.Close()
 
 		logger = log.New(logFile, "", 0)
-	}
-
-	err = tools.Initialize(ctx, namespacesCollection)
-	if err != nil {
-		panic(err)
 	}
 
 	// Loading installable integrations
@@ -111,15 +107,23 @@ func main() {
 		namespacesCollection,
 		conn,
 	)
-	userAuthController := controllers.NewUserAuthController()
+	userAuthController := controllers.NewUserAuthController(
+		usersCollection,
+		namespacesCollection,
+	)
+	rbacController := controllers.NewRBACController(
+		usersCollection,
+		namespacesCollection,
+	)
 
 	mainRouter := routers.NewMainRouter(
+		incidentController,
+		integrationsController,
 		mainController,
 		namespaceController,
-		workflowController,
-		integrationsController,
-		incidentController,
-		userAuthController)
+		rbacController,
+		userAuthController,
+		workflowController)
 	mainRouter.RegisterRoutes(routerApiGroup)
 
 	pyInterfacePayload := map[string]any{
