@@ -22,8 +22,9 @@ type GithubIntegration struct {
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"get_content": models.WorkflowFunctionDefinition{
-		Function: getContent,
-		Input:    GetFileContentInput{},
+		Function:   getContent,
+		Input:      GetFileContentInput{},
+		OutputTags: []string{"metdata", "logs"},
 	},
 }
 
@@ -44,9 +45,14 @@ func (integration GithubIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration GithubIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration GithubIntegration) Validate() error {

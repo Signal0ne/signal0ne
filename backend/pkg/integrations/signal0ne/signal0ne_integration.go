@@ -15,12 +15,14 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"correlate_ongoing_alerts": models.WorkflowFunctionDefinition{
-		Function: correlateOngoingAlerts,
-		Input:    CorrelateOngoingAlertsInput{},
+		Function:   correlateOngoingAlerts,
+		Input:      CorrelateOngoingAlertsInput{},
+		OutputTags: []string{"alerts"},
 	},
 	"create_incident": models.WorkflowFunctionDefinition{
-		Function: createIncident,
-		Input:    CreateIncidentInput{},
+		Function:   createIncident,
+		Input:      CreateIncidentInput{},
+		OutputTags: []string{"metadata"},
 	},
 }
 
@@ -64,9 +66,14 @@ func (integration Signal0neIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration Signal0neIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration Signal0neIntegration) Validate() error {

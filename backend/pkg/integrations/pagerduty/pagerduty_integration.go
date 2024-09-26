@@ -13,8 +13,9 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"create_incident": models.WorkflowFunctionDefinition{
-		Function: createIncident,
-		Input:    CreateIncidentInput{},
+		Function:   createIncident,
+		Input:      CreateIncidentInput{},
+		OutputTags: []string{"metadata"},
 	},
 }
 
@@ -56,9 +57,14 @@ func (integration PagerdutyIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration PagerdutyIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration PagerdutyIntegration) Validate() error {

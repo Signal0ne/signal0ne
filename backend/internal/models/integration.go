@@ -9,6 +9,8 @@ type IIntegration interface {
 
 	ValidateStep(input any,
 		functionName string) error
+
+	Initialize() map[string]string
 }
 
 type Integration struct {

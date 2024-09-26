@@ -14,16 +14,19 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"add_users_to_channel": models.WorkflowFunctionDefinition{
-		Function: addUsersToTheChannel,
-		Input:    AddUsersToTheChannelInput{},
+		Function:   addUsersToTheChannel,
+		Input:      AddUsersToTheChannelInput{},
+		OutputTags: []string{"metadata"},
 	},
 	"create_channel": models.WorkflowFunctionDefinition{
-		Function: createChannel,
-		Input:    CreateChannelInput{},
+		Function:   createChannel,
+		Input:      CreateChannelInput{},
+		OutputTags: []string{"metadata"},
 	},
 	"post_message": models.WorkflowFunctionDefinition{
-		Function: postMessage,
-		Input:    PostMessageInput{},
+		Function:   postMessage,
+		Input:      PostMessageInput{},
+		OutputTags: []string{"metadata"},
 	},
 }
 
@@ -60,9 +63,24 @@ func (integration SlackIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration SlackIntegration) Initialize() map[string]string {
+	var output map[string]string
+
+	slackAppManifest, err := integration.GenerateSlackManifest(integration.Config.WorkspaceID, integration.Url)
+	if err != nil {
+		return nil
+	}
+
+	output = map[string]string{
+		"SlackAppManifest": slackAppManifest,
+	}
+
+	return output
 }
 
 func (integration SlackIntegration) Validate() error {

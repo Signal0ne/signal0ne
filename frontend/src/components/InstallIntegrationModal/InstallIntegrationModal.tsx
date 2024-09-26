@@ -26,6 +26,13 @@ interface GetInstalledIntegrationsResponse {
   installedIntegrations: Integration[];
 }
 
+interface InstallIntegrationResponse {
+  integration: Integration;
+  configData: Record<string, string>;
+}
+
+type InstallationStep = 0 | 1;
+
 const CUSTOM_STYLES: Styles = {
   content: {
     backgroundColor: '#383838',
@@ -43,6 +50,10 @@ const CUSTOM_STYLES: Styles = {
 
 const InstallIntegrationModal = () => {
   const [error, setError] = useState<Error | null>(null);
+  const [installationStep, setInstallationStep] = useState<InstallationStep>(0);
+  const [configData, setConfigData] = useState<Record<string, string> | null>(
+    null
+  );
 
   const {
     formState: { errors },
@@ -62,7 +73,17 @@ const InstallIntegrationModal = () => {
 
   useEffect(() => {
     setError(null);
+    resetSteps();
   }, [selectedIntegration]);
+
+  const resetSteps = () => {
+    setInstallationStep(0);
+  }
+
+  const acknowledgeConfigData = () => {
+    resetSteps();
+    setIsModalOpen(false);
+  }
 
   const submitForm: SubmitHandler<FormData> = async data => {
     const { name, ...rest } = data;
@@ -109,13 +130,21 @@ const InstallIntegrationModal = () => {
         throw new Error(errorData.error);
       }
 
+      const installationOutput: InstallIntegrationResponse = await res.json();
+
       const response = await fetch(
         `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`
       );
       const data: GetInstalledIntegrationsResponse = await response.json();
 
       setInstalledIntegrations(data.installedIntegrations);
-      setIsModalOpen(false);
+      if (installationOutput.configData) {
+        setInstallationStep(1);
+        setConfigData(installationOutput.configData);
+      } else {
+        resetSteps();
+        setIsModalOpen(false);
+      }
 
       toast.success(
         `Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`
@@ -187,44 +216,62 @@ const InstallIntegrationModal = () => {
             </span>{' '}
             integration
           </h3>
-          <form className="form-content" onSubmit={handleSubmit(submitForm)}>
-            {formattedSelectedIntegration &&
-              formattedSelectedIntegration.map(entry => {
-                const { key, value } = entry;
+          {installationStep === 0 ?
+            <form className="form-content" onSubmit={handleSubmit(submitForm)}>
+              {formattedSelectedIntegration &&
+                formattedSelectedIntegration.map(entry => {
+                  const { key, value } = entry;
 
-                const errorMessage =
-                  typeof errors[key]?.message === 'string'
-                    ? { message: errors[key]?.message }
-                    : undefined;
+                  const errorMessage =
+                    typeof errors[key]?.message === 'string'
+                      ? { message: errors[key]?.message }
+                      : undefined;
 
-                return (
-                  <div className="form-field" key={key}>
-                    <Input
-                      defaultValue={selectedIntegration?.id ? value : undefined}
-                      error={errorMessage}
-                      id={`field-${key}`}
-                      label={getFormattedFormLabel(key)}
-                      placeholder={`Enter ${getFormattedFormLabel(key)} here...`}
-                      type={getInputType(key)} //TODO: Find a way to determinate it from the BE
-                      {...register(key, {
-                        pattern:
-                          key === 'url'
-                            ? {
-                              message: 'Invalid URL address',
-                              value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
-                            }
-                            : undefined,
-                        required: 'This field is required'
-                      })}
-                    />
+                  return (
+                    <div className="form-field" key={key}>
+                      <Input
+                        defaultValue={selectedIntegration?.id ? value : undefined}
+                        error={errorMessage}
+                        id={`field-${key}`}
+                        label={getFormattedFormLabel(key)}
+                        placeholder={`Enter ${getFormattedFormLabel(key)} here...`}
+                        type={getInputType(key)} //TODO: Find a way to determinate it from the BE
+                        {...register(key, {
+                          pattern:
+                            key === 'url'
+                              ? {
+                                message: 'Invalid URL address',
+                                value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
+                              }
+                              : undefined,
+                          required: 'This field is required'
+                        })}
+                      />
+                    </div>
+                  );
+                })}
+              {error ? <p className="error-msg">{error.message}</p> : null}
+              <button className="submit" type="submit">
+                {selectedIntegration.id ? 'Save Changes' : 'Install'}
+              </button>
+            </form> :
+            <div className="config-data">
+              <h4>Configuration data</h4>
+              <ul>
+                {configData && Object.entries(configData).map(([key, value]) => (
+                  <div key={key}>
+                    <span className="key">{key}</span>
+                    <div className="value">
+                      <pre>{JSON.stringify(JSON.parse(value), null, 2)}</pre>
+                    </div>
                   </div>
-                );
-              })}
-            {error ? <p className="error-msg">{error.message}</p> : null}
-            <button className="submit" type="submit">
-              {selectedIntegration.id ? 'Save Changes' : 'Install'}
-            </button>
-          </form>
+                ))}
+              </ul>
+              <button className="submit" onClick={acknowledgeConfigData}>
+                Got it
+              </button>
+            </div>
+          }
         </div>
       ) : (
         <Spinner />

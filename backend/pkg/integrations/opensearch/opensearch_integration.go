@@ -19,8 +19,9 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"get_log_occurrences": models.WorkflowFunctionDefinition{
-		Function: getLogOccurrences,
-		Input:    GetLogOccurrencesInput{},
+		Function:   getLogOccurrences,
+		Input:      GetLogOccurrencesInput{},
+		OutputTags: []string{"logs"},
 	},
 }
 
@@ -57,9 +58,14 @@ func (integration OpenSearchIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration OpenSearchIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration OpenSearchIntegration) Validate() error {

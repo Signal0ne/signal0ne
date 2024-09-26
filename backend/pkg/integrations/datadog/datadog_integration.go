@@ -21,8 +21,9 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"get_relevant_logs": models.WorkflowFunctionDefinition{
-		Function: getRelevantLogs,
-		Input:    GetRelevantLogsInput{},
+		Function:   getRelevantLogs,
+		Input:      GetRelevantLogsInput{},
+		OutputTags: []string{"logs"},
 	},
 
 	// TBD
@@ -126,9 +127,14 @@ func (integration DataDogIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration DataDogIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration DataDogIntegration) Validate() error {
