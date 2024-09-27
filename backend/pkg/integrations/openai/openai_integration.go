@@ -18,12 +18,14 @@ type OpenaiIntegration struct {
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"propose_resolution_steps": models.WorkflowFunctionDefinition{
-		Function: proposeResolutions,
-		Input:    ProposeResolutionsInput{},
+		Function:   proposeResolutions,
+		Input:      ProposeResolutionsInput{},
+		OutputTags: []string{"copilot"},
 	},
 	"summarize_context": models.WorkflowFunctionDefinition{
-		Function: summarizeContext,
-		Input:    SummarizeContextInput{},
+		Function:   summarizeContext,
+		Input:      SummarizeContextInput{},
+		OutputTags: []string{"copilot"},
 	},
 }
 
@@ -44,9 +46,14 @@ func (integration OpenaiIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration OpenaiIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration OpenaiIntegration) Validate() error {

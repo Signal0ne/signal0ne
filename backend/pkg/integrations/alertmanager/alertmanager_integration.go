@@ -18,8 +18,9 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"get_relevant_alerts": models.WorkflowFunctionDefinition{
-		Function: getRelevantAlerts,
-		Input:    GetRelevantAlertsInput{},
+		Function:   getRelevantAlerts,
+		Input:      GetRelevantAlertsInput{},
+		OutputTags: []string{"alerts"},
 	},
 }
 
@@ -125,9 +126,14 @@ func (integration AlertmanagerIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration AlertmanagerIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration AlertmanagerIntegration) Validate() error {

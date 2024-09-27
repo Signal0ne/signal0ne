@@ -1,6 +1,7 @@
 package models
 
 type WorkflowFunctionDefinition struct {
-	Function func(input any, integration any) (output []any, err error)
-	Input    any
+	Function   func(input any, integration any) (output []any, err error)
+	Input      any
+	OutputTags []string
 }

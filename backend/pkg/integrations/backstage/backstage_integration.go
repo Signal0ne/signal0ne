@@ -12,8 +12,9 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"get_properties_values": models.WorkflowFunctionDefinition{
-		Function: getPropertiesValues,
-		Input:    GetPropertiesValuesInput{},
+		Function:   getPropertiesValues,
+		Input:      GetPropertiesValuesInput{},
+		OutputTags: []string{"metadata"},
 	},
 }
 
@@ -39,9 +40,14 @@ func (integration BackstageIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration BackstageIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration BackstageIntegration) Validate() error {

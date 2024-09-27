@@ -1,3 +1,4 @@
+import { CopyIcon } from '../Icons/Icons';
 import {
   getFormattedFormLabel,
   getInputType,
@@ -13,6 +14,11 @@ import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
 import Spinner from '../Spinner/Spinner';
 import './InstallIntegrationModal.scss';
+import Button from '../Button/Button';
+
+interface ConfigData {
+  [key: string]: string;
+}
 
 interface Error {
   message: string;
@@ -22,9 +28,18 @@ interface FormData {
   [key: string]: unknown;
 }
 
+
 interface GetInstalledIntegrationsResponse {
   installedIntegrations: Integration[];
 }
+
+
+interface InstallIntegrationResponse {
+  configData: ConfigData | null;
+  integration: Integration;
+}
+
+type InstallationStep = 0 | 1;
 
 const CUSTOM_STYLES: Styles = {
   content: {
@@ -42,7 +57,11 @@ const CUSTOM_STYLES: Styles = {
 };
 
 const InstallIntegrationModal = () => {
+  const [configData, setConfigData] = useState<ConfigData | null>(
+    null
+  );
   const [error, setError] = useState<Error | null>(null);
+  const [installationStep, setInstallationStep] = useState<InstallationStep>(0);
 
   const {
     formState: { errors },
@@ -62,7 +81,25 @@ const InstallIntegrationModal = () => {
 
   useEffect(() => {
     setError(null);
+    resetSteps();
   }, [selectedIntegration]);
+
+  const acknowledgeConfigData = () => {
+    resetSteps();
+    setIsModalOpen(false);
+  }
+
+  const handleContentCopy = (content: string, key: string) => {
+    try {
+      navigator.clipboard.writeText(content);
+      toast.success(key + ' copied to clipboard');
+    }
+    catch (e) {
+      toast.error('Failed to copy content to clipboard');
+    }
+  };
+
+  const resetSteps = () => setInstallationStep(0);
 
   const submitForm: SubmitHandler<FormData> = async data => {
     const { name, ...rest } = data;
@@ -109,13 +146,21 @@ const InstallIntegrationModal = () => {
         throw new Error(errorData.error);
       }
 
+      const installationOutputData: InstallIntegrationResponse = await res.json();
+
       const response = await fetch(
         `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`
       );
       const data: GetInstalledIntegrationsResponse = await response.json();
 
       setInstalledIntegrations(data.installedIntegrations);
-      setIsModalOpen(false);
+      if (installationOutputData.configData) {
+        setConfigData(installationOutputData.configData);
+        setInstallationStep(1);
+      } else {
+        resetSteps();
+        setIsModalOpen(false);
+      }
 
       toast.success(
         `Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`
@@ -187,44 +232,73 @@ const InstallIntegrationModal = () => {
             </span>{' '}
             integration
           </h3>
-          <form className="form-content" onSubmit={handleSubmit(submitForm)}>
-            {formattedSelectedIntegration &&
-              formattedSelectedIntegration.map(entry => {
-                const { key, value } = entry;
+          {installationStep === 0 ?
+            <form className="form-content" onSubmit={handleSubmit(submitForm)}>
+              {formattedSelectedIntegration &&
+                formattedSelectedIntegration.map(entry => {
+                  const { key, value } = entry;
 
-                const errorMessage =
-                  typeof errors[key]?.message === 'string'
-                    ? { message: errors[key]?.message }
-                    : undefined;
+                  const errorMessage =
+                    typeof errors[key]?.message === 'string'
+                      ? { message: errors[key]?.message }
+                      : undefined;
 
-                return (
-                  <div className="form-field" key={key}>
-                    <Input
-                      defaultValue={selectedIntegration?.id ? value : undefined}
-                      error={errorMessage}
-                      id={`field-${key}`}
-                      label={getFormattedFormLabel(key)}
-                      placeholder={`Enter ${getFormattedFormLabel(key)} here...`}
-                      type={getInputType(key)} //TODO: Find a way to determinate it from the BE
-                      {...register(key, {
-                        pattern:
-                          key === 'url'
-                            ? {
-                              message: 'Invalid URL address',
-                              value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
-                            }
-                            : undefined,
-                        required: 'This field is required'
-                      })}
-                    />
+                  return (
+                    <div className="form-field" key={key}>
+                      <Input
+                        defaultValue={selectedIntegration?.id ? value : undefined}
+                        error={errorMessage}
+                        id={`field-${key}`}
+                        label={getFormattedFormLabel(key)}
+                        placeholder={`Enter ${getFormattedFormLabel(key)} here...`}
+                        type={getInputType(key)} //TODO: Find a way to determinate it from the BE
+                        {...register(key, {
+                          pattern:
+                            key === 'url'
+                              ? {
+                                message: 'Invalid URL address',
+                                value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
+                              }
+                              : undefined,
+                          required: 'This field is required'
+                        })}
+                      />
+                    </div>
+                  );
+                })}
+              {error ? <p className="error-msg">{error.message}</p> : null}
+              <Button type="submit">
+                {selectedIntegration.id ? 'Save Changes' : 'Install'}
+              </Button>
+            </form> :
+            <div className="config-data">
+              <h4>Save the configuration data for later. It won't be shown again.</h4>
+              <div>
+                {configData && Object.entries(configData).map(([key, value]) => (
+                  <div key={key}>
+                    <span className="key">{key}</span>
+                    <div className="value">
+                      <pre>{JSON.stringify(JSON.parse(value), null, 2)}
+                        <CopyIcon
+                          className="modal-copy-icon"
+                          data-tooltip-class-name="copy-tooltip"
+                          data-tooltip-content="Copy Webhook URL"
+                          data-tooltip-id="global"
+                          height={28}
+                          onClick={() => { handleContentCopy(value, key) }}
+                          tabIndex={0}
+                          width={28}
+                        />
+                      </pre>
+                    </div>
                   </div>
-                );
-              })}
-            {error ? <p className="error-msg">{error.message}</p> : null}
-            <button className="submit" type="submit">
-              {selectedIntegration.id ? 'Save Changes' : 'Install'}
-            </button>
-          </form>
+                ))}
+              </div>
+              <Button onClick={acknowledgeConfigData}>
+                Got it
+              </Button>
+            </div>
+          }
         </div>
       ) : (
         <Spinner />

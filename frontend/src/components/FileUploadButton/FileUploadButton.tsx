@@ -135,8 +135,13 @@ const FileUploadButton = () => {
   };
 
   const handleWebhookCopy = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    toast.success('Webhook URL copied to clipboard');
+    try {
+      navigator.clipboard.writeText(webhookUrl);
+      toast.success('Webhook URL copied to clipboard');
+    }
+    catch (e) {
+      toast.error('Failed to copy content to clipboard');
+    }
   };
 
   const openModal = () => setIsModalOpen(true);

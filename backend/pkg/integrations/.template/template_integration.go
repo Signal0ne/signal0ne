@@ -40,6 +40,11 @@ func (integration TemplateIntegration) Execute(
 	return results, nil
 }
 
+func (integration TemplateIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
+}
+
 func (integration TemplateIntegration) Validate() error {
 	// Implement your config validation here
 	return nil

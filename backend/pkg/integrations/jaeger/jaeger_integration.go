@@ -15,12 +15,14 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"compare_traces": models.WorkflowFunctionDefinition{
-		Function: compareTraces,
-		Input:    CompareTracesInput{},
+		Function:   compareTraces,
+		Input:      CompareTracesInput{},
+		OutputTags: []string{"metadata"},
 	},
 	"get_properties_values": models.WorkflowFunctionDefinition{
-		Function: getPropertiesValues,
-		Input:    GetPropertiesValuesInput{},
+		Function:   getPropertiesValues,
+		Input:      GetPropertiesValuesInput{},
+		OutputTags: []string{"logs", "traces"},
 	},
 }
 
@@ -57,9 +59,14 @@ func (integration JaegerIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration JaegerIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration JaegerIntegration) Validate() error {

@@ -187,6 +187,8 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 		return
 	}
 
+	configData := integration.Initialize()
+
 	_, err = ic.IntegrationCollection.InsertOne(ctx, integrationTemplate)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -195,7 +197,10 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, integration)
+	ctx.JSON(http.StatusOK, gin.H{
+		"integration": integration,
+		"configData":  configData,
+	})
 }
 
 func (ic *IntegrationController) UpdateIntegration(ctx *gin.Context) {
@@ -257,6 +262,8 @@ func (ic *IntegrationController) UpdateIntegration(ctx *gin.Context) {
 		return
 	}
 
+	configData := integration.Initialize()
+
 	updatedIntegration := bson.M{"$set": integrationTemplate}
 
 	integID, _ := primitive.ObjectIDFromHex(integrationId)
@@ -269,5 +276,8 @@ func (ic *IntegrationController) UpdateIntegration(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, integration)
+	ctx.JSON(http.StatusOK, gin.H{
+		"integration": integration,
+		"configData":  configData,
+	})
 }

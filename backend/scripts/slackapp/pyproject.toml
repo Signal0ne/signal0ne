@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "signal0ne-slackapp"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+slack-bolt = "^1.19.1"
+pytest = "^8.3.2"
+python-dotenv = "^1.0.1"
+responses = "^0.25.3"
+flask = "^3.0.3"
+matplotlib = "^3.6.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

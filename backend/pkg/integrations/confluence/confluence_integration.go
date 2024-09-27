@@ -15,8 +15,9 @@ import (
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"search": models.WorkflowFunctionDefinition{
-		Function: search,
-		Input:    SearchInput{},
+		Function:   search,
+		Input:      SearchInput{},
+		OutputTags: []string{"runbooks"},
 	},
 }
 
@@ -53,9 +54,14 @@ func (integration ConfluenceIntegration) Execute(
 		return results, fmt.Errorf("%s.%s:%v", integration.Name, functionName, err)
 	}
 
-	results = tools.ExecutionResultWrapper(intermediateResults, output)
+	results = tools.ExecutionResultWrapper(intermediateResults, output, function.OutputTags)
 
 	return results, nil
+}
+
+func (integration ConfluenceIntegration) Initialize() map[string]string {
+	// Implement your config initialization here
+	return nil
 }
 
 func (integration ConfluenceIntegration) Validate() error {

@@ -25,6 +25,14 @@ services:
       - ./backend:/app
       - ./logs:/logs:rw
 
+  slackapp:
+    container_name: slackapp
+    build:
+      dockerfile: ./Dockerfile
+      context: ./backend/scripts/slackapp
+    ports:
+      - 3000:3000
+
   python-service:
     container_name: python-service
     build:

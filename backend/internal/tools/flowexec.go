@@ -125,7 +125,9 @@ func RecordExecution(
 	return nil
 }
 
-func ExecutionResultWrapper(intermediateResults []any, output map[string]string) []map[string]any {
+func ExecutionResultWrapper(intermediateResults []any,
+	output map[string]string,
+	outputTags []string) []map[string]any {
 	var results []map[string]any
 
 	for _, result := range intermediateResults {
@@ -133,6 +135,7 @@ func ExecutionResultWrapper(intermediateResults []any, output map[string]string)
 		for key, mapping := range output {
 			traverseResult[key] = TraverseOutput(result, key, mapping)
 		}
+		traverseResult["tags"] = outputTags
 		results = append(results, traverseResult)
 	}
 
