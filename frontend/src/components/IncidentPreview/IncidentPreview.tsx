@@ -1,4 +1,5 @@
-import { FormEvent, useState } from 'react';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Incident } from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
@@ -36,9 +37,21 @@ const IncidentPreview = () => {
   const [taskErrorMessage, setTaskErrorMessage] = useState('');
   const [taskName, setTaskName] = useState('');
 
+  const previewRef = useRef<HTMLDivElement>(null);
+
   const { namespaceId } = useAuthContext();
   const { isIncidentPreviewLoading, selectedIncident, setSelectedIncident } =
     useIncidentsContext();
+
+  useEffect(() => {
+    const element = previewRef.current;
+
+    if (!element) return;
+
+    return autoScrollForElements({
+      element
+    });
+  }, [selectedIncident]);
 
   const handleAddTask = async (e: FormEvent) => {
     e.preventDefault();
@@ -107,7 +120,7 @@ const IncidentPreview = () => {
       );
 
     return (
-      <section className="incident-preview">
+      <section className="incident-preview" ref={previewRef}>
         <div className="incident-preview-header">
           <h2 className="incident-preview-header-title">
             {selectedIncident?.title}

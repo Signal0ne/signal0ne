@@ -1,10 +1,22 @@
+import {
+  attachClosestEdge,
+  Edge,
+  extractClosestEdge
+} from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChevronIcon, UserIcon } from '../Icons/Icons';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import {
+  draggable,
+  dropTargetForElements
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
 import {
   IIncidentTask,
   Incident
 } from '../../contexts/IncidentsProvider/IncidentsProvider';
+import { reorderWithEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/reorder-with-edge';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
@@ -13,7 +25,6 @@ import classNames from 'classnames';
 import Input from '../Input/Input';
 import TextArea from '../TextArea/TextArea';
 import './IncidentTask.scss';
-
 interface AddCommentResponse {
   updatedIncident: Incident;
 }
@@ -22,14 +33,16 @@ interface IncidentTaskProps {
   incidentTask: IIncidentTask;
 }
 
-interface TaskStatusResponse {
+interface TaskUpdateResponse {
   updatedIncident: Incident;
 }
 
 const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
+  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [commentContent, setCommentContent] = useState('');
   const [commentTitle, setCommentTitle] = useState('');
   const [isCommentEditorOpen, setIsCommentEditorOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   const { namespaceId } = useAuthContext();
@@ -37,6 +50,139 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
 
   const abortControllerRef = useRef(new AbortController());
   const commentEditorTitleInputRef = useRef<HTMLInputElement>(null);
+
+  const incidentTaskRef = useRef(null);
+  const incidentTaskDragHandleRef = useRef(null);
+
+  useEffect(() => {
+    const handleUpdatePriority = async (newOrderedTasks: IIncidentTask[]) => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/update-tasks-priority`,
+          {
+            body: JSON.stringify({
+              incidentTasks: newOrderedTasks
+            }),
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            method: 'PATCH'
+          }
+        );
+
+        if (!response.ok) throw new Error('Failed to update the task priority');
+
+        const data: TaskUpdateResponse = await response.json();
+
+        setSelectedIncident(data.updatedIncident);
+
+        toast.success('Task priority updated successfully');
+      } catch (error) {
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error('An error occurred while updating the task priority');
+        }
+      }
+    };
+
+    const incidentTaskEl = incidentTaskRef.current;
+    const incidentTaskDragHandleEl = incidentTaskDragHandleRef.current;
+
+    if (!incidentTaskEl || !incidentTaskDragHandleEl) return;
+
+    return combine(
+      draggable({
+        element: incidentTaskEl,
+        dragHandle: incidentTaskDragHandleEl,
+        getInitialData: () => ({
+          incidentTaskId: incidentTask.id,
+          incidentTask,
+          index: incidentTask.priority,
+          type: 'taskItem'
+        }),
+        onDragStart: () => setIsDragging(true),
+        onDrop: () => setIsDragging(false)
+      }),
+      dropTargetForElements({
+        element: incidentTaskEl,
+        canDrop: ({ source }) => source.data.type === 'taskItem',
+        getData: ({ element, input }) => {
+          const targetElementId = element.id;
+          const foundTaskIndex = selectedIncident?.tasks.findIndex(
+            task => task.id === targetElementId
+          );
+
+          const data = { index: foundTaskIndex };
+
+          return attachClosestEdge(data, {
+            allowedEdges: ['top', 'bottom'],
+            element,
+            input
+          });
+        },
+        onDrag({ self, source }) {
+          const isSource = source.element === incidentTaskEl;
+
+          if (isSource) {
+            setClosestEdge(null);
+            return;
+          }
+
+          const closestEdge = extractClosestEdge(self.data);
+
+          const sourceIndex = source.data.index as number;
+
+          const isItemBeforeSource = incidentTask.priority === sourceIndex - 1;
+          const isItemAfterSource = incidentTask.priority === sourceIndex + 1;
+
+          const isDropIndicatorHidden =
+            (isItemBeforeSource && closestEdge === 'bottom') ||
+            (isItemAfterSource && closestEdge === 'top');
+
+          if (isDropIndicatorHidden) {
+            setClosestEdge(null);
+            return;
+          }
+
+          setClosestEdge(closestEdge);
+        },
+        onDragLeave() {
+          setClosestEdge(null);
+        },
+        onDrop: async ({ location, self, source }) => {
+          setClosestEdge(null);
+
+          if (!selectedIncident) return;
+
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(
+            self.data
+          );
+
+          // we shouldn't modify the order if the item is dropped in the same position
+          const shouldNotChangeOrder =
+            source.data.index === location.current.dropTargets[0].data.index;
+
+          if (shouldNotChangeOrder) return;
+
+          const reorderedArray = reorderWithEdge({
+            axis: 'vertical',
+            closestEdgeOfTarget: closestEdgeOfTarget,
+            indexOfTarget: location.current.dropTargets[0].data.index as number,
+            list: selectedIncident.tasks,
+            startIndex: source.data.index as number
+          });
+
+          const formattedTasksArray = reorderedArray.map((task, index) => ({
+            ...task,
+            priority: index
+          }));
+
+          await handleUpdatePriority(formattedTasksArray);
+        }
+      })
+    );
+  }, [incidentTask, namespaceId, selectedIncident, setSelectedIncident]);
 
   useEffect(() => {
     if (isCommentEditorOpen) {
@@ -118,7 +264,7 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
 
       if (!response.ok) throw new Error('Failed to update task status');
 
-      const data: TaskStatusResponse = await response.json();
+      const data: TaskUpdateResponse = await response.json();
 
       setSelectedIncident(data.updatedIncident);
       toast.success('Task status updated successfully');
@@ -134,10 +280,19 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
   const handleToggleOpen = () => setIsOpen(prev => !prev);
 
   return (
-    <li className="incident-task-container">
+    <li
+      className={classNames('incident-task-container', {
+        'is-dragging': isDragging
+      })}
+      id={incidentTask.id}
+      ref={incidentTaskRef}
+    >
       <div className="incident-task-tile">
         <div className="incident-task-tile-left">
-          <span className="incident-task-drag-handle">
+          <span
+            className="incident-task-drag-handle"
+            ref={incidentTaskDragHandleRef}
+          >
             <span className="dot" />
             <span className="dot" />
             <span className="dot" />
@@ -184,6 +339,7 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
           </span>
         </div>
       </div>
+      {closestEdge && <DropIndicator edge={closestEdge} gap="16px" />}
       {isOpen && (
         <div className="incident-task-items">
           {incidentTask?.items?.map((incidentItem, index) => (
