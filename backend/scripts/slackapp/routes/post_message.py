@@ -73,3 +73,4 @@ def post_message():
         return jsonify({"message": "Message posted successfully", "response": response.data}), 200
     except SlackApiError as e:
         return jsonify({"error": str(e)}), 500
+    

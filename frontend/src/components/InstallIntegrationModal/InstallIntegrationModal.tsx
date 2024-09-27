@@ -14,6 +14,11 @@ import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
 import Spinner from '../Spinner/Spinner';
 import './InstallIntegrationModal.scss';
+import Button from '../Button/Button';
+
+interface ConfigData {
+  [key: string]: string;
+}
 
 interface Error {
   message: string;
@@ -23,13 +28,15 @@ interface FormData {
   [key: string]: unknown;
 }
 
+
 interface GetInstalledIntegrationsResponse {
   installedIntegrations: Integration[];
 }
 
+
 interface InstallIntegrationResponse {
+  configData: ConfigData | null;
   integration: Integration;
-  configData: Record<string, string>;
 }
 
 type InstallationStep = 0 | 1;
@@ -50,11 +57,11 @@ const CUSTOM_STYLES: Styles = {
 };
 
 const InstallIntegrationModal = () => {
-  const [error, setError] = useState<Error | null>(null);
-  const [installationStep, setInstallationStep] = useState<InstallationStep>(0);
-  const [configData, setConfigData] = useState<Record<string, string> | null>(
+  const [configData, setConfigData] = useState<ConfigData | null>(
     null
   );
+  const [error, setError] = useState<Error | null>(null);
+  const [installationStep, setInstallationStep] = useState<InstallationStep>(0);
 
   const {
     formState: { errors },
@@ -83,13 +90,16 @@ const InstallIntegrationModal = () => {
   }
 
   const handleContentCopy = (content: string, key: string) => {
-    navigator.clipboard.writeText(content);
-    toast.success(key + ' copied to clipboard');
+    try {
+      navigator.clipboard.writeText(content);
+      toast.success(key + ' copied to clipboard');
+    }
+    catch (e) {
+      toast.error('Failed to copy content to clipboard');
+    }
   };
 
-  const resetSteps = () => {
-    setInstallationStep(0);
-  }
+  const resetSteps = () => setInstallationStep(0);
 
   const submitForm: SubmitHandler<FormData> = async data => {
     const { name, ...rest } = data;
@@ -136,7 +146,7 @@ const InstallIntegrationModal = () => {
         throw new Error(errorData.error);
       }
 
-      const installationOutput: InstallIntegrationResponse = await res.json();
+      const installationOutputData: InstallIntegrationResponse = await res.json();
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`
@@ -144,9 +154,9 @@ const InstallIntegrationModal = () => {
       const data: GetInstalledIntegrationsResponse = await response.json();
 
       setInstalledIntegrations(data.installedIntegrations);
-      if (installationOutput.configData) {
+      if (installationOutputData.configData) {
+        setConfigData(installationOutputData.configData);
         setInstallationStep(1);
-        setConfigData(installationOutput.configData);
       } else {
         resetSteps();
         setIsModalOpen(false);
@@ -257,13 +267,13 @@ const InstallIntegrationModal = () => {
                   );
                 })}
               {error ? <p className="error-msg">{error.message}</p> : null}
-              <button className="submit" type="submit">
+              <Button type="submit">
                 {selectedIntegration.id ? 'Save Changes' : 'Install'}
-              </button>
+              </Button>
             </form> :
             <div className="config-data">
               <h4>Save the configuration data for later. It won't be shown again.</h4>
-              <ul>
+              <div>
                 {configData && Object.entries(configData).map(([key, value]) => (
                   <div key={key}>
                     <span className="key">{key}</span>
@@ -283,10 +293,10 @@ const InstallIntegrationModal = () => {
                     </div>
                   </div>
                 ))}
-              </ul>
-              <button className="submit" onClick={acknowledgeConfigData}>
+              </div>
+              <Button onClick={acknowledgeConfigData}>
                 Got it
-              </button>
+              </Button>
             </div>
           }
         </div>
