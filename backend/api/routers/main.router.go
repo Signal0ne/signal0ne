@@ -60,6 +60,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		incidentGroup.POST("/:incidentid/tasks", r.IncidentController.AddNewTask)
 		incidentGroup.POST("/:incidentid/:taskid/add-task-comment", r.IncidentController.AddTaskComment)
 		incidentGroup.PATCH("/:incidentid/:taskid/status", r.IncidentController.UpdateTaskStatus)
+		incidentGroup.PATCH("/:incidentid/update-tasks-priority", r.IncidentController.UpdateTasksPriority)
 
 		// Signal0ne incident only
 		incidentGroup.PATCH("/:incidentid", r.IncidentController.UpdateIncident)

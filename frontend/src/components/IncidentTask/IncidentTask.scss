@@ -3,6 +3,11 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 16px;
+  position: relative;
+
+  &.is-dragging {
+    opacity: 0.5;
+  }
 
   .incident-task-items {
     align-self: center;
@@ -195,6 +200,7 @@
   
       .incident-task-drag-handle {
         align-items: center;
+        cursor: grab;
         display: flex;
         flex-direction: column;
         height: 32px;
