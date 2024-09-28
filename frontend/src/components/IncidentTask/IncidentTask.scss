@@ -19,6 +19,7 @@
     margin: 0;
     padding: 32px;
     position: relative;
+    user-select: text;
     width: 90%;
 
     .comment-editor-buttons {
@@ -154,6 +155,10 @@
 
             .user-comment-content-value {
               font-size: 14px;
+
+              .markdown-code {
+                background-color: #505050;
+              }
             }
           }
         }
