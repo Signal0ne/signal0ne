@@ -23,8 +23,10 @@ import { useIncidentsContext } from '../../hooks/useIncidentsContext';
 import Button from '../Button/Button';
 import classNames from 'classnames';
 import Input from '../Input/Input';
+import MarkdownWrapper from '../MarkdownWrapper/MarkdownWrapper';
 import TextArea from '../TextArea/TextArea';
 import './IncidentTask.scss';
+
 interface AddCommentResponse {
   updatedIncident: Incident;
 }
@@ -360,7 +362,11 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
                       {item.key}:
                     </span>
                     <span className="incident-task-item-content-value">
-                      {item.value}
+                      {item.valueType === 'markdown' ? (
+                        <MarkdownWrapper content={String(item.value)} />
+                      ) : (
+                        item.value
+                      )}
                     </span>
                   </div>
                 ))}
@@ -382,7 +388,9 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
                         {comment.content.key}
                       </span>
                       <span className="user-comment-content-value">
-                        {comment.content.value}
+                        <MarkdownWrapper
+                          content={String(comment.content.value)}
+                        />
                       </span>
                     </div>
                     <i className="user-comment-author-info">

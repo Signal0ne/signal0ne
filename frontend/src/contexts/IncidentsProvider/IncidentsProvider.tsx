@@ -59,7 +59,7 @@ export interface IncidentTaskItem {
 interface IncidentTaskItemContent {
   key: string;
   value: string;
-  valueKey: 'graph' | 'markdown' | 'text';
+  valueType: 'graph' | 'markdown' | 'text';
 }
 
 interface IncidentsResponseBody {
