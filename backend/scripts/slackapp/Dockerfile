@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir poetry
 
 COPY pyproject.toml poetry.lock* /app/
 
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root --no-dev && \
+    pip install watchdog
 
 COPY . /app
 
@@ -24,4 +25,4 @@ EXPOSE 3000
 RUN useradd -m flaskuser
 USER flaskuser
 
-CMD ["poetry","run","python", "app.py"]
+CMD ["watchmedo", "auto-restart", "--directory=.", "--pattern=*.py", "--recursive", "--", "poetry", "run", "python", "app.py"]

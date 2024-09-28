@@ -6,12 +6,14 @@ def handle(ack: Ack, respond: Respond, command):
     ack()
     blocks = []
     
-    # Extract the alert_id from the command text
-    alert_id = command['text'].strip()
+    command_params = command['text'].split(" ")
 
-    if not alert_id:
-        respond("Please provide a valid alert ID.")
+    if len(command_params) < 2:
+        respond("Please use command in the following format: `/details <alert_id> <[]tags...>`")
         return
+    
+    alert_id = command_params[0]
+    tags = command_params[1:]
     
     try:
         data = get_enriched_alert_by_id(alert_id)

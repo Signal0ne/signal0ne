@@ -39,6 +39,11 @@ func NewMainRouter(
 
 func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 
+	alertGroup := rg.Group("/:namespaceid/alert", middlewares.CheckAuthorization)
+	{
+		alertGroup.GET("/:alertid")
+	}
+
 	authGroup := rg.Group("/auth")
 	{
 		authGroup.POST("/login", r.UserAuthController.Login)

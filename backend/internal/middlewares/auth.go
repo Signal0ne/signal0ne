@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/utils"
@@ -13,9 +12,6 @@ import (
 func CheckAuthorization(ctx *gin.Context) {
 	var skipAuth = config.GetInstance().SkipAuth
 
-	//TODO: Remove before release
-	fmt.Printf("SKIP AUTH: %v\n", skipAuth)
-
 	if skipAuth {
 		ctx.Next()
 		return
@@ -25,9 +21,24 @@ func CheckAuthorization(ctx *gin.Context) {
 
 	var jwtToken = strings.TrimPrefix(authHeader, "Bearer ")
 
-	_, err := utils.VerifyToken(jwtToken)
-	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+	sourceHeader := ctx.GetHeader("X-Source")
+
+	if sourceHeader == "" || sourceHeader == "frontend" {
+		_, err := utils.VerifyToken(jwtToken)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			ctx.Abort()
+			return
+		}
+	} else if sourceHeader == "integration" {
+		err := utils.VerifyIntegrationToken(jwtToken)
+		if err != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			ctx.Abort()
+			return
+		}
+	} else {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid source"})
 		ctx.Abort()
 		return
 	}
