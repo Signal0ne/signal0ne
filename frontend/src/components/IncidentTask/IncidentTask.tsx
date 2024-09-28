@@ -26,6 +26,7 @@ import Input from '../Input/Input';
 import MarkdownWrapper from '../MarkdownWrapper/MarkdownWrapper';
 import TextArea from '../TextArea/TextArea';
 import './IncidentTask.scss';
+
 interface AddCommentResponse {
   updatedIncident: Incident;
 }
