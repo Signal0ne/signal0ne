@@ -2,6 +2,10 @@
   position: relative;
   width: 100%;
 
+  &.is-disabled {
+    cursor: not-allowed;
+  }
+
   .dropdown-label {
     background-color: #383838;
     font-size: 12px;
@@ -18,10 +22,6 @@
   }
 
   .dropdown-select {
-    &--is-disabled {
-      cursor: not-allowed;
-    }
-
     .dropdown-select__control {
       background-color: transparent;
       border: 1px solid #ccc;
@@ -172,6 +172,11 @@
         display: flex;
         gap: 8px;
         padding: 8px 12px;
+
+        &.dropdown-select__option--is-disabled {
+          color: #999;
+          cursor: not-allowed;
+        }
 
         &.dropdown-select__option--is-focused,
         &.dropdown-select__option--is-selected {

@@ -36,7 +36,11 @@ const AsyncDropdown = <
     : undefined;
 
   return (
-    <div className="dropdown-container">
+    <div
+      className={classNames('dropdown-container', {
+        'is-disabled': isDisabled
+      })}
+    >
       {label && (
         <label
           className={classNames('dropdown-label', {
@@ -58,9 +62,9 @@ const AsyncDropdown = <
         components={{ IndicatorSeparator: () => null, ...components }}
         defaultOptions={true}
         loadOptions={loadOptions}
+        id={id}
         isDisabled={isDisabled}
         isOptionDisabled={option => Boolean(option.disabled)}
-        id={id}
         menuPlacement="bottom"
         menuPortalTarget={portalElement}
         noOptionsMessage={() => noOptionsMsg}

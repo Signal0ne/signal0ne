@@ -39,7 +39,11 @@ const Dropdown = <
     : undefined;
 
   return (
-    <div className="dropdown-container">
+    <div
+      className={classNames('dropdown-container', {
+        'is-disabled': isDisabled
+      })}
+    >
       {label && (
         <label
           className={classNames('dropdown-label', {
@@ -60,6 +64,7 @@ const Dropdown = <
         closeMenuOnSelect
         components={{ IndicatorSeparator: () => null, ...components }}
         id={id}
+        isDisabled={isDisabled}
         isOptionDisabled={option => Boolean(option.disabled)}
         menuPlacement="bottom"
         menuPortalTarget={portalElement}
