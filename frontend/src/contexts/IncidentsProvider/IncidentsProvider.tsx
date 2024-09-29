@@ -13,12 +13,11 @@ export interface Incident {
   title: string;
 }
 
-interface IncidentAssignee {
-  email: string;
+export interface IncidentAssignee {
   id: string;
   name: string;
-  photoUrl: string;
-  type: string;
+  photoUri: string;
+  role: string;
 }
 
 export interface IncidentsContextType {
