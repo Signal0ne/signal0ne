@@ -84,7 +84,7 @@ func main() {
 	})
 
 	mainController := controllers.NewMainController()
-	namespaceController := controllers.NewNamespaceController(namespacesCollection)
+	namespaceController := controllers.NewNamespaceController(namespacesCollection, usersCollection)
 	workflowController := controllers.NewWorkflowController(
 		workflowsCollection,
 		namespacesCollection,

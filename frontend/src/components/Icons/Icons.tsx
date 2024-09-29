@@ -221,13 +221,16 @@ export const UploadIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-export const UserIcon = (props: SVGProps<SVGSVGElement>) => (
+export const UserIcon = (
+  props: SVGProps<SVGSVGElement> & { title?: string }
+) => (
   <svg
     fill="none"
     viewBox="0 0 26 26"
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
+    {props.title && <title>{props.title}</title>}
     <path
       d="M25 25V22.3333C25 20.9188 24.3679 19.5623 23.2426 18.5621C22.1174 17.5619 20.5913 17 19 17H7C5.4087 17 3.88258 17.5619 2.75736 18.5621C1.63214 19.5623 1 20.9188 1 22.3333V25M19 6.33333C19 9.27885 16.3137 11.6667 13 11.6667C9.68629 11.6667 7 9.27885 7 6.33333C7 3.38781 9.68629 1 13 1C16.3137 1 19 3.38781 19 6.33333Z"
       stroke="currentColor"
