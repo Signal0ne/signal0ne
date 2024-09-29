@@ -17,11 +17,15 @@ import {
   Incident
 } from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { reorderWithEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/reorder-with-edge';
+import { TaskAssigneeDropdownOption } from '../IncidentPreview/IncidentPreview';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
+import AssigneeDropdownOption from '../Dropdown/AssigneeDropdown/AssigneeDropdownOption/AssigneeDropdownOption';
+import AssigneeDropdownSingleValue from '../Dropdown/AssigneeDropdown/AssigneeDropdownSingleValue/AssigneeDropdownSingleValue';
 import Button from '../Button/Button';
 import classNames from 'classnames';
+import Dropdown from '../Dropdown/Dropdown';
 import Input from '../Input/Input';
 import MarkdownWrapper from '../MarkdownWrapper/MarkdownWrapper';
 import TextArea from '../TextArea/TextArea';
@@ -32,6 +36,7 @@ interface AddCommentResponse {
 }
 
 interface IncidentTaskProps {
+  availableAssignees: TaskAssigneeDropdownOption[];
   incidentTask: IIncidentTask;
 }
 
@@ -39,7 +44,10 @@ interface TaskUpdateResponse {
   updatedIncident: Incident;
 }
 
-const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
+const IncidentTask = ({
+  availableAssignees,
+  incidentTask
+}: IncidentTaskProps) => {
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [commentContent, setCommentContent] = useState('');
   const [commentTitle, setCommentTitle] = useState('');
@@ -53,8 +61,8 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
   const abortControllerRef = useRef(new AbortController());
   const commentEditorTitleInputRef = useRef<HTMLInputElement>(null);
 
-  const incidentTaskRef = useRef(null);
   const incidentTaskDragHandleRef = useRef(null);
+  const incidentTaskRef = useRef(null);
 
   useEffect(() => {
     const handleUpdatePriority = async (newOrderedTasks: IIncidentTask[]) => {
@@ -192,6 +200,16 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
     }
   }, [isCommentEditorOpen]);
 
+  const getAssigneeDropdownValue = () => {
+    if (!incidentTask.assignee) return null;
+
+    return {
+      disabled: false,
+      label: incidentTask.assignee.name,
+      value: incidentTask.assignee
+    };
+  };
+
   const handleCloseCommentEditor = () => {
     setCommentTitle('');
     setCommentContent('');
@@ -281,6 +299,40 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
 
   const handleToggleOpen = () => setIsOpen(prev => !prev);
 
+  const updateTaskAssignee = async (
+    dropdownOption: TaskAssigneeDropdownOption | null
+  ) => {
+    if (incidentTask.assignee?.id === dropdownOption?.value.id) return;
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/${incidentTask.id}/assignee`,
+        {
+          body: JSON.stringify({
+            assignee: dropdownOption?.value
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          method: 'PATCH'
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to update task assignee');
+
+      const data: TaskUpdateResponse = await response.json();
+
+      setSelectedIncident(data.updatedIncident);
+      toast.success('Task assignee updated successfully');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('An error occurred while updating the task assignee');
+      }
+    }
+  };
+
   return (
     <li
       className={classNames('incident-task-container', {
@@ -329,16 +381,22 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
             />
             <span className="incident-task-checkbox-label">Done</span>
           </label>
-          <span className="incident-task-assignee">
-            {incidentTask.assignee.name ? (
-              <img
-                alt={`User: ${incidentTask.assignee.name}`}
-                src={incidentTask.assignee.photoUrl}
-              />
-            ) : (
-              <UserIcon height={16} width={16} />
-            )}
-          </span>
+          <Dropdown
+            className="assignee-dropdown"
+            components={{
+              DropdownIndicator: () => null,
+              IndicatorsContainer: () => null,
+              Option: AssigneeDropdownOption,
+              SingleValue: AssigneeDropdownSingleValue
+            }}
+            isSearchable={false}
+            maxMenuHeight={200}
+            noOptionsMsg="No users available"
+            onChange={option => updateTaskAssignee(option)}
+            options={availableAssignees}
+            placeholder={<UserIcon height={16} width={16} />}
+            value={getAssigneeDropdownValue()}
+          />
         </div>
       </div>
       {closestEdge && <DropIndicator edge={closestEdge} gap="16px" />}
