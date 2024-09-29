@@ -173,6 +173,12 @@ const IncidentPreview = () => {
           <h2 className="incident-preview-header-title">
             {selectedIncident?.title}
           </h2>
+          <span className="incident-preview-header-severity">
+            <strong>Severity:</strong>{' '}
+            <span className="incident-preview-header-severity-value">
+              {selectedIncident?.severity}
+            </span>
+          </span>
           {selectedIncident?.summary && (
             <div className="incident-preview-header-summary">
               <h4 className="incident-preview-header-summary-title">
