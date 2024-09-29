@@ -59,6 +59,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 		incidentGroup.GET("incidents", r.IncidentController.GetIncidents)
 		incidentGroup.POST("/:incidentid/tasks", r.IncidentController.AddNewTask)
 		incidentGroup.POST("/:incidentid/:taskid/add-task-comment", r.IncidentController.AddTaskComment)
+		incidentGroup.PATCH("/:incidentid/:taskid/assignee", r.IncidentController.UpdateTaskAssignee)
 		incidentGroup.PATCH("/:incidentid/:taskid/status", r.IncidentController.UpdateTaskStatus)
 		incidentGroup.PATCH("/:incidentid/update-tasks-priority", r.IncidentController.UpdateTasksPriority)
 
@@ -80,11 +81,12 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 
 	namespaceGroup := rg.Group("/namespace", middlewares.CheckAuthorization)
 	{
-		namespaceGroup.GET("/search-by-name", r.NamespaceController.GetNamespaceByName)
 		namespaceGroup.POST("/create")
 		namespaceGroup.DELETE("/:namespaceid/delete")
 		namespaceGroup.GET("/:namespaceid/get")
 		namespaceGroup.PATCH("/:namespaceid/update")
+		namespaceGroup.GET("/:namespaceid/users", r.NamespaceController.GetUsersFromNamespace)
+		namespaceGroup.GET("/search-by-name", r.NamespaceController.GetNamespaceByName)
 	}
 
 	webhookGroup := rg.Group("/webhook")
