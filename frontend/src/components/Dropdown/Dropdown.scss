@@ -138,6 +138,10 @@
         padding: 0;
         width: 32px;
 
+        &--is-focused {
+          outline: 1px solid #4a90e2 !important;
+        }
+
         .dropdown-select__value-container {
           padding: 0;
 

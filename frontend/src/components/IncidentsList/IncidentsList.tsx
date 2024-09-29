@@ -38,10 +38,16 @@ const IncidentsList = ({ incidentsList }: IncidentsListProps) => {
     >
       {isIncidentListLoading ? (
         <Spinner />
-      ) : (
+      ) : incidentsList.length ? (
         incidentsList.map(incident => (
           <IncidentsListItem incident={incident} key={incident.id} />
         ))
+      ) : (
+        <p className="incidents-list--empty">
+          No incidents found
+          <br />
+          <span className="helpful-msg">Please refine your search</span>
+        </p>
       )}
     </ul>
   );

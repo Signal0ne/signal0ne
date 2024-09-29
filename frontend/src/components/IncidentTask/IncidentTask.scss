@@ -44,7 +44,7 @@
 
         .input-label {
           background-color: #505050;
-          background-image: linear-gradient(0deg, #505050 0%,#424242 100%);
+          background-image: linear-gradient(0deg, #505050 0%, #424242 100%);
         }
       }
 
@@ -53,10 +53,10 @@
         border-radius: 8px;
         font-size: 14px;
         height: 80px;
-   
-        .textarea-field { 
+
+        .textarea-field {
           height: 100%;
-     
+
           &::placeholder {
             color: #c4c4c4;
           }
@@ -64,7 +64,7 @@
 
         .textarea-label {
           background-color: #505050;
-          background-image: linear-gradient(0deg, #505050 0%,#424242 100%);
+          background-image: linear-gradient(0deg, #505050 0%, #424242 100%);
         }
       }
     }
@@ -74,7 +74,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-  
+
         .incident-task-item-content-info {
           background-color: #505050;
           border-radius: 6px;
@@ -82,12 +82,12 @@
           display: flex;
           gap: 8px;
           padding: 16px;
-  
+
           .incident-task-item-content-key {
             font-size: 14px;
             font-weight: 600;
           }
-    
+
           .incident-task-item-content-value {
             font-size: 14px;
             max-height: 120px;
@@ -97,7 +97,7 @@
           }
         }
       }
-  
+
       .incident-task-item-source {
         height: 24px;
         left: 8px;
@@ -125,9 +125,9 @@
           box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.2);
           display: flex;
           flex-direction: column;
-          padding: 16px;  
+          padding: 16px;
 
-          .user-comment-author-info { 
+          .user-comment-author-info {
             align-self: flex-end;
             display: flex;
             flex-direction: column;
@@ -191,18 +191,18 @@
       display: flex;
       gap: 12px;
       width: 100%;
-  
+
       .arrow-icon {
         cursor: pointer;
         margin-top: 2px;
         transform: rotate(-90deg);
         transition: transform 0.3s;
-    
+
         &.open {
           transform: rotate(0);
         }
       }
-  
+
       .incident-task-drag-handle {
         align-items: center;
         cursor: grab;
@@ -212,21 +212,21 @@
         gap: 4px;
         justify-content: center;
         width: 32px;
-        
+
         &:hover {
           .dot {
             background-color: #eee;
           }
         }
-    
+
         .dot {
-          background-color: #CECBCB;
+          background-color: #cecbcb;
           border-radius: 100%;
           height: 3px;
           width: 3px;
         }
       }
-    
+
       .incident-task-name {
         color: white;
         cursor: pointer;
@@ -234,12 +234,12 @@
         font-weight: 600;
       }
     }
-  
+
     .incident-task-tile-right {
       align-items: center;
       display: flex;
       gap: 16px;
-  
+
       .incident-task-assignee {
         align-items: center;
         background-color: #505050;
@@ -250,7 +250,7 @@
         justify-content: center;
         width: 32px;
       }
-    
+
       .incident-task-checkbox {
         align-items: center;
         background-color: #505050;
@@ -259,13 +259,13 @@
         display: flex;
         gap: 6px;
         padding: 4px 10px;
-    
+
         &.checked {
           .incident-task-checkbox-label {
             color: white;
           }
         }
-    
+
         .incident-task-checkbox-input {
           appearance: none;
           border: 1px solid #c4c4c4;
@@ -277,10 +277,10 @@
           min-width: 13px;
           position: relative;
           width: 13px;
-    
+
           &:checked {
             border-color: white;
-    
+
             &::after,
             &::before {
               background-color: white;
@@ -289,19 +289,19 @@
               display: block;
               height: 1.5px;
             }
-    
+
             &::after {
               transform: rotate(-135deg) translate(-4px, -3px);
               width: 5px;
             }
-    
+
             &::before {
               transform: rotate(-45deg) translate(-1px, 4px);
               width: 13px;
             }
           }
         }
-    
+
         .incident-task-checkbox-label {
           color: #c4c4c4;
           font-size: 16px;
