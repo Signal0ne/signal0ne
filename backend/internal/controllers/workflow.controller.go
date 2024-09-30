@@ -238,6 +238,10 @@ func (c *WorkflowController) validate(ctx context.Context, workflow models.Workf
 
 func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	var workflow *models.Workflow
+	var executionLog = models.StepExecution{
+		Outputs:  map[string]any{},
+		Outcomes: []models.StepExecutionOutcome{},
+	}
 	var localErrorMessage = ""
 	var incomingTriggerPayload map[string]any
 	var alert = models.EnrichedAlert{
@@ -269,7 +273,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			"error": err,
 		})
 		localErrorMessage = fmt.Sprintf("%v", err)
-		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		executionLog.Outcomes = append(executionLog.Outcomes, models.StepExecutionOutcome{
+			Status:     "failure",
+			LogMessage: localErrorMessage,
+		})
 		return
 	}
 
@@ -278,7 +285,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			"error": err,
 		})
 		localErrorMessage = fmt.Sprintf("%v", err)
-		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		executionLog.Outcomes = append(executionLog.Outcomes, models.StepExecutionOutcome{
+			Status:     "failure",
+			LogMessage: localErrorMessage,
+		})
 		return
 	}
 
@@ -287,7 +297,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			"error": err,
 		})
 		localErrorMessage = fmt.Sprintf("%v", err)
-		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		executionLog.Outcomes = append(executionLog.Outcomes, models.StepExecutionOutcome{
+			Status:     "failure",
+			LogMessage: localErrorMessage,
+		})
 		return
 	}
 
@@ -298,7 +311,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			"error": err,
 		})
 		localErrorMessage = fmt.Sprintf("%v", err)
-		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		executionLog.Outcomes = append(executionLog.Outcomes, models.StepExecutionOutcome{
+			Status:     "failure",
+			LogMessage: localErrorMessage,
+		})
 
 		return
 	}
@@ -309,7 +325,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			"error": err,
 		})
 		localErrorMessage = fmt.Sprintf("%v", err)
-		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		executionLog.Outcomes = append(executionLog.Outcomes, models.StepExecutionOutcome{
+			Status:     "failure",
+			LogMessage: localErrorMessage,
+		})
 		return
 
 	}
@@ -339,7 +358,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		localErrorMessage = fmt.Sprintf("%v", err)
-		tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+		executionLog.Outcomes = append(executionLog.Outcomes, models.StepExecutionOutcome{
+			Status:     "failure",
+			LogMessage: localErrorMessage,
+		})
 		return
 	}
 
@@ -456,7 +478,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 					}
 					return value
 				},
-				"date": func(timestamp float64, shift string, outputType string) string {
+				"date": func(timeString string, shift string, outputType string) string {
 					unit := string(shift[len(shift)-1])
 					value, _ := strconv.Atoi(shift[1 : len(shift)-1])
 					sign := string(shift[0])
@@ -472,6 +494,14 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 					} else if unit == "h" {
 						multiplier = multiplier * 3600
 					}
+
+					parsedTime, err := time.Parse(time.RFC3339, timeString)
+					if err != nil {
+						fmt.Printf("invalid time format: %v", err)
+						localErrorMessage = fmt.Sprintf("invalid time format: %v", err)
+					}
+
+					timestamp := parsedTime.Unix()
 
 					resultTimestamp := int64(timestamp) + int64(value)*multiplier
 					resultTime := time.Unix(resultTimestamp, 0)
@@ -555,8 +585,22 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 
 		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult
+		executionLog.Outputs[step.Name] = execResult
+
+		status := "success"
+		if localErrorMessage != "" {
+			status = "failure"
+		}
+		executionLog.Outcomes = append(executionLog.Outcomes, models.StepExecutionOutcome{
+			Status:     status,
+			LogMessage: localErrorMessage,
+		})
 	}
-	tools.RecordExecution(ctx, localErrorMessage, c.WorkflowsCollection, filter)
+	executionLog.ParsedWorkflow = models.ParsedWorkflow{
+		Steps:   workflow.Steps,
+		Trigger: workflow.Trigger,
+	}
+	tools.RecordExecution(ctx, executionLog, c.WorkflowsCollection, filter)
 
 	_, err = c.AlertsCollection.InsertOne(ctx, alert)
 	if err != nil {

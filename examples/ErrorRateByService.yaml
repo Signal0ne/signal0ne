@@ -8,6 +8,7 @@ trigger:
       service: "job"
       alertname: "labels.alertname"
       span: "span_name"
+      timestamp: "startsAt"
     condition: "{{ if eq .TriggerProperties.alertname \"ErrorRateByService\" }}true{{ else }}false{{ end }}"
 steps:
 - displayName: Get ownership

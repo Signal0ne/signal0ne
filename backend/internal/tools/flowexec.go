@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"signal0ne/cmd/config"
 	"signal0ne/internal/models" //only internal import allowed
 	"strconv"
 	"strings"
@@ -93,24 +94,31 @@ func WebhookTriggerExec(payload map[string]any, workflow *models.Workflow) (map[
 
 func RecordExecution(
 	ctx context.Context,
-	localErrorMessage string,
+	newExecution models.StepExecution,
 	workflowsCollection *mongo.Collection,
 	filter bson.M) error {
 
-	var status string
-	var log string
-	if localErrorMessage == "" {
-		status = "Success"
-		log = "Successfully executed"
-	} else {
-		status = "Failure"
-		log = localErrorMessage
-	}
+	var workflow models.Workflow
+	cfg := config.GetInstance()
 
-	newExecution := models.Execution{
-		Status:    status,
-		Log:       log,
-		Timestamp: time.Now().Unix(),
+	woorkflowOutput := workflowsCollection.FindOne(ctx, filter)
+	woorkflowOutput.Decode(&workflow)
+
+	executionsHistoryBacklog := len(workflow.Executions)
+	excessiveBacklog := int64(executionsHistoryBacklog) - cfg.WorkflowsExecutionsHistoryLimit
+
+	if excessiveBacklog > 0 {
+
+		for i := 0; i < int(excessiveBacklog); i++ {
+			_, err := workflowsCollection.UpdateOne(ctx, filter, bson.M{
+				"$pop": bson.M{
+					"executions": -1,
+				},
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	_, err := workflowsCollection.UpdateOne(ctx, filter, bson.M{

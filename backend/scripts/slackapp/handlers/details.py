@@ -17,16 +17,19 @@ def handle(ack: Ack, respond: Respond, command):
     
     try:
         data = get_enriched_alert_by_id(alert_id)
-        for k,v in dict(data[0]).items():
-            blocks.append({
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": f"*{k}:*\n```{v}```"
-                }
-            })
+        for k,v in dict(data).additionalContext.items():
+            for item in v:
+                if any(tag in list(item.tags) for tag in tags):
+                    blocks.append({
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*{k}:*\n```{item}```"
+                        }
+                    })
     except requests.RequestException as e:
         print(f"An error occurred: {e}")
+        respond("An error occurred while fetching the alert details. Please try again later.")
 
 
     

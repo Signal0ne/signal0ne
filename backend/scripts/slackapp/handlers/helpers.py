@@ -7,23 +7,24 @@ from dotenv import load_dotenv
 load_dotenv()
 BACKEND_URL = os.getenv("BACKEND_URL")
 BACKEND_AUTH_TOKEN = os.getenv("BACKEND_AUTH_TOKEN")
+NAMESPACE_ID = os.getenv("ORG_NAMESPACE_ID")
     
 def get_enriched_alert_by_id(alert_id):
-    url = f"{BACKEND_URL}/api/alert/{alert_id}/correlations"
+    url = f"{BACKEND_URL}/api/{NAMESPACE_ID}/alert/{alert_id}"
     headers = {
         "Authorization ": f"Bearer {BACKEND_AUTH_TOKEN}"
     }
     response = requests.get(url, headers=headers)
     return response.json()
 
-def create_incident(incident_destination, alert_ids):
+def create_incident(incident_destination: str, alert_ids: list):
     url = f"{BACKEND_URL}/api/incident"
     headers = {
         "Authorization ": f"Bearer {BACKEND_AUTH_TOKEN}"
     }
     data = {
-        "destination": incident_destination,
-        "alert_ids": alert_ids
+        "integration": incident_destination,
+        "baseAlertId": alert_ids[0],
     }
     response = requests.post(url, headers=headers, json=data)
     return response.json()

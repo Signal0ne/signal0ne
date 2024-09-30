@@ -4,7 +4,7 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Workflow struct {
 	Description  string             `json:"description" bson:"description"`
-	Executions   []Execution        `json:"executions,omitempty" bson:"executions,omitempty"`
+	Executions   []StepExecution    `json:"executions,omitempty" bson:"executions,omitempty"`
 	Id           primitive.ObjectID `json:"id" bson:"_id"`
 	Lookback     string             `json:"lookback" bson:"lookback"`
 	Name         string             `json:"name" bson:"name"`
@@ -14,8 +14,18 @@ type Workflow struct {
 	WorkflowSalt string             `json:"salt" bson:"salt"`
 }
 
-type Execution struct {
-	Log       string `json:"log" bson:"log"`
-	Status    string `json:"status" bson:"status"`
-	Timestamp int64  `json:"timestamp" bson:"timestamp"`
+type StepExecution struct {
+	ParsedWorkflow ParsedWorkflow         `json:"parsedWorkflow" bson:"parsedWorkflow"`
+	Outputs        map[string]any         `json:"outputs" bson:"outputs"`
+	Outcomes       []StepExecutionOutcome `json:"outcomes" bson:"outcomes"`
+}
+
+type StepExecutionOutcome struct {
+	Status     string `json:"status" bson:"status"`
+	LogMessage string `json:"logMessage" bson:"logMessage"`
+}
+
+type ParsedWorkflow struct {
+	Steps   []Step  `json:"steps" bson:"steps"`
+	Trigger Trigger `json:"trigger" bson:"trigger"`
 }
