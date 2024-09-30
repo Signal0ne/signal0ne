@@ -2,11 +2,12 @@ import { createContext, ReactNode, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 
+type IncidentSeverity = 'critical' | 'high' | 'moderate' | 'low';
 export interface Incident {
   assignee: IncidentAssignee;
   history: string[];
   id: string;
-  severity: string;
+  severity: IncidentSeverity;
   summary: string;
   tasks: IIncidentTask[];
   timestamp: number;

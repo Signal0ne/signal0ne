@@ -35,7 +35,15 @@
       flex-direction: column;
       gap: 8px;
 
-      .incident-preview-header-summary {  
+      .incident-preview-header-severity {
+        font-size: 16px;
+
+        .incident-preview-header-severity-value {
+          text-transform: capitalize;
+        }
+      }
+
+      .incident-preview-header-summary {
         display: flex;
         flex-direction: column;
         gap: 4px;
@@ -51,7 +59,7 @@
           margin: 0;
         }
       }
-      
+
       .incident-preview-header-title {
         font-size: 28px;
         margin: 0;

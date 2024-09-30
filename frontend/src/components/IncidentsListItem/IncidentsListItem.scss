@@ -15,7 +15,7 @@
 
   &.active {
     background-color: #383838;
-    box-shadow: 0 2px 3px rgba(255, 255, 255 , 0.1);
+    box-shadow: 0 2px 3px rgba(255, 255, 255, 0.1);
   }
 
   .incidents-list-item-info {
@@ -42,11 +42,17 @@
     &.critical {
       background-color: #e00f41;
     }
-    &.error {
-      background-color: #C76E00;
+
+    &.high {
+      background-color: #f28627;
     }
-    &.warning {
-      background-color: #F1C232;
+
+    &.low {
+      background-color: #19b545;
+    }
+
+    &.moderate {
+      background-color: #f2d22e;
     }
   }
 }

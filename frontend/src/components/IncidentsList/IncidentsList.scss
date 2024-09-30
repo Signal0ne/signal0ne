@@ -8,8 +8,19 @@
   overflow-y: scroll;
   padding: 0;
   @include customScrollbar;
-  
+
   &.scroll-offset {
     padding-right: 8px;
+  }
+
+  .incidents-list--empty {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    text-align: center;
+
+    .helpful-msg {
+      font-size: 13px;
+    }
   }
 }

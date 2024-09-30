@@ -200,6 +200,14 @@ const IncidentTask = ({
     }
   }, [isCommentEditorOpen]);
 
+  useEffect(() => {
+    if (isDragging) {
+      document.body.classList.add('is-dragging');
+    } else {
+      document.body.classList.remove('is-dragging');
+    }
+  }, [isDragging]);
+
   const getAssigneeDropdownValue = () => {
     if (!incidentTask.assignee) return null;
 
