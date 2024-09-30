@@ -1,6 +1,7 @@
 import {
   BackStageIcon,
   ConfluenceIcon,
+  DatadogIcon,
   GithubIcon,
   JaegerIcon,
   OpenAIIcon,
@@ -25,6 +26,8 @@ export const getFormattedFormLabel = (fieldLabel: string) => {
   switch (fieldLabel) {
     case 'apiKey':
       return 'API Key';
+    case 'applicationKey':
+      return 'Application Key';
     case 'url':
       return 'URL';
     case 'workspaceId':
@@ -50,7 +53,9 @@ export const getIntegrationGradientColor = (integrationName: string) => {
     case 'backstage':
       return 'linear-gradient(45deg, #36baa2 0%, #36baa2 100%)';
     case 'confluence':
-      return 'linear-gradient(45deg, #2684ff 0%, #59a0fe 100%)';
+      return 'linear-gradient(90deg, #2684ff 0%, #59a0fe 100%)';
+    case 'datadog':
+      return 'linear-gradient(45deg, #6d43a0 0%, #714aa9 100%)';
     case 'github':
       return 'linear-gradient(90deg, #5a6370 0%, #fafbfc 200%)';
     case 'jaeger':
@@ -77,6 +82,7 @@ export const getIntegrationIcon = (integrationName: string) => {
     alertmanager: <PrometheusIcon />,
     backstage: <BackStageIcon />,
     confluence: <ConfluenceIcon />,
+    datadog: <DatadogIcon />,
     github: <GithubIcon />,
     jaeger: <JaegerIcon />,
     openai: <OpenAIIcon />,
