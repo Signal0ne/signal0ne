@@ -20,8 +20,9 @@ import (
 )
 
 type CreateIncidentRequest struct {
-	BaseAlertId string `json:"baseAlertId"`
-	Integration string `json:"integration"`
+	BaseAlertId                string   `json:"baseAlertId"`
+	ManuallyCorrelatedAlertIds []string `json:"manuallyCorrelatedAlertIds"`
+	Integration                string   `json:"integration"`
 }
 
 type IncidentController struct {
@@ -236,6 +237,31 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 		return
 	}
 
+	var manuallyCorrelatedAlerts = make([]string, 0)
+	for _, alertId := range createIncidentRequest.ManuallyCorrelatedAlertIds {
+		manuallyCorrelatedAlert, err := db.GetEnrichedAlertById(
+			alertId,
+			ctx,
+			ic.AlertsCollection,
+		)
+		if err != nil {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "alert not found",
+			})
+			return
+		}
+
+		alertBytes, err := json.Marshal(manuallyCorrelatedAlert)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("error marshalling alert: %v", err),
+			})
+			return
+		}
+
+		manuallyCorrelatedAlerts = append(manuallyCorrelatedAlerts, string(alertBytes))
+	}
+
 	workflow, err := db.GetWorkflowById(alert.WorkflowId,
 		ctx,
 		ic.WorkflowsCollection,
@@ -285,9 +311,10 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 	case *signal0ne.Signal0neIntegration:
 		bytes, _ := json.Marshal(alert)
 		input := map[string]any{
-			"severity":                "",
-			"assignee":                models.User{}.Id,
-			"parsable_context_object": string(bytes),
+			"severity":                    "",
+			"assignee":                    models.User{}.Id,
+			"parsable_context_object":     string(bytes),
+			"_manually_correlated_alerts": manuallyCorrelatedAlerts,
 		}
 		_, err := i.Execute(input, nil, "create_incident")
 		if err != nil {

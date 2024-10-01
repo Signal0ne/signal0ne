@@ -11,10 +11,11 @@ const (
 
 type EnrichedAlert struct {
 	Id                primitive.ObjectID `json:"id" bson:"_id"`
-	WorkflowId        string             `json:"workflowId" bson:"workflowId"`
-	State             AlertStatus        `json:"state" bson:"state"`
-	StartTime         int64              `json:"startTime" bson:"startTime"`
-	Integration       string             `json:"integration" bson:"integration"`
 	AdditionalContext map[string]any     `json:"additionalContext" bson:"additionalProperties"`
+	AlertName         string             `json:"alertName" bson:"alertName"`
+	Integration       string             `json:"integration" bson:"integration"`
+	StartTime         string             `json:"startTime" bson:"startTime"`
+	State             AlertStatus        `json:"state" bson:"state"`
 	TriggerProperties map[string]any     `json:"triggerProperties,inline" bson:"triggerProperties,inline"`
+	WorkflowId        string             `json:"workflowId" bson:"workflowId"`
 }

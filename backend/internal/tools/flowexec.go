@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -190,18 +189,11 @@ func MapAlertState(payload map[string]any, stateKey string, triggerStateMapping 
 	return models.AlertStatus(mappedStateValue), nil
 }
 
-func GetStartTime(payload map[string]any, startTimeKey string) (int64, error) {
+func GetStartTime(payload map[string]any, startTimeKey string) (string, error) {
 	startTime, exists := payload[startTimeKey].(string)
 	if !exists {
-		return 0, fmt.Errorf("cannot find start time key in alert payload")
+		return "", fmt.Errorf("cannot find start time key in alert payload")
 	}
 
-	parsedTime, err := time.Parse(time.RFC3339, startTime)
-	if err != nil {
-		return 0, fmt.Errorf("error parsing start time: %v", err)
-	}
-
-	startTimeUnix := parsedTime.Unix()
-
-	return startTimeUnix, nil
+	return startTime, nil
 }

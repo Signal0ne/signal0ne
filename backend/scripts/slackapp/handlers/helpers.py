@@ -26,6 +26,9 @@ def create_incident(incident_destination: str, alert_ids: list):
         "integration": incident_destination,
         "baseAlertId": alert_ids[0],
     }
+    if len(alert_ids) > 1:
+        data["manuallyCorrelatedAlertIds"] = alert_ids[1:]
+        
     response = requests.post(url, headers=headers, json=data)
     return response.json()
     
