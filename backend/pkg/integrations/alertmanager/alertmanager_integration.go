@@ -80,9 +80,10 @@ func (integration AlertmanagerIntegration) Trigger(
 	}
 
 	var ok bool
-	alert.AlertName, ok = tools.TraverseOutput(alertPayload, NameKey, "alertName").(string)
+	alertNamePlaceholder := tools.TraverseOutput(alertPayload, "alertName", NameKey)
+	alert.AlertName, ok = alertNamePlaceholder.(string)
 	if !ok {
-		return fmt.Errorf("cannot find alert name")
+		return fmt.Errorf("cannot find alert name in payload")
 	}
 
 	alertsHistory, err := db.GetEnrichedAlertsByWorkflowId(workflow.Id.Hex(),

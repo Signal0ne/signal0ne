@@ -315,7 +315,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			Status:     "failure",
 			LogMessage: localErrorMessage,
 		})
-
+		tools.RecordExecution(ctx, executionLog, c.WorkflowsCollection, filter)
 		return
 	}
 
@@ -329,6 +329,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			Status:     "failure",
 			LogMessage: localErrorMessage,
 		})
+		tools.RecordExecution(ctx, executionLog, c.WorkflowsCollection, filter)
 		return
 
 	}
@@ -362,6 +363,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			Status:     "failure",
 			LogMessage: localErrorMessage,
 		})
+		tools.RecordExecution(ctx, executionLog, c.WorkflowsCollection, filter)
 		return
 	}
 
