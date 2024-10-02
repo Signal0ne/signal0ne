@@ -46,6 +46,18 @@ const WorkflowStepDetails = () => {
             </div>
           </div>
         )}
+        {isWebhook && (
+          <div className="workflow-step-details-group condition">
+            <h3 className="workflow-step-details-group-header">Integration</h3>
+            <div className="workflow-step-details-group-content">
+              {activeStep?.webhook.integration && (
+                <div className="workflow-step-group-item">
+                  {activeStep.webhook.integration}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {!isWebhook && (
           <div className="workflow-step-details-group scheduled">
             <h3 className="workflow-step-details-group-header">Interval</h3>

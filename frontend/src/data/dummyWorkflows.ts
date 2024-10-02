@@ -17,6 +17,7 @@ export type IWorkflowTrigger =
   | {
     webhook: {
       output: Record<string, string>;
+      integration: string;
       condition?: string;
     };
   }
@@ -88,6 +89,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     ],
     trigger: {
       webhook: {
+        integration: 'alertmanager',
         output: {
           service: 'job',
           span: 'span_name',
@@ -205,6 +207,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     ],
     trigger: {
       webhook: {
+        integration: 'alertmanager',
         output: {
           service: 'job',
           span: 'span_name',
@@ -263,6 +266,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     ],
     trigger: {
       webhook: {
+        integration: 'alertmanager',
         output: {
           service: 'job',
           span: 'span_name',
@@ -322,6 +326,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     ],
     trigger: {
       webhook: {
+        integration: 'alertmanager',
         output: {
           service: 'job',
           span: 'span_name',
@@ -381,6 +386,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     ],
     trigger: {
       webhook: {
+        integration: 'alertmanager',
         output: {
           service: 'job',
           span: 'span_name',
@@ -440,6 +446,7 @@ export const DUMMY_WORKFLOWS: Workflow[] = [
     ],
     trigger: {
       webhook: {
+        integration: 'alertmanager',
         output: {
           service: 'job',
           span: 'span_name',

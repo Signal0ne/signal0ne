@@ -112,7 +112,7 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "get_log_occurrences")
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot validate input parameters: %s", err)
 	}
 
 	fmt.Printf("###\nExecuting OpenSearch integration function...\n")
@@ -128,13 +128,13 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		},
 	})
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("error creating opensearch client: %s", err)
 	}
 
 	var query map[string]any
 	err = json.Unmarshal([]byte(parsedInput.Query), &query)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot parse query to json structure: %s", err)
 	}
 
 	searchReq := opensearchapi.SearchRequest{
@@ -151,12 +151,12 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 	var hits map[string]any
 	querySearchResults, err := io.ReadAll(searchResp.Body)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("error reading search results: %s", err)
 	}
 
 	err = json.Unmarshal(querySearchResults, &hits)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot parse output to json structure: %s", err)
 	}
 	parsedHits, ok := hits["hits"].(map[string]any)["hits"].([]any)
 	if !ok {
@@ -184,7 +184,7 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 	}
 	payloadBytes, err := json.Marshal(pyInterfacePayload)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot marshal python service payload: %s", err)
 	}
 
 	batchSizeHeader := make([]byte, 4)
@@ -193,26 +193,26 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 
 	_, err = assertedIntegration.Inventory.PyInterface.Write(payloadBytesWithHeaders)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot write payload: %s", err)
 	}
 
 	headerBuffer := make([]byte, 4)
 	_, err = assertedIntegration.Inventory.PyInterface.Read(headerBuffer)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot read header: %s", err)
 	}
 	size := binary.BigEndian.Uint32(headerBuffer)
 
 	payloadBuffer := make([]byte, size)
 	n, err := assertedIntegration.Inventory.PyInterface.Read(payloadBuffer)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot read payload: %s", err)
 	}
 
 	var intermediateOutput map[string]any
 	err = json.Unmarshal(payloadBuffer[:n], &intermediateOutput)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot parse output to json structure: %s", err)
 	}
 	statusCode, exists := intermediateOutput["status"].(string)
 	if !exists || statusCode != "0" {
@@ -226,7 +226,7 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 
 	err = json.Unmarshal([]byte(resultsEncoded), &output)
 	if err != nil {
-		return output, err
+		return output, fmt.Errorf("cannot parse output to json structure: %s", err)
 	}
 
 	for _, outputElement := range output {

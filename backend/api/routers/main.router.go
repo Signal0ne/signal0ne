@@ -8,6 +8,7 @@ import (
 )
 
 type MainRouter struct {
+	AlertController       *controllers.AlertController
 	IncidentController    *controllers.IncidentController
 	IntegrationController *controllers.IntegrationController
 	MainController        *controllers.MainController
@@ -18,6 +19,7 @@ type MainRouter struct {
 }
 
 func NewMainRouter(
+	AlertController *controllers.AlertController,
 	IncidentController *controllers.IncidentController,
 	IntegrationController *controllers.IntegrationController,
 	MainController *controllers.MainController,
@@ -27,6 +29,7 @@ func NewMainRouter(
 	WorkflowController *controllers.WorkflowController,
 ) *MainRouter {
 	return &MainRouter{
+		AlertController:       AlertController,
 		IncidentController:    IncidentController,
 		IntegrationController: IntegrationController,
 		MainController:        MainController,
@@ -38,6 +41,11 @@ func NewMainRouter(
 }
 
 func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
+
+	alertGroup := rg.Group("/:namespaceid/alert", middlewares.CheckAuthorization)
+	{
+		alertGroup.GET("/:alertid", r.AlertController.GetAlert)
+	}
 
 	authGroup := rg.Group("/auth")
 	{

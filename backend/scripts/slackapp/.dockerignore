@@ -23,10 +23,7 @@ var/
 
 # Virtual environments
 venv/
-ENV/
-env/
 .venv/
-.env
 
 # Testing
 .pytest_cache/

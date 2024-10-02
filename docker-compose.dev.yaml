@@ -32,6 +32,8 @@ services:
       context: ./backend/scripts/slackapp
     ports:
       - 3000:3000
+    volumes:
+      - ./backend/scripts/slackapp:/app
 
   python-service:
     container_name: python-service

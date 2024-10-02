@@ -6,11 +6,11 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"signal0ne/cmd/config"
 	"signal0ne/internal/models" //only internal import allowed
 	"strconv"
 	"strings"
 	"text/template"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -93,24 +93,31 @@ func WebhookTriggerExec(payload map[string]any, workflow *models.Workflow) (map[
 
 func RecordExecution(
 	ctx context.Context,
-	localErrorMessage string,
+	newExecution models.StepExecution,
 	workflowsCollection *mongo.Collection,
 	filter bson.M) error {
 
-	var status string
-	var log string
-	if localErrorMessage == "" {
-		status = "Success"
-		log = "Successfully executed"
-	} else {
-		status = "Failure"
-		log = localErrorMessage
-	}
+	var workflow models.Workflow
+	cfg := config.GetInstance()
 
-	newExecution := models.Execution{
-		Status:    status,
-		Log:       log,
-		Timestamp: time.Now().Unix(),
+	workflowOutput := workflowsCollection.FindOne(ctx, filter)
+	workflowOutput.Decode(&workflow)
+
+	executionsHistoryBacklog := len(workflow.Executions)
+	excessiveBacklog := int64(executionsHistoryBacklog) - cfg.WorkflowsExecutionsHistoryLimit
+
+	if excessiveBacklog > 0 {
+
+		for i := 0; i < int(excessiveBacklog); i++ {
+			_, err := workflowsCollection.UpdateOne(ctx, filter, bson.M{
+				"$pop": bson.M{
+					"executions": -1,
+				},
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	_, err := workflowsCollection.UpdateOne(ctx, filter, bson.M{
@@ -182,18 +189,11 @@ func MapAlertState(payload map[string]any, stateKey string, triggerStateMapping 
 	return models.AlertStatus(mappedStateValue), nil
 }
 
-func GetStartTime(payload map[string]any, startTimeKey string) (int64, error) {
+func GetStartTime(payload map[string]any, startTimeKey string) (string, error) {
 	startTime, exists := payload[startTimeKey].(string)
 	if !exists {
-		return 0, fmt.Errorf("cannot find start time key in alert payload")
+		return "", fmt.Errorf("cannot find start time key in alert payload")
 	}
 
-	parsedTime, err := time.Parse(time.RFC3339, startTime)
-	if err != nil {
-		return 0, fmt.Errorf("error parsing start time: %v", err)
-	}
-
-	startTimeUnix := parsedTime.Unix()
-
-	return startTimeUnix, nil
+	return startTime, nil
 }

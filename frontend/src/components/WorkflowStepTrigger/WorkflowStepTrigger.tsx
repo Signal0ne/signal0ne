@@ -39,6 +39,11 @@ const WorkflowStepTrigger = ({ step }: WorkflowStepProps) => {
               Interval: {step.scheduled.interval}
             </span>
           )}
+          {isWebhook && (
+            <span className="workflow-step-info-function">
+              Integration: {step.webhook.integration}
+            </span>
+          )}
         </div>
         <div className="workflow-step-output">
           {stepOptions &&

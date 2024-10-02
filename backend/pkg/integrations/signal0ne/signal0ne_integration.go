@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"signal0ne/cmd/config"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -107,9 +109,10 @@ type CorrelateOngoingAlertsInput struct {
 }
 
 type CreateIncidentInput struct {
-	Severity              string `json:"severity"`
-	Assignee              string `json:"assignee"`
-	ParsableContextObject string `json:"parsable_context_object"`
+	Severity                 string   `json:"severity"`
+	Assignee                 string   `json:"assignee"`
+	ParsableContextObject    string   `json:"parsable_context_object"`
+	ManuallyCorrelatedAlerts []string `json:"_manually_correlated_alerts"`
 }
 
 func correlateOngoingAlerts(input any, integration any) ([]any, error) {
@@ -253,11 +256,12 @@ func createIncident(input any, integration any) ([]any, error) {
 		}
 
 		task := models.Task{
+			Id:       primitive.NewObjectID(),
 			Assignee: models.User{},
 			IsDone:   isDone,
 			Items:    make([]models.Item, 0),
 			Priority: si,
-			TaskName: step.Name,
+			TaskName: step.DisplayName,
 		}
 
 		for _, stepOutput := range stepOutputs {
@@ -266,10 +270,21 @@ func createIncident(input any, integration any) ([]any, error) {
 				Source:  step.Integration,
 			}
 			fmt.Printf("\nStep output %s_%s %v", step.Integration, step.Name, stepOutput)
+			var parsedValue string
 			for key, value := range stepOutput.(map[string]any) {
+				_, isString := value.(string)
+				if isString {
+					parsedValue = value.(string)
+				} else {
+					valueBytes, err := json.Marshal(value)
+					if err != nil {
+						continue
+					}
+					parsedValue = string(valueBytes)
+				}
 				item.Content = append(item.Content, models.ItemContent{
 					Key:       key,
-					Value:     value,
+					Value:     parsedValue,
 					ValueType: "markdown",
 				})
 			}
@@ -285,7 +300,7 @@ func createIncident(input any, integration any) ([]any, error) {
 	}
 
 	incident := models.Incident{
-		Id:          parsedAlert.Id,
+		Id:          primitive.NewObjectID(),
 		Assignee:    assignee,
 		Summary:     "",
 		History:     []models.IncidentUpdate[models.Update]{},
@@ -297,6 +312,57 @@ func createIncident(input any, integration any) ([]any, error) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	assertedIntegration.Inventory.IncidentCollection.InsertOne(context.Background(), incident)
+	if parsedInput.ManuallyCorrelatedAlerts != nil {
+		var items = make([]models.Item, 0)
+		for _, alert := range parsedInput.ManuallyCorrelatedAlerts {
+			var parsedAlert models.EnrichedAlert
+			err = json.Unmarshal([]byte(alert), &parsedAlert)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
+			}
+			alertMarkdown := fmt.Sprintf("\n*AlertId*:\n %s \n *AlertName*:\n %s \n *Timestamp*:\n %s \n *State*:\n %s",
+				parsedAlert.Id,
+				parsedAlert.AlertName,
+				parsedAlert.StartTime,
+				parsedAlert.State,
+			)
+			item := models.Item{
+				Content: make([]models.ItemContent, 0),
+				Source:  "signal0ne",
+			}
+			item.Content = append(item.Content, models.ItemContent{
+				Key:       "alert",
+				Value:     alertMarkdown,
+				ValueType: "markdown",
+			})
+			items = append(items, item)
+		}
+		task := models.Task{
+			Id:       primitive.NewObjectID(),
+			Assignee: models.User{},
+			IsDone:   true,
+			Items:    items,
+			Priority: len(tasks),
+			TaskName: "Manually Correlated Alerts via Slack Integration",
+		}
+		incident.Tasks = append(incident.Tasks, task)
+	}
+
+	_, err = assertedIntegration.Inventory.IncidentCollection.InsertOne(context.Background(), incident)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert incident: %v", err)
+	}
+
+	cfg := config.GetInstance()
+	id := incident.Id.Hex()
+	//Construct metadata incident response
+	output = append(output, map[string]any{
+		"id":       id,
+		"name":     incident.Title,
+		"status":   incident.Status,
+		"severity": incident.Severity,
+		"url":      fmt.Sprintf("%s/incidents/%s", cfg.FrontendUrl, id),
+	})
+
 	return output, nil
 }

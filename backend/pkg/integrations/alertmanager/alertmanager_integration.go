@@ -47,6 +47,7 @@ func (integration AlertmanagerIntegration) Trigger(
 	workflow *models.Workflow) (err error) {
 
 	var StateKey = "status"
+	var NameKey = "labels.alertname"
 
 	//incoming in RFC3339 format string with timezone UTC
 	var StartTimeKey = "startsAt"
@@ -76,6 +77,13 @@ func (integration AlertmanagerIntegration) Trigger(
 	alert.StartTime, err = tools.GetStartTime(alertPayload, StartTimeKey)
 	if err != nil {
 		return err
+	}
+
+	var ok bool
+	alertNamePlaceholder := tools.TraverseOutput(alertPayload, "alertName", NameKey)
+	alert.AlertName, ok = alertNamePlaceholder.(string)
+	if !ok {
+		return fmt.Errorf("cannot find alert name in payload")
 	}
 
 	alertsHistory, err := db.GetEnrichedAlertsByWorkflowId(workflow.Id.Hex(),

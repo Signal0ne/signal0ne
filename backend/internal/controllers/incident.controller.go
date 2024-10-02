@@ -20,8 +20,9 @@ import (
 )
 
 type CreateIncidentRequest struct {
-	BaseAlertId string `json:"baseAlertId"`
-	Integration string `json:"integration"`
+	BaseAlertId                string   `json:"baseAlertId"`
+	Integration                string   `json:"integration"`
+	ManuallyCorrelatedAlertIds []string `json:"manuallyCorrelatedAlertIds,omitempty"`
 }
 
 type IncidentController struct {
@@ -207,7 +208,7 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 	var integration any
 	var createIncidentRequest CreateIncidentRequest
 
-	err := ctx.BindJSON(&createIncidentRequest)
+	err := ctx.ShouldBindJSON(&createIncidentRequest)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": fmt.Sprintf("invalid request: %v", err),
@@ -237,6 +238,32 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 			"error": "alert not found",
 		})
 		return
+	}
+
+	var manuallyCorrelatedAlerts = make([]string, 0)
+
+	for _, alertId := range createIncidentRequest.ManuallyCorrelatedAlertIds {
+		manuallyCorrelatedAlert, err := db.GetEnrichedAlertById(
+			alertId,
+			ctx,
+			ic.AlertsCollection,
+		)
+		if err != nil {
+			ctx.JSON(http.StatusNotFound, gin.H{
+				"error": "alert not found",
+			})
+			return
+		}
+
+		alertBytes, err := json.Marshal(manuallyCorrelatedAlert)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": fmt.Sprintf("error marshalling alert: %v", err),
+			})
+			return
+		}
+
+		manuallyCorrelatedAlerts = append(manuallyCorrelatedAlerts, string(alertBytes))
 	}
 
 	workflow, err := db.GetWorkflowById(alert.WorkflowId,
@@ -284,15 +311,24 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 		})
 	}
 
+	var execResult []map[string]any
 	switch i := integration.(type) {
 	case *signal0ne.Signal0neIntegration:
 		bytes, _ := json.Marshal(alert)
 		input := map[string]any{
-			"severity":                "",
-			"assignee":                models.User{}.Id,
-			"parsable_context_object": string(bytes),
+			"severity":                    "",
+			"assignee":                    models.User{}.Id,
+			"parsable_context_object":     string(bytes),
+			"_manually_correlated_alerts": manuallyCorrelatedAlerts,
 		}
-		_, err := i.Execute(input, nil, "create_incident")
+		output := map[string]string{
+			"id":       "id",
+			"name":     "name",
+			"status":   "status",
+			"severity": "severity",
+			"url":      "url",
+		}
+		execResult, err = i.Execute(input, output, "create_incident")
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("error executing integration: %v", err),
@@ -307,7 +343,7 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 			"service_name":            alert.TriggerProperties["service"],
 			"parsable_context_object": string(bytes),
 		}
-		_, err := i.Execute(input, nil, "create_incident")
+		execResult, err = i.Execute(input, nil, "create_incident")
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": fmt.Sprintf("error executing integration: %v", err),
@@ -317,6 +353,8 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 	case *servicenow.ServicenowIntegration:
 		// Create incident in ServiceNow
 	}
+
+	ctx.JSON(http.StatusOK, execResult)
 }
 
 func (ic *IncidentController) GetIncident(ctx *gin.Context) {
