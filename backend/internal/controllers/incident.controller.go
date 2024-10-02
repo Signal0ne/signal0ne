@@ -21,8 +21,8 @@ import (
 
 type CreateIncidentRequest struct {
 	BaseAlertId                string   `json:"baseAlertId"`
-	ManuallyCorrelatedAlertIds []string `json:"manuallyCorrelatedAlertIds,omitempty"`
 	Integration                string   `json:"integration"`
+	ManuallyCorrelatedAlertIds []string `json:"manuallyCorrelatedAlertIds,omitempty"`
 }
 
 type IncidentController struct {
@@ -238,6 +238,7 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 	}
 
 	var manuallyCorrelatedAlerts = make([]string, 0)
+
 	for _, alertId := range createIncidentRequest.ManuallyCorrelatedAlertIds {
 		manuallyCorrelatedAlert, err := db.GetEnrichedAlertById(
 			alertId,

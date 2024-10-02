@@ -75,6 +75,7 @@ func VerifyToken(tokenString string) (string, error) {
 func VerifyIntegrationToken(tokenString string) error {
 	var cfg = config.GetInstance()
 	secret := cfg.SignalOneSecret
+
 	isValid := (tokenString == secret)
 	if !isValid {
 		return fmt.Errorf("invalid token")

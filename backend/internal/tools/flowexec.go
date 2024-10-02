@@ -100,8 +100,8 @@ func RecordExecution(
 	var workflow models.Workflow
 	cfg := config.GetInstance()
 
-	woorkflowOutput := workflowsCollection.FindOne(ctx, filter)
-	woorkflowOutput.Decode(&workflow)
+	workflowOutput := workflowsCollection.FindOne(ctx, filter)
+	workflowOutput.Decode(&workflow)
 
 	executionsHistoryBacklog := len(workflow.Executions)
 	excessiveBacklog := int64(executionsHistoryBacklog) - cfg.WorkflowsExecutionsHistoryLimit
