@@ -1,9 +1,16 @@
-import { FormEvent, useState } from 'react';
-import { Incident } from '../../contexts/IncidentsProvider/IncidentsProvider';
+import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { FormEvent, useEffect, useRef, useState } from 'react';
+import {
+  Incident,
+  IncidentAssignee
+} from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
+import AssigneeDropdownOption from '../Dropdown/AssigneeDropdown/AssigneeDropdownOption/AssigneeDropdownOption';
+import AssigneeDropdownSingleValueWithImage from '../Dropdown/AssigneeDropdown/AssigneeDropdownSingleValueWithImage/AssigneeDropdownSingleValueWithImage';
 import Button from '../Button/Button';
+import Dropdown from '../Dropdown/Dropdown';
 import IncidentTask from '../IncidentTask/IncidentTask';
 import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
@@ -12,6 +19,16 @@ import './IncidentPreview.scss';
 
 interface IncidentNewTaskResponse {
   updatedIncident: Incident;
+}
+
+interface NamespaceUsersResponse {
+  users: IncidentAssignee[];
+}
+
+export interface TaskAssigneeDropdownOption {
+  disabled?: boolean;
+  label: string;
+  value: IncidentAssignee;
 }
 
 const CUSTOM_STYLES: Styles = {
@@ -31,14 +48,58 @@ const CUSTOM_STYLES: Styles = {
 };
 
 const IncidentPreview = () => {
+  const [availableAssignees, setAvailableAssignees] = useState<
+    TaskAssigneeDropdownOption[]
+  >([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [taskAssignee, setTaskAssignee] = useState('');
+  const [taskAssignee, setTaskAssignee] =
+    useState<TaskAssigneeDropdownOption | null>(null);
   const [taskErrorMessage, setTaskErrorMessage] = useState('');
   const [taskName, setTaskName] = useState('');
+
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const { namespaceId } = useAuthContext();
   const { isIncidentPreviewLoading, selectedIncident, setSelectedIncident } =
     useIncidentsContext();
+
+  useEffect(() => {
+    const element = previewRef.current;
+
+    if (!element) return;
+
+    return autoScrollForElements({
+      element
+    });
+  }, [selectedIncident]);
+
+  useEffect(() => {
+    if (!selectedIncident) return;
+
+    const fetchAvailableAssignees = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER_API_URL}/namespace/${namespaceId}/users`
+        );
+
+        if (!response.ok) throw new Error('Failed to fetch users');
+
+        const data: NamespaceUsersResponse = await response.json();
+
+        setAvailableAssignees(
+          data.users?.map(user => ({
+            label: user.name,
+            value: user
+          }))
+        );
+      } catch (error) {
+        console.error(error);
+        setAvailableAssignees([]);
+      }
+    };
+
+    fetchAvailableAssignees();
+  }, [namespaceId, selectedIncident]);
 
   const handleAddTask = async (e: FormEvent) => {
     e.preventDefault();
@@ -53,21 +114,21 @@ const IncidentPreview = () => {
 
   const handleTaskModalClose = () => {
     setIsTaskModalOpen(false);
-    setTaskAssignee('');
+    setTaskAssignee(null);
     setTaskName('');
     setTaskErrorMessage('');
   };
 
   const saveNewTask = async () => {
+    if (!taskAssignee || !taskName) return;
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/tasks`,
         {
           body: JSON.stringify({
-            assignee: {
-              id: '000000000000000000000000',
-              name: taskAssignee
-            },
+            assignee: taskAssignee.value,
+            comments: [],
             isDone: false,
             items: [],
             priority: selectedIncident?.tasks.length,
@@ -107,11 +168,17 @@ const IncidentPreview = () => {
       );
 
     return (
-      <section className="incident-preview">
+      <section className="incident-preview" ref={previewRef}>
         <div className="incident-preview-header">
           <h2 className="incident-preview-header-title">
             {selectedIncident?.title}
           </h2>
+          <span className="incident-preview-header-severity">
+            <strong>Severity:</strong>{' '}
+            <span className="incident-preview-header-severity-value">
+              {selectedIncident?.severity}
+            </span>
+          </span>
           {selectedIncident?.summary && (
             <div className="incident-preview-header-summary">
               <h4 className="incident-preview-header-summary-title">
@@ -127,7 +194,11 @@ const IncidentPreview = () => {
           <ul className="incident-preview-tasks-list">
             {selectedIncident?.tasks &&
               selectedIncident?.tasks?.map(task => (
-                <IncidentTask incidentTask={task} key={task.taskName} />
+                <IncidentTask
+                  availableAssignees={availableAssignees}
+                  incidentTask={task}
+                  key={task.taskName}
+                />
               ))}
           </ul>
           {selectedIncident && (
@@ -164,9 +235,19 @@ const IncidentPreview = () => {
               label="Task Name"
               onChange={e => setTaskName(e.target.value)}
             />
-            <Input
+            <Dropdown
+              components={{
+                Option: AssigneeDropdownOption,
+                SingleValue: AssigneeDropdownSingleValueWithImage
+              }}
               label="Assignee"
-              onChange={e => setTaskAssignee(e.target.value)}
+              maxMenuHeight={200}
+              menuPortalSelector=".ReactModal__Content"
+              menuPosition="fixed"
+              onChange={option => option && setTaskAssignee(option)}
+              options={availableAssignees}
+              placeholder="Select assignee..."
+              value={taskAssignee}
             />
             {taskErrorMessage && (
               <p className="error-msg">{taskErrorMessage}</p>

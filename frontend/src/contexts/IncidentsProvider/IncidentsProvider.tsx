@@ -2,23 +2,23 @@ import { createContext, ReactNode, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 
+type IncidentSeverity = 'critical' | 'high' | 'moderate' | 'low';
 export interface Incident {
   assignee: IncidentAssignee;
   history: string[];
   id: string;
-  severity: string;
+  severity: IncidentSeverity;
   summary: string;
   tasks: IIncidentTask[];
   timestamp: number;
   title: string;
 }
 
-interface IncidentAssignee {
-  email: string;
+export interface IncidentAssignee {
   id: string;
   name: string;
-  photoUrl: string;
-  type: string;
+  photoUri: string;
+  role: string;
 }
 
 export interface IncidentsContextType {
@@ -59,7 +59,7 @@ export interface IncidentTaskItem {
 interface IncidentTaskItemContent {
   key: string;
   value: string;
-  valueKey: 'graph' | 'markdown' | 'text';
+  valueType: 'graph' | 'markdown' | 'text';
 }
 
 interface IncidentsResponseBody {

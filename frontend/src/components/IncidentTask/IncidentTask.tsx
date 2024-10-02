@@ -1,16 +1,33 @@
+import {
+  attachClosestEdge,
+  Edge,
+  extractClosestEdge
+} from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChevronIcon, UserIcon } from '../Icons/Icons';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
+import {
+  draggable,
+  dropTargetForElements
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
 import {
   IIncidentTask,
   Incident
 } from '../../contexts/IncidentsProvider/IncidentsProvider';
+import { reorderWithEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/reorder-with-edge';
+import { TaskAssigneeDropdownOption } from '../IncidentPreview/IncidentPreview';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
+import AssigneeDropdownOption from '../Dropdown/AssigneeDropdown/AssigneeDropdownOption/AssigneeDropdownOption';
+import AssigneeDropdownSingleValue from '../Dropdown/AssigneeDropdown/AssigneeDropdownSingleValue/AssigneeDropdownSingleValue';
 import Button from '../Button/Button';
 import classNames from 'classnames';
+import Dropdown from '../Dropdown/Dropdown';
 import Input from '../Input/Input';
+import MarkdownWrapper from '../MarkdownWrapper/MarkdownWrapper';
 import TextArea from '../TextArea/TextArea';
 import './IncidentTask.scss';
 
@@ -19,17 +36,23 @@ interface AddCommentResponse {
 }
 
 interface IncidentTaskProps {
+  availableAssignees: TaskAssigneeDropdownOption[];
   incidentTask: IIncidentTask;
 }
 
-interface TaskStatusResponse {
+interface TaskUpdateResponse {
   updatedIncident: Incident;
 }
 
-const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
+const IncidentTask = ({
+  availableAssignees,
+  incidentTask
+}: IncidentTaskProps) => {
+  const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
   const [commentContent, setCommentContent] = useState('');
   const [commentTitle, setCommentTitle] = useState('');
   const [isCommentEditorOpen, setIsCommentEditorOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
   const { namespaceId } = useAuthContext();
@@ -38,11 +61,162 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
   const abortControllerRef = useRef(new AbortController());
   const commentEditorTitleInputRef = useRef<HTMLInputElement>(null);
 
+  const incidentTaskDragHandleRef = useRef(null);
+  const incidentTaskRef = useRef(null);
+
+  useEffect(() => {
+    const handleUpdatePriority = async (newOrderedTasks: IIncidentTask[]) => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/update-tasks-priority`,
+          {
+            body: JSON.stringify({
+              incidentTasks: newOrderedTasks
+            }),
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            method: 'PATCH'
+          }
+        );
+
+        if (!response.ok) throw new Error('Failed to update the task priority');
+
+        const data: TaskUpdateResponse = await response.json();
+
+        setSelectedIncident(data.updatedIncident);
+
+        toast.success('Task priority updated successfully');
+      } catch (error) {
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error('An error occurred while updating the task priority');
+        }
+      }
+    };
+
+    const incidentTaskEl = incidentTaskRef.current;
+    const incidentTaskDragHandleEl = incidentTaskDragHandleRef.current;
+
+    if (!incidentTaskEl || !incidentTaskDragHandleEl) return;
+
+    return combine(
+      draggable({
+        element: incidentTaskEl,
+        dragHandle: incidentTaskDragHandleEl,
+        getInitialData: () => ({
+          incidentTaskId: incidentTask.id,
+          incidentTask,
+          index: incidentTask.priority,
+          type: 'taskItem'
+        }),
+        onDragStart: () => setIsDragging(true),
+        onDrop: () => setIsDragging(false)
+      }),
+      dropTargetForElements({
+        element: incidentTaskEl,
+        canDrop: ({ source }) => source.data.type === 'taskItem',
+        getData: ({ element, input }) => {
+          const targetElementId = element.id;
+          const foundTaskIndex = selectedIncident?.tasks.findIndex(
+            task => task.id === targetElementId
+          );
+
+          const data = { index: foundTaskIndex };
+
+          return attachClosestEdge(data, {
+            allowedEdges: ['top', 'bottom'],
+            element,
+            input
+          });
+        },
+        onDrag({ self, source }) {
+          const isSource = source.element === incidentTaskEl;
+
+          if (isSource) {
+            setClosestEdge(null);
+            return;
+          }
+
+          const closestEdge = extractClosestEdge(self.data);
+
+          const sourceIndex = source.data.index as number;
+
+          const isItemBeforeSource = incidentTask.priority === sourceIndex - 1;
+          const isItemAfterSource = incidentTask.priority === sourceIndex + 1;
+
+          const isDropIndicatorHidden =
+            (isItemBeforeSource && closestEdge === 'bottom') ||
+            (isItemAfterSource && closestEdge === 'top');
+
+          if (isDropIndicatorHidden) {
+            setClosestEdge(null);
+            return;
+          }
+
+          setClosestEdge(closestEdge);
+        },
+        onDragLeave() {
+          setClosestEdge(null);
+        },
+        onDrop: async ({ location, self, source }) => {
+          setClosestEdge(null);
+
+          if (!selectedIncident) return;
+
+          const closestEdgeOfTarget: Edge | null = extractClosestEdge(
+            self.data
+          );
+
+          // we shouldn't modify the order if the item is dropped in the same position
+          const shouldNotChangeOrder =
+            source.data.index === location.current.dropTargets[0].data.index;
+
+          if (shouldNotChangeOrder) return;
+
+          const reorderedArray = reorderWithEdge({
+            axis: 'vertical',
+            closestEdgeOfTarget: closestEdgeOfTarget,
+            indexOfTarget: location.current.dropTargets[0].data.index as number,
+            list: selectedIncident.tasks,
+            startIndex: source.data.index as number
+          });
+
+          const formattedTasksArray = reorderedArray.map((task, index) => ({
+            ...task,
+            priority: index
+          }));
+
+          await handleUpdatePriority(formattedTasksArray);
+        }
+      })
+    );
+  }, [incidentTask, namespaceId, selectedIncident, setSelectedIncident]);
+
   useEffect(() => {
     if (isCommentEditorOpen) {
       commentEditorTitleInputRef.current?.focus();
     }
   }, [isCommentEditorOpen]);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.body.classList.add('is-dragging');
+    } else {
+      document.body.classList.remove('is-dragging');
+    }
+  }, [isDragging]);
+
+  const getAssigneeDropdownValue = () => {
+    if (!incidentTask.assignee) return null;
+
+    return {
+      disabled: false,
+      label: incidentTask.assignee.name,
+      value: incidentTask.assignee
+    };
+  };
 
   const handleCloseCommentEditor = () => {
     setCommentTitle('');
@@ -118,7 +292,7 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
 
       if (!response.ok) throw new Error('Failed to update task status');
 
-      const data: TaskStatusResponse = await response.json();
+      const data: TaskUpdateResponse = await response.json();
 
       setSelectedIncident(data.updatedIncident);
       toast.success('Task status updated successfully');
@@ -133,11 +307,54 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
 
   const handleToggleOpen = () => setIsOpen(prev => !prev);
 
+  const updateTaskAssignee = async (
+    dropdownOption: TaskAssigneeDropdownOption | null
+  ) => {
+    if (incidentTask.assignee?.id === dropdownOption?.value.id) return;
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/${incidentTask.id}/assignee`,
+        {
+          body: JSON.stringify({
+            assignee: dropdownOption?.value
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          method: 'PATCH'
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to update task assignee');
+
+      const data: TaskUpdateResponse = await response.json();
+
+      setSelectedIncident(data.updatedIncident);
+      toast.success('Task assignee updated successfully');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('An error occurred while updating the task assignee');
+      }
+    }
+  };
+
   return (
-    <li className="incident-task-container">
+    <li
+      className={classNames('incident-task-container', {
+        'is-dragging': isDragging
+      })}
+      id={incidentTask.id}
+      ref={incidentTaskRef}
+    >
       <div className="incident-task-tile">
         <div className="incident-task-tile-left">
-          <span className="incident-task-drag-handle">
+          <span
+            className="incident-task-drag-handle"
+            ref={incidentTaskDragHandleRef}
+          >
             <span className="dot" />
             <span className="dot" />
             <span className="dot" />
@@ -172,18 +389,25 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
             />
             <span className="incident-task-checkbox-label">Done</span>
           </label>
-          <span className="incident-task-assignee">
-            {incidentTask.assignee.name ? (
-              <img
-                alt={`User: ${incidentTask.assignee.name}`}
-                src={incidentTask.assignee.photoUrl}
-              />
-            ) : (
-              <UserIcon height={16} width={16} />
-            )}
-          </span>
+          <Dropdown
+            className="assignee-dropdown"
+            components={{
+              DropdownIndicator: () => null,
+              IndicatorsContainer: () => null,
+              Option: AssigneeDropdownOption,
+              SingleValue: AssigneeDropdownSingleValue
+            }}
+            isSearchable={false}
+            maxMenuHeight={200}
+            noOptionsMsg="No users available"
+            onChange={option => updateTaskAssignee(option)}
+            options={availableAssignees}
+            placeholder={<UserIcon height={16} width={16} />}
+            value={getAssigneeDropdownValue()}
+          />
         </div>
       </div>
+      {closestEdge && <DropIndicator edge={closestEdge} gap="16px" />}
       {isOpen && (
         <div className="incident-task-items">
           {incidentTask?.items?.map((incidentItem, index) => (
@@ -204,7 +428,11 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
                       {item.key}:
                     </span>
                     <span className="incident-task-item-content-value">
-                      {item.value}
+                      {item.valueType === 'markdown' ? (
+                        <MarkdownWrapper content={String(item.value)} />
+                      ) : (
+                        item.value
+                      )}
                     </span>
                   </div>
                 ))}
@@ -226,7 +454,9 @@ const IncidentTask = ({ incidentTask }: IncidentTaskProps) => {
                         {comment.content.key}
                       </span>
                       <span className="user-comment-content-value">
-                        {comment.content.value}
+                        <MarkdownWrapper
+                          content={String(comment.content.value)}
+                        />
                       </span>
                     </div>
                     <i className="user-comment-author-info">

@@ -54,8 +54,9 @@ const IncidentsListItem = ({ incident }: IncidentsListItemProps) => {
       <span
         className={classNames('incidents-list-item-severity', {
           critical: incident.severity === 'critical',
-          error: incident.severity === 'error',
-          warning: incident.severity === 'warning'
+          high: incident.severity === 'high',
+          moderate: incident.severity === 'moderate',
+          low: incident.severity === 'low'
         })}
       />
       <div className="incidents-list-item-info">

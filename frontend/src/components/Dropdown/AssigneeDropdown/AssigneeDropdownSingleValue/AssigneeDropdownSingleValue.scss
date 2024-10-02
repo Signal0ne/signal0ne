@@ -1,0 +1,11 @@
+.dropdown-select__single-value {
+  .incident-task-assignee-avatar {
+    border-radius: 100%;
+    height: 100%;
+    width: 100%;
+  }
+
+  .incident-task-assignee-avatar--empty {
+    border-radius: 0;
+  }
+}

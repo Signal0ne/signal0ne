@@ -1,5 +1,5 @@
 type: datadog
-name: DataDog
+name: Datadog
 imageUri: ../logos/datadog.svg
 config:
   url: string
