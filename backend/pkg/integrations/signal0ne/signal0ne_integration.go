@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"signal0ne/cmd/config"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
@@ -299,7 +300,7 @@ func createIncident(input any, integration any) ([]any, error) {
 	}
 
 	incident := models.Incident{
-		Id:          parsedAlert.Id,
+		Id:          primitive.NewObjectID(),
 		Assignee:    assignee,
 		Summary:     "",
 		History:     []models.IncidentUpdate[models.Update]{},
@@ -347,6 +348,21 @@ func createIncident(input any, integration any) ([]any, error) {
 		incident.Tasks = append(incident.Tasks, task)
 	}
 
-	assertedIntegration.Inventory.IncidentCollection.InsertOne(context.Background(), incident)
+	_, err = assertedIntegration.Inventory.IncidentCollection.InsertOne(context.Background(), incident)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert incident: %v", err)
+	}
+
+	cfg := config.GetInstance()
+	id := incident.Id.Hex()
+	//Construct metadata incident response
+	output = append(output, map[string]any{
+		"id":       id,
+		"name":     incident.Title,
+		"status":   incident.Status,
+		"severity": incident.Severity,
+		"url":      fmt.Sprintf("%s/incidents/%s", cfg.FrontendUrl, id),
+	})
+
 	return output, nil
 }

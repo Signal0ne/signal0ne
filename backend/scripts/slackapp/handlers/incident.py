@@ -15,13 +15,28 @@ def handle_create(ack: Ack, respond: Respond, command):
     incident_destination = command_params[0]
     alert_ids = command_params[1:]
 
+    print("ALERT IDS", alert_ids)
+    print("INCIDENT DESTINATION", incident_destination)
+
     try:
-        incident = create_incident(incident_destination, alert_ids)
+        incident_creation_response = create_incident(incident_destination, alert_ids)
+        incident = incident_creation_response[0]
         blocks.append({
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"Link to incident: https://{incident_destination}/incident/{incident['id']}"
+                "text": f"*New incident created*"
+            }
+        })
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"""*Id:* {incident['id']}\n
+                        *Name:* {incident['name']}\n
+                        *Status:* {incident['status']}\n
+                        *Severity:* {incident['severity']}\n
+                        *Link:* {incident['url']}"""
             }
         })
     except requests.RequestException as e:

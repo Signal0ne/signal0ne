@@ -15,6 +15,7 @@ type Server struct {
 
 type Config struct {
 	Debug                           bool   `mapstructure:"DEBUG"`
+	FrontendUrl                     string `mapstructure:"FRONTEND_URL"`
 	IPCSocket                       string `mapstructure:"IPC_SOCKET"`
 	MongoUri                        string `mapstructure:"MONGO_URI"`
 	Server                          Server `mapstructure:",squash"`

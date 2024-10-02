@@ -12,14 +12,18 @@ def handle(ack: Ack, respond: Respond, command):
         respond("Please use command in the following format: `/details <alert_id> <[]tags...>`")
         return
     
+    print(command_params)
+    
     alert_id = command_params[0]
     tags = command_params[1:]
     
     try:
         data = get_enriched_alert_by_id(alert_id)
-        for k,v in dict(data).additionalContext.items():
+        for k,v in dict(data)["additionalContext"].items():
+            if not v:
+                continue
             for item in v:
-                if any(tag in list(item.tags) for tag in tags):
+                if any(tag in list(item["tags"]) for tag in tags):
                     blocks.append({
                         "type": "section",
                         "text": {

@@ -24,7 +24,7 @@ func NewAlertController(alertsCollection *mongo.Collection) *AlertController {
 func (ac *AlertController) GetAlert(ctx *gin.Context) {
 	var alert models.EnrichedAlert
 
-	namespaceId := ctx.Param("namespaceid")
+	_ = ctx.Param("namespaceid")
 	alertId := ctx.Param("alertid")
 
 	parsedAlertId, err := primitive.ObjectIDFromHex(alertId)
@@ -34,8 +34,8 @@ func (ac *AlertController) GetAlert(ctx *gin.Context) {
 	}
 
 	alertRes := ac.AlertsCollection.FindOne(ctx, bson.M{
-		"namespaceid": namespaceId,
-		"_id":         parsedAlertId,
+		// "namespaceid": namespaceId,
+		"_id": parsedAlertId,
 	})
 	if alertRes.Err() != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "alert not found"})
