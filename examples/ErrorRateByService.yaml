@@ -83,12 +83,12 @@ steps:
     context: "{{root}}"
   output:
     summary: "summary"
-# - displayName: Send to slack channel
-#   name: send_to_slack
-#   integration: slack
-#   function: post_message
-#   input:
-#     slack_channel: "{{range .AdditionalContext.backstage_get_ownership}}{{.slack_channel}},{{end}}"
-#     parsable_context_object: "{{root}}"
-#     post_message_payload: "{\"startedAt\": \"{{.TriggerProperties.timestamp}}\", \"service\": \"{{.TriggerProperties.service}}\", \"summary\": \"{{( index .AdditionalContext.openai_summarize-issue-content 0).summary}}\"}"
+- displayName: Send to slack channel
+  name: send_to_slack
+  integration: slack
+  function: post_message
+  input:
+    slack_channel: "{{range .AdditionalContext.backstage_get_ownership}}{{.slack_channel}},{{end}}"
+    parsable_context_object: "{{root}}"
+    additional_message_payload: "{\"service\": \"{{.TriggerProperties.service}}\"}"
 

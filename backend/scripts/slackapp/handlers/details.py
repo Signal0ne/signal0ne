@@ -12,8 +12,6 @@ def handle(ack: Ack, respond: Respond, command):
         respond("Please use command in the following format: `/details <alert_id> <[]tags...>`")
         return
     
-    print(command_params)
-    
     alert_id = command_params[0]
     tags = command_params[1:]
     
