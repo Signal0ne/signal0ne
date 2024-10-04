@@ -18,8 +18,6 @@ func Test_PostMessage(t *testing.T) {
 
 	mockedEnrichedAlertStringified, _ := json.Marshal(mockedEnrichedAlert)
 
-	// mockedPostMessagePayload := `{"text": "Hello, World!"}`
-
 	input := PostMessageInput{
 		ParsableContextObject: string(mockedEnrichedAlertStringified),
 		SlackChannel:          "incidents",

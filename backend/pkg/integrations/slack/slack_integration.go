@@ -155,7 +155,9 @@ func postMessage(input any, integration any) (output []any, err error) {
 		if contextObject == nil {
 			continue
 		}
+
 		contexts := contextObject.([]any)
+
 		for _, context := range contexts {
 			contextMap := context.(map[string]any)
 			for _, tag := range contextMap["tags"].([]any) {
