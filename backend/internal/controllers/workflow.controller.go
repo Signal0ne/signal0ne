@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"signal0ne/cmd/config"
+	"signal0ne/internal/db"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
@@ -144,6 +145,36 @@ func (c *WorkflowController) ApplyWorkflow(ctx *gin.Context) {
 		),
 		"workflow": workflow,
 	})
+}
+
+func (c *WorkflowController) GetWorkflow(ctx *gin.Context) {
+	var namespace *models.Namespace
+	var workflow models.Workflow
+
+	namespaceId := ctx.Param("namespaceid")
+	workflowId := ctx.Param("workflowid")
+
+	nsID, _ := primitive.ObjectIDFromHex(namespaceId)
+	res := c.NamespaceCollection.FindOne(ctx, bson.M{"_id": nsID})
+	err := res.Decode(&namespace)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("cannot find namespace for requested workflow, %s", err),
+		})
+
+		return
+	}
+
+	workflow, err = db.GetWorkflowById(workflowId, ctx, c.WorkflowsCollection)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": "workflow not found",
+		})
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"workflow": workflow})
 }
 
 func (c *WorkflowController) GetWorkflows(ctx *gin.Context) {

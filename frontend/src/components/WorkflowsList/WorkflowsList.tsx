@@ -23,7 +23,7 @@ const WorkflowsList = ({
 
   const workflowsListRef = useRef<HTMLUListElement>(null);
 
-  const { activeWorkflow, setActiveWorkflow } = useWorkflowsContext();
+  const { activeWorkflow } = useWorkflowsContext();
 
   useEffect(() => {
     if (!workflowsListRef.current) return;
@@ -35,28 +35,11 @@ const WorkflowsList = ({
     setShouldDisplayScrollOffset(shouldDisplayOffset);
   }, [workflows]);
 
-  const handleListItemClick = (workflow: Workflow) =>
-    setActiveWorkflow(workflow);
+  const getContent = () => {
+    if (isLoading) return <Spinner />;
 
-  return (
-    <ul
-      className={classNames('workflows-list', {
-        'scroll-offset': shouldDisplayScrollOffset
-      })}
-      ref={workflowsListRef}
-    >
-      {isLoading ? (
-        <Spinner />
-      ) : workflows?.length ? (
-        workflows.map(workflow => (
-          <WorkflowsListItem
-            isActive={workflow.id === activeWorkflow?.id}
-            key={workflow.id}
-            onClick={handleListItemClick}
-            workflow={workflow}
-          />
-        ))
-      ) : (
+    if (!workflows?.length)
+      return (
         <p className="workflows-list--empty">
           No workflows found
           <span className="helpful-msg">
@@ -65,7 +48,25 @@ const WorkflowsList = ({
               : 'Please refine your search'}
           </span>
         </p>
-      )}
+      );
+
+    return workflows.map(workflow => (
+      <WorkflowsListItem
+        isActive={workflow.id === activeWorkflow?.id}
+        key={workflow.id}
+        workflow={workflow}
+      />
+    ));
+  };
+
+  return (
+    <ul
+      className={classNames('workflows-list', {
+        'scroll-offset': shouldDisplayScrollOffset
+      })}
+      ref={workflowsListRef}
+    >
+      {getContent()}
     </ul>
   );
 };

@@ -15,6 +15,9 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { currentUser } = useAuthContext();
 
+  return children;
+
+  //TODO: Uncomment after finishing the authentication logic
   if (unAuthed) return !currentUser ? children : <Navigate to={redirectTo} />;
 
   return currentUser ? children : <Navigate to={redirectTo} />;

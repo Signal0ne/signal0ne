@@ -1,46 +1,20 @@
 import { handleKeyDown } from '../../utils/utils';
 import { Incident } from '../../contexts/IncidentsProvider/IncidentsProvider';
-import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
+import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames';
 import './IncidentsListItem.scss';
-
-interface IncidentResponse {
-  incident: Incident;
-}
 
 interface IncidentsListItemProps {
   incident: Incident;
 }
 
 const IncidentsListItem = ({ incident }: IncidentsListItemProps) => {
-  const { namespaceId } = useAuthContext();
-  const { selectedIncident, setIsIncidentPreviewLoading, setSelectedIncident } =
-    useIncidentsContext();
+  const { selectedIncident } = useIncidentsContext();
 
-  const handleIncidentClick = async () => {
-    setIsIncidentPreviewLoading(true);
+  const navigate = useNavigate();
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${incident.id}`
-      );
-
-      if (!response.ok) throw new Error('Failed to fetch incident details');
-
-      const data: IncidentResponse = await response.json();
-      setSelectedIncident(data.incident);
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('An unexpected error occurred. Please try again later.');
-      }
-    } finally {
-      setIsIncidentPreviewLoading(false);
-    }
-  };
+  const handleIncidentClick = () => navigate(`/incidents/${incident.id}`);
 
   return (
     <li
