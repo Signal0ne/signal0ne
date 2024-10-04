@@ -14,6 +14,7 @@ type EnrichedAlert struct {
 	AdditionalContext map[string]any     `json:"additionalContext" bson:"additionalProperties"`
 	AlertName         string             `json:"alertName" bson:"alertName"`
 	Integration       string             `json:"integration" bson:"integration"`
+	OriginalUrl       string             `json:"originalUrl" bson:"originalUrl"`
 	StartTime         string             `json:"startTime" bson:"startTime"`
 	State             AlertStatus        `json:"state" bson:"state"`
 	TriggerProperties map[string]any     `json:"triggerProperties,inline" bson:"triggerProperties,inline"`

@@ -48,6 +48,7 @@ func (integration AlertmanagerIntegration) Trigger(
 
 	var StateKey = "status"
 	var NameKey = "labels.alertname"
+	var OriginalUrlKey = "generatorUrl"
 
 	//incoming in RFC3339 format string with timezone UTC
 	var StartTimeKey = "startsAt"
@@ -84,6 +85,11 @@ func (integration AlertmanagerIntegration) Trigger(
 	alert.AlertName, ok = alertNamePlaceholder.(string)
 	if !ok {
 		return fmt.Errorf("cannot find alert name in payload")
+	}
+
+	alert.OriginalUrl, ok = tools.TraverseOutput(alertPayload, "originalUrl", OriginalUrlKey).(string)
+	if !ok {
+		return fmt.Errorf("cannot find original url in payload")
 	}
 
 	alertsHistory, err := db.GetEnrichedAlertsByWorkflowId(workflow.Id.Hex(),

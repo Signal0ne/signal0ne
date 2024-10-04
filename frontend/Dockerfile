@@ -5,7 +5,7 @@ FROM node:16-alpine AS build
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install
 
 # Copy source files and build the app

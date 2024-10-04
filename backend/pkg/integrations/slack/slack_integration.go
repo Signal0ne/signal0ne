@@ -113,10 +113,10 @@ func (integration SlackIntegration) ValidateStep(
 }
 
 type PostMessageInput struct {
-	IgnoreContextKeys     string `json:"ignore_context_keys"`
-	ParsableContextObject string `json:"parsable_context_object"`
-	PostMessagePayload    string `json:"post_message_payload"`
-	SlackChannel          string `json:"slack_channel"`
+	IgnoreContextKeys        string `json:"ignore_context_keys"`
+	ParsableContextObject    string `json:"parsable_context_object"`
+	AdditionalMessagePayload string `json:"additional_message_payload"`
+	SlackChannel             string `json:"slack_channel"`
 }
 
 type CreateChannelInput struct {
@@ -150,17 +150,54 @@ func postMessage(input any, integration any) (output []any, err error) {
 	title := assertedIntegration.Inventory.AlertTitle
 	id := parsedAlert.Id.Hex()
 
-	data := map[string]any{}
-	err = json.Unmarshal([]byte(parsedInput.PostMessagePayload), &data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
+	tags := make([]string, 0)
+	for _, contextObject := range parsedAlert.AdditionalContext {
+		if contextObject == nil {
+			continue
+		}
+
+		contexts := contextObject.([]any)
+
+		for _, context := range contexts {
+			contextMap := context.(map[string]any)
+			for _, tag := range contextMap["tags"].([]any) {
+				exists := false
+				for _, existingTag := range tags {
+					if existingTag == tag {
+						exists = true
+						break
+					}
+				}
+				if !exists {
+					tags = append(tags, tag.(string))
+				}
+			}
+		}
 	}
 
 	payload := map[string]any{
 		"channelName": strings.Split(parsedInput.SlackChannel, ",")[0],
-		"data":        data,
-		"id":          id,
 		"title":       title,
+		"id":          id,
+		"source":      parsedAlert.Integration,
+		"time":        parsedAlert.StartTime,
+		"status":      parsedAlert.State,
+		"originalUrl": parsedAlert.OriginalUrl,
+		"tags":        tags,
+	}
+
+	if parsedInput.AdditionalMessagePayload != "" {
+
+		additionalPayload := map[string]any{}
+		payload["additionalContext"] = map[string]any{}
+		err = json.Unmarshal([]byte(parsedInput.AdditionalMessagePayload), &additionalPayload)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
+		}
+
+		for key, value := range additionalPayload {
+			payload["additionalContext"].(map[string]any)[key] = value
+		}
 	}
 
 	prettyJSON, err := json.MarshalIndent(payload, "", "    ")
