@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
+import { useParams } from 'react-router-dom';
 
 type IncidentSeverity = 'critical' | 'high' | 'moderate' | 'low';
 export interface Incident {
@@ -62,6 +63,10 @@ interface IncidentTaskItemContent {
   valueType: 'graph' | 'markdown' | 'text';
 }
 
+interface IncidentResponseBody {
+  incident: Incident;
+}
+
 interface IncidentsResponseBody {
   incidents: Incident[];
 }
@@ -80,6 +85,40 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
   );
 
   const { namespaceId } = useAuthContext();
+  const { incidentId } = useParams<{ incidentId: string }>();
+
+  useEffect(() => {
+    const fetchIncident = async () => {
+      try {
+        setIsIncidentPreviewLoading(true);
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${incidentId}`
+        );
+
+        if (!response.ok) throw new Error('Failed to fetch incident');
+
+        const data: IncidentResponseBody = await response.json();
+
+        setSelectedIncident(data.incident);
+      } catch (error) {
+        if (error instanceof Error) {
+          toast.error(error.message);
+        } else {
+          toast.error('An unexpected error occurred. Please try again later.');
+        }
+      } finally {
+        setIsIncidentPreviewLoading(false);
+      }
+    };
+
+    if (incidentId) {
+      setSelectedIncident(null);
+      fetchIncident();
+    } else {
+      setSelectedIncident(null);
+    }
+  }, [incidentId, namespaceId]);
 
   useEffect(() => {
     if (!namespaceId) return;

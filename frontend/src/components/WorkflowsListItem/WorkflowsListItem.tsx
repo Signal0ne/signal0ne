@@ -1,21 +1,21 @@
 import { handleKeyDown } from '../../utils/utils';
 import { Workflow } from '../../data/dummyWorkflows';
+import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames';
 import './WorkflowsListItem.scss';
 
 interface WorkflowsListItemProps {
   isActive?: boolean;
-  onClick: (w: Workflow) => void;
   workflow: Workflow;
 }
 
 const DESCRIPTION_DISPLAY_LIMIT = 60;
 
-const WorkflowsListItem = ({
-  isActive,
-  onClick,
-  workflow
-}: WorkflowsListItemProps) => {
+const WorkflowsListItem = ({ isActive, workflow }: WorkflowsListItemProps) => {
+  const navigate = useNavigate();
+
+  const handleWorkflowClick = () => navigate(`/${workflow.id}`);
+
   const descriptionToDisplay =
     workflow.description.length > DESCRIPTION_DISPLAY_LIMIT
       ? `${workflow.description.slice(0, DESCRIPTION_DISPLAY_LIMIT)}...`
@@ -25,8 +25,8 @@ const WorkflowsListItem = ({
     <li
       className={classNames('workflows-list-item', { active: isActive })}
       key={workflow.id}
-      onClick={() => onClick(workflow)}
-      onKeyDown={handleKeyDown(() => onClick(workflow))}
+      onClick={handleWorkflowClick}
+      onKeyDown={handleKeyDown(handleWorkflowClick)}
       tabIndex={0}
     >
       <h3 className="workflows-list-item--title">{workflow.name}</h3>

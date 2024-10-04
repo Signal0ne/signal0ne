@@ -13,8 +13,8 @@ const Navbar = () => {
     currentUser ? (
       <>
         <div className="navbar-content-links">
-          {ROUTES.map(({ isDisabled, path, title, unAuthed }) => {
-            if (unAuthed) return;
+          {ROUTES.map(({ isDisabled, path, showInNavbar, title, unAuthed }) => {
+            if (unAuthed || !showInNavbar) return;
 
             return isDisabled ? (
               <span
