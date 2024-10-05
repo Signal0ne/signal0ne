@@ -1,5 +1,21 @@
 version: "3"
 services:
+
+  proxy:
+    container_name: devproxy
+    image: ngrok/ngrok:3
+    command: 
+      - "start"
+      - "--config"
+      - "/ngrok/ngrok.yml"
+      - "--all"
+    ports:
+      - 4040:4040
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    volumes:
+      - ./infra/ngrok.yaml:/ngrok/ngrok.yml
+
   frontend:
     container_name: s0frontend
     build:
