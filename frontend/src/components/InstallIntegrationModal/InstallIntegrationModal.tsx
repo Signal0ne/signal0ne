@@ -10,11 +10,11 @@ import { toast } from 'react-toastify';
 import { useAuthContext } from '../../hooks/useAuthContext';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import { useEffect, useMemo, useState } from 'react';
+import Button from '../Button/Button';
 import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
 import Spinner from '../Spinner/Spinner';
 import './InstallIntegrationModal.scss';
-import Button from '../Button/Button';
 
 interface ConfigData {
   [key: string]: string;
@@ -25,14 +25,13 @@ interface Error {
 }
 
 interface FormData {
+  name: string;
   [key: string]: unknown;
 }
-
 
 interface GetInstalledIntegrationsResponse {
   installedIntegrations: Integration[];
 }
-
 
 interface InstallIntegrationResponse {
   configData: ConfigData | null;
@@ -48,6 +47,7 @@ const CUSTOM_STYLES: Styles = {
     borderRadius: '8px',
     height: 'max-content',
     margin: 'auto',
+    maxWidth: '50%',
     padding: '2rem',
     width: 'max-content'
   },
@@ -57,9 +57,7 @@ const CUSTOM_STYLES: Styles = {
 };
 
 const InstallIntegrationModal = () => {
-  const [configData, setConfigData] = useState<ConfigData | null>(
-    null
-  );
+  const [configData, setConfigData] = useState<ConfigData | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [installationStep, setInstallationStep] = useState<InstallationStep>(0);
 
@@ -67,8 +65,11 @@ const InstallIntegrationModal = () => {
     formState: { errors },
     handleSubmit,
     register,
-    reset
-  } = useForm();
+    reset,
+    watch
+  } = useForm<FormData>();
+
+  const nameFormValue = watch('name');
 
   const { namespaceId } = useAuthContext();
   const {
@@ -87,14 +88,14 @@ const InstallIntegrationModal = () => {
   const acknowledgeConfigData = () => {
     resetSteps();
     setIsModalOpen(false);
-  }
+  };
 
-  const handleContentCopy = (content: string, key: string) => {
+  const handleContentCopy = async (content: string, key: string) => {
     try {
-      navigator.clipboard.writeText(content);
+      await navigator.clipboard.writeText(content);
+
       toast.success(key + ' copied to clipboard');
-    }
-    catch (e) {
+    } catch (error) {
       toast.error('Failed to copy content to clipboard');
     }
   };
@@ -108,7 +109,7 @@ const InstallIntegrationModal = () => {
 
     const newIntegration = {
       config: rest,
-      name,
+      name: transformIntegrationName(name),
       type: selectedIntegration.type
     };
 
@@ -146,7 +147,8 @@ const InstallIntegrationModal = () => {
         throw new Error(errorData.error);
       }
 
-      const installationOutputData: InstallIntegrationResponse = await res.json();
+      const installationOutputData: InstallIntegrationResponse =
+        await res.json();
 
       const response = await fetch(
         `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`
@@ -174,6 +176,18 @@ const InstallIntegrationModal = () => {
         setError(new Error('An unknown error occurred'));
       }
     }
+  };
+
+  const transformIntegrationName = (name: string) => {
+    if (!name) return '';
+
+    return name
+      ?.toLowerCase()
+      .trim()
+      .replace(/[\s-]/g, '_')
+      .replace(/[^a-z0-9_]/g, '')
+      .replace(/_+$/, '')
+      .replace(/^_+/, '');
   };
 
   const formattedSelectedIntegration = useMemo(() => {
@@ -232,7 +246,7 @@ const InstallIntegrationModal = () => {
             </span>{' '}
             integration
           </h3>
-          {installationStep === 0 ?
+          {installationStep === 0 ? (
             <form className="form-content" onSubmit={handleSubmit(submitForm)}>
               {formattedSelectedIntegration &&
                 formattedSelectedIntegration.map(entry => {
@@ -246,7 +260,9 @@ const InstallIntegrationModal = () => {
                   return (
                     <div className="form-field" key={key}>
                       <Input
-                        defaultValue={selectedIntegration?.id ? value : undefined}
+                        defaultValue={
+                          selectedIntegration?.id ? value : undefined
+                        }
                         error={errorMessage}
                         id={`field-${key}`}
                         label={getFormattedFormLabel(key)}
@@ -256,13 +272,21 @@ const InstallIntegrationModal = () => {
                           pattern:
                             key === 'url'
                               ? {
-                                message: 'Invalid URL address',
-                                value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
-                              }
+                                  message: 'Invalid URL address',
+                                  value: /^https?:\/\/[^\s/$?#].[^\s]*(:\d+)?$/
+                                }
                               : undefined,
                           required: 'This field is required'
                         })}
                       />
+                      {key === 'name' && nameFormValue && (
+                        <p className="field-hint">
+                          Your integration name:{' '}
+                          <strong>
+                            {transformIntegrationName(nameFormValue)}
+                          </strong>
+                        </p>
+                      )}
                     </div>
                   );
                 })}
@@ -270,35 +294,38 @@ const InstallIntegrationModal = () => {
               <Button type="submit">
                 {selectedIntegration.id ? 'Save Changes' : 'Install'}
               </Button>
-            </form> :
+            </form>
+          ) : (
             <div className="config-data">
-              <h4>Save the configuration data for later. It won't be shown again.</h4>
+              <h4>
+                Save the configuration data for later. It won't be shown again.
+              </h4>
               <div>
-                {configData && Object.entries(configData).map(([key, value]) => (
-                  <div key={key}>
-                    <span className="key">{key}</span>
-                    <div className="value">
-                      <pre>{JSON.stringify(JSON.parse(value), null, 2)}
-                        <CopyIcon
-                          className="modal-copy-icon"
-                          data-tooltip-class-name="copy-tooltip"
-                          data-tooltip-content="Copy Webhook URL"
-                          data-tooltip-id="global"
-                          height={28}
-                          onClick={() => { handleContentCopy(value, key) }}
-                          tabIndex={0}
-                          width={28}
-                        />
-                      </pre>
+                {configData &&
+                  Object.entries(configData).map(([key, value]) => (
+                    <div key={key}>
+                      <span className="key">{key}</span>
+                      <div className="value">
+                        <pre>
+                          {JSON.stringify(JSON.parse(value), null, 2)}
+                          <CopyIcon
+                            className="modal-copy-icon"
+                            data-tooltip-class-name="copy-tooltip"
+                            data-tooltip-content="Copy Webhook URL"
+                            data-tooltip-id="global"
+                            height={28}
+                            onClick={() => handleContentCopy(value, key)}
+                            tabIndex={0}
+                            width={28}
+                          />
+                        </pre>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
-              <Button onClick={acknowledgeConfigData}>
-                Got it
-              </Button>
+              <Button onClick={acknowledgeConfigData}>Got it</Button>
             </div>
-          }
+          )}
         </div>
       ) : (
         <Spinner />

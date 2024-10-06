@@ -134,12 +134,12 @@ const FileUploadButton = () => {
     e.target.value = '';
   };
 
-  const handleWebhookCopy = () => {
+  const handleWebhookCopy = async () => {
     try {
-      navigator.clipboard.writeText(webhookUrl);
+      await navigator.clipboard.writeText(webhookUrl);
+
       toast.success('Webhook URL copied to clipboard');
-    }
-    catch (e) {
+    } catch (e) {
       toast.error('Failed to copy content to clipboard');
     }
   };
