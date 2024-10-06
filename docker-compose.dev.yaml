@@ -15,6 +15,7 @@ services:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     volumes:
       - ./infra/ngrok.yaml:/ngrok/ngrok.yml
+    network_mode: host
 
   frontend:
     container_name: s0frontend
