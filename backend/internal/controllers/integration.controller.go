@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"regexp"
 	"signal0ne/internal/models"
 	"signal0ne/pkg/integrations"
 	"sort"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -159,6 +161,23 @@ func (ic *IntegrationController) Install(ctx *gin.Context) {
 		return
 	}
 
+	name, ok := integrationTemplate["name"].(string)
+	if !ok {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid or missing name field",
+		})
+
+		return
+	}
+
+	if !isValidIntegrationName(name) {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid name format",
+		})
+
+		return
+	}
+
 	integrationTemplate["namespaceId"] = namespaceId
 
 	integType, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate["type"].(string)]
@@ -280,4 +299,16 @@ func (ic *IntegrationController) UpdateIntegration(ctx *gin.Context) {
 		"integration": integration,
 		"configData":  configData,
 	})
+}
+
+func isValidIntegrationName(name string) bool {
+	formattedName := strings.ToLower(name)
+	formattedName = strings.TrimSpace(formattedName)
+	formattedName = strings.ReplaceAll(formattedName, " ", "_")
+	formattedName = strings.ReplaceAll(formattedName, "-", "_")
+	formattedName = regexp.MustCompile(`[^a-z0-9_]`).ReplaceAllString(formattedName, "")
+	formattedName = strings.TrimRight(formattedName, "_")
+	formattedName = strings.TrimLeft(formattedName, "_")
+
+	return name == formattedName
 }
