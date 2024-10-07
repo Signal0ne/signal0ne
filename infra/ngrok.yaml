@@ -1,0 +1,11 @@
+version: 3
+endpoints:
+  - name: api
+    upstream:
+      url: 8080
+      protocol: http1
+  - name: slackapp
+    upstream:
+      url: 3000
+      protocol: http1
+      
