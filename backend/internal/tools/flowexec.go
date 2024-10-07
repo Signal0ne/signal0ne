@@ -7,10 +7,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"signal0ne/cmd/config"
+	"signal0ne/internal/errors" //only internal import allowed
 	"signal0ne/internal/models" //only internal import allowed
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -85,7 +87,7 @@ func WebhookTriggerExec(payload map[string]any, workflow *models.Workflow) (map[
 
 	if !EvaluateCondition(workflow.Trigger.WebhookTrigger.Webhook.Condition,
 		alertWithTriggerProperties) {
-		return desiredPropertiesWithValues, fmt.Errorf("condition not satisfied")
+		return desiredPropertiesWithValues, errors.ErrConditionNotSatisfied
 	}
 
 	return desiredPropertiesWithValues, nil
@@ -189,11 +191,17 @@ func MapAlertState(payload map[string]any, stateKey string, triggerStateMapping 
 	return models.AlertStatus(mappedStateValue), nil
 }
 
-func GetStartTime(payload map[string]any, startTimeKey string) (string, error) {
+func GetStartTime(payload map[string]any, startTimeKey string) (time.Time, error) {
+	var parsedTime time.Time
 	startTime, exists := payload[startTimeKey].(string)
 	if !exists {
-		return "", fmt.Errorf("cannot find start time key in alert payload")
+		return parsedTime, fmt.Errorf("cannot find start time key in alert payload")
 	}
 
-	return startTime, nil
+	parsedTime, err := time.Parse(time.RFC3339, startTime)
+	if err != nil {
+		return parsedTime, fmt.Errorf("invalid time format: %v", err)
+	}
+
+	return parsedTime, nil
 }

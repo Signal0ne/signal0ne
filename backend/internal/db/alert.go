@@ -41,7 +41,9 @@ func GetEnrichedAlertsByWorkflowId(
 ) ([]models.EnrichedAlert, error) {
 	var alerts []models.EnrichedAlert
 
-	filter["workflowId"] = workflowId
+	if workflowId != "" {
+		filter["workflowId"] = workflowId
+	}
 
 	cursor, err := alertsCollection.Find(ctx, filter)
 	if err == mongo.ErrNoDocuments {

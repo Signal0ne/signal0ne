@@ -256,9 +256,10 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 
 func compareTraces(input any, integration any) ([]any, error) {
 	type Diff struct {
-		Operation string         `json:"operation"`
-		Processes map[string]any `json:"processes"`
-		Spans     map[string]any `json:"spans"`
+		Operation     string `json:"operation"`
+		Processes     string `json:"processes"`
+		Spans         string `json:"spans"`
+		DependencyMap string `json:"dependency_map"`
 	}
 	var parsedInput CompareTracesInput
 	var output []any
@@ -348,22 +349,22 @@ func compareTraces(input any, integration any) ([]any, error) {
 		}
 
 		processesDiffSlice := diffStringSlices(baseProcessesSlice, comparedProcessesSlice)
-		//Compare spans, errors, durations --- TBD
-		if len(processesDiffSlice) > 0 {
-			for _, process := range processesDiffSlice {
-				sign := string(process[0])
-				processName := string(process[1:])
-				diff.Processes = map[string]any{
-					"sign":        sign,
-					"processName": processName,
-				}
-			}
 
+		if len(processesDiffSlice) > 0 {
+			diff.Processes = strings.Join(processesDiffSlice, ",")
 			diff.Operation = operation.(string)
+			diff.DependencyMap = fmt.Sprintf("%s\n", parsedInput.Service)
+			for pid, process := range baseProcessesSlice {
+				spacing := strings.Repeat("-", (pid+1)*2)
+				diff.DependencyMap += fmt.Sprintf("%s%s\n", spacing, process)
+
+			}
+			diff.Spans = "" //TODO: Implement spans comparison
 			translatedMap := map[string]any{
-				"output_source": parsedInput.Service,
-				"processes":     diff.Processes,
-				"operation":     diff.Operation,
+				"dependency_map": diff.DependencyMap,
+				"operation":      diff.Operation,
+				"output_source":  parsedInput.Service,
+				"processes":      diff.Processes,
 			}
 			output = append(output, translatedMap)
 		}

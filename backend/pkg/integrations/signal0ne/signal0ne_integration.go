@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"net"
 	"signal0ne/cmd/config"
+	"signal0ne/internal/db"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
+	"strconv"
+	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -29,16 +33,19 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 }
 
 type Signal0neIntegrationInventory struct {
+	AlertsCollection   *mongo.Collection `json:"-" bson:"-"`
 	IncidentCollection *mongo.Collection `json:"-" bson:"-"`
 	PyInterface        net.Conn          `json:"-" bson:"-"`
 	WorkflowProperties *models.Workflow  `json:"-" bson:"-"`
 }
 
 func NewSignal0neIntegrationInventory(
+	alertsCollection *mongo.Collection,
 	incidentsCollection *mongo.Collection,
 	pyInterface net.Conn,
 	workflowProperties *models.Workflow) Signal0neIntegrationInventory {
 	return Signal0neIntegrationInventory{
+		AlertsCollection:   alertsCollection,
 		IncidentCollection: incidentsCollection,
 		PyInterface:        pyInterface,
 		WorkflowProperties: workflowProperties,
@@ -103,9 +110,7 @@ func (integration Signal0neIntegration) ValidateStep(
 
 type CorrelateOngoingAlertsInput struct {
 	StartTimestamp string `json:"startTimestamp"`
-	EndTimestamp   string `json:"endTimestamp"`
-	Type           string `json:"type"`
-	CompareBy      string `json:"compareBy"`
+	DependencyMap  string `json:"dependency_map"`
 }
 
 type CreateIncidentInput struct {
@@ -124,97 +129,62 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	// assertedIntegration := integration.(Signal0neIntegration)
+	parsedIntegration := integration.(Signal0neIntegration)
 
-	// comparedFieldParamSpliced := strings.Split(parsedInput.CompareBy, ",")
-	// for idx, field := range comparedFieldParamSpliced {
-	// 	comparedFieldParamSpliced[idx] = strings.Trim(field, " ")
-	// }
+	services := strings.Split(parsedInput.DependencyMap, "\n")[1:]
+	for si, service := range services {
+		prefix := strings.Repeat("-", (si+1)*2)
+		services[si] = strings.TrimPrefix(service, prefix)
+	}
 
-	// fmt.Printf("Executing backstage getPropertiesValues\n")
+	// Pre-filtering by start time +- lookback
+	startTime, err := time.Parse(time.RFC3339, parsedInput.StartTimestamp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse start time: %v", err)
+	}
 
-	// unixStartTimestamp, err := strconv.Atoi(parsedInput.StartTimestamp)
-	// if err != nil {
-	// 	return output, err
-	// }
-	// unixEndTimestamp, err := strconv.Atoi(parsedInput.EndTimestamp)
-	// if err != nil {
-	// 	return output, err
-	// }
+	lookback := parsedIntegration.Inventory.WorkflowProperties.Lookback
+	lookbackSuffix := lookback[len(lookback)-1:]
+	lookbackValue, err := strconv.Atoi(lookback[:len(lookback)-1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse lookback: %v", err)
+	}
 
-	// startTimestamp := time.Unix(int64(unixStartTimestamp), 0)
-	// endTimestamp := time.Unix(int64(unixEndTimestamp), 0)
+	delta := -time.Duration(lookbackValue)
 
-	// filter := bson.M{
-	// 	"timestamp": bson.M{
-	// 		"$gte": startTimestamp,
-	// 		"$lte": endTimestamp,
-	// 	},
-	// }
+	if lookbackSuffix == "m" {
+		delta = delta * time.Minute
+	} else if lookbackSuffix == "s" {
+		delta = delta * time.Second
+	}
 
-	// var alerts []models.EnrichedAlert
-	// potentialCorrelationsResults, err := assertedIntegration.Inventory.AlertsCollection.Find(context.Background(), filter)
-	// if err != nil {
-	// 	return output, err
-	// }
-	// potentialCorrelationsResults.Decode(&alerts)
+	endTime := startTime.Add(delta)
 
-	// var entities = make([]any, 0)
-	// for _, _ = range alerts {
-	// 	// TBD
-	// }
+	alerts, err := db.GetEnrichedAlertsByWorkflowId("",
+		context.Background(),
+		parsedIntegration.Inventory.AlertsCollection,
+		bson.M{
+			"startTime": bson.M{
+				"$gte": endTime,
+				"$lte": startTime,
+			},
+			"service": bson.M{
+				"$in": services,
+			},
+			"state": models.AlertStatusActive,
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get alerts: %v", err)
+	}
 
-	// pyInterfacePayload := map[string]any{
-	// 	"command": "correlate_ongoing_alerts",
-	// 	"params": map[string]any{
-	// 		"collectedEntities": entities,
-	// 	},
-	// }
-	// payloadBytes, err := json.Marshal(pyInterfacePayload)
-	// if err != nil {
-	// 	return output, err
-	// }
-
-	// headers := make([]byte, 4)
-	// binary.BigEndian.PutUint32(headers, uint32(len(payloadBytes)))
-	// payloadBytesWithHeaders := append(headers, payloadBytes...)
-
-	// _, err = assertedIntegration.Inventory.PyInterface.Write(payloadBytesWithHeaders)
-	// if err != nil {
-	// 	return output, err
-	// }
-	// headerBuffer := make([]byte, 4)
-	// _, err = assertedIntegration.Inventory.PyInterface.Read(headerBuffer)
-	// if err != nil {
-	// 	return output, err
-	// }
-	// size := binary.BigEndian.Uint32(headerBuffer)
-
-	// payloadBuffer := make([]byte, size)
-	// n, err := assertedIntegration.Inventory.PyInterface.Read(payloadBuffer)
-	// if err != nil {
-	// 	return output, err
-	// }
-
-	// var intermediateOutput map[string]any
-	// err = json.Unmarshal(payloadBuffer[:n], &intermediateOutput)
-	// if err != nil {
-	// 	return output, err
-	// }
-	// statusCode, exists := intermediateOutput["status"].(string)
-	// if !exists || statusCode != "0" {
-	// 	errorMsg, _ := intermediateOutput["error"].(string)
-	// 	return output, fmt.Errorf("cannot retrieve results %s", errorMsg)
-	// }
-	// resultsEncoded, exists := intermediateOutput["result"].(string)
-	// if !exists {
-	// 	return output, fmt.Errorf("cannot retrieve results")
-	// }
-
-	// err = json.Unmarshal([]byte(resultsEncoded), &output)
-	// if err != nil {
-	// 	return output, err
-	// }
+	for _, alert := range alerts {
+		output = append(output, map[string]string{
+			"alertId": alert.Id.Hex(),
+			"service": alert.Service,
+			"state":   string(alert.State),
+			"name":    alert.AlertName,
+		})
+	}
 
 	return output, nil
 }

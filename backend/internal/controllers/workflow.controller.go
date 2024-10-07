@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/db"
+	"signal0ne/internal/errors"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
@@ -387,6 +388,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 		err = integration.Trigger(incomingTriggerPayload, &alert, workflow)
 	}
+	if err == errors.ErrConditionNotSatisfied || err == errors.ErrAlertAlreadyInactive {
+		ctx.JSON(http.StatusAccepted, nil)
+		return
+	}
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		localErrorMessage = fmt.Sprintf("%v", err)
@@ -474,6 +479,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &servicenow.ServicenowIntegration{}
 		case "signal0ne":
 			inventory := signal0ne.NewSignal0neIntegrationInventory(
+				c.AlertsCollection,
 				c.IncidentsCollection,
 				c.PyInterface,
 				workflow,
@@ -629,6 +635,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			LogMessage: localErrorMessage,
 		})
 	}
+
 	executionLog.ParsedWorkflow = models.ParsedWorkflow{
 		Steps:   workflow.Steps,
 		Trigger: workflow.Trigger,

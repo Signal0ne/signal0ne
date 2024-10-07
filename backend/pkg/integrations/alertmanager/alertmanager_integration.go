@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"signal0ne/internal/db"
+	"signal0ne/internal/errors"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
@@ -48,7 +49,8 @@ func (integration AlertmanagerIntegration) Trigger(
 
 	var StateKey = "status"
 	var NameKey = "labels.alertname"
-	var OriginalUrlKey = "generatorUrl"
+	var OriginalUrlKey = "generatorURL"
+	var ServiceNameKey = workflow.Trigger.Webhook.Service
 
 	//incoming in RFC3339 format string with timezone UTC
 	var StartTimeKey = "startsAt"
@@ -87,6 +89,11 @@ func (integration AlertmanagerIntegration) Trigger(
 		return fmt.Errorf("cannot find alert name in payload")
 	}
 
+	alert.Service, ok = tools.TraverseOutput(alertPayload, "serviceName", ServiceNameKey).(string)
+	if !ok {
+		return fmt.Errorf("cannot find service in payload")
+	}
+
 	alert.OriginalUrl, ok = tools.TraverseOutput(alertPayload, "originalUrl", OriginalUrlKey).(string)
 	if !ok {
 		return fmt.Errorf("cannot find original url in payload")
@@ -116,7 +123,7 @@ func (integration AlertmanagerIntegration) Trigger(
 		}
 
 		if anyUpdates && alert.State == models.AlertStatusInactive {
-			return fmt.Errorf("alert already inactive")
+			return errors.ErrAlertAlreadyInactive
 		}
 	}
 

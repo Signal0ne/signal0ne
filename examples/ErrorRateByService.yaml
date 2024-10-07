@@ -4,8 +4,8 @@ lookback: 15m
 trigger:
   webhook:
     integration: alertmanager
+    service: "labels.job"
     output:
-      service: "job"
       alertname: "labels.alertname"
       span: "span_name"
       timestamp: "startsAt"
@@ -16,17 +16,18 @@ steps:
   integration: backstage
   function: get_properties_values
   input:
-    filter: kind=component,metadata.name={{.TriggerProperties.service}}
+    filter: kind=component,metadata.name={{.service}}
   output:
     owner: "spec.owner"
     slack_channel: "metadata.labels.slack_channel"
+    repo_uri: "metadata.labels.repo_uri"
 - displayName: Get relevant logs
   name: get_relevant_logs
   integration: opensearch
   function: get_log_occurrences
   input:
-    service: "{{.TriggerProperties.service}}"
-    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.TriggerProperties.service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .TriggerProperties.timestamp \"-15m\" \"rfc\"}}\",\"lte\": \"{{date .TriggerProperties.timestamp \"+15m\" \"rfc\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
+    service: "{{.service}}"
+    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .TriggerProperties.timestamp \"-15m\" \"rfc\"}}\",\"lte\": \"{{date .TriggerProperties.timestamp \"+15m\" \"rfc\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
     compare_by: "body, resource.host.name"
   output:
     output_source: "output_source"
@@ -38,7 +39,7 @@ steps:
   integration: jaeger
   function: get_properties_values
   input:
-    service: "{{.TriggerProperties.service}}"
+    service: "{{.service}}"
     tags: "{\"error\":\"true\"}"
     query: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
     compare_by: "logs.exception.stacktrace, tags.grpc.error_message"
@@ -52,7 +53,7 @@ steps:
   integration: jaeger
   function: compare_traces
   input:
-    service: "{{.TriggerProperties.service}}"
+    service: "{{.service}}"
     operation: "{{ default .TriggerProperties.span \"all\"}}"
     baseTraceTags: "{\"rpc.grpc.status_code\":\"0\"},{\"http.status_code\":\"200\"}"
     comparedTraceTags: "{\"error\":\"true\"}"
@@ -62,19 +63,16 @@ steps:
     output_source: "output_source"
     operation: "operation"
     processes_diff: "processes"
-    # TBD - 
-    # spans_diff:
-    # errors_diff:
-    # duration_diff: 
-- displayName: Get containers status
-  name: get_containers_status
-  integration: alertmanager
-  function: get_relevant_alerts
+    dependency_map: "dependency_map"
+- displayName: Get relevant alerts
+  name: correlate_ongoing_alerts
+  integration: signal0ne
+  function: correlate_ongoing_alerts
   input:
-    filter: "{{range .AdditionalContext.jaeger_compare_traces}}name={{.processes_diff.processName}},{{end}}"
+    startTimestamp: "{{date .startTime \"-0m\" \"rfc\"}}"
+    dependency_map: "{{range .AdditionalContext.jaeger_compare_traces}}{{.dependency_map}},{{end}}"
   output:
-    output_source: "output_source"
-    alert: "alert"
+    ongoing_alerts: "ongoing_alerts"
 - displayName: Summarize issue content
   name: summarize_issue_content
   integration: openai
@@ -90,5 +88,5 @@ steps:
   input:
     slack_channel: "{{range .AdditionalContext.backstage_get_ownership}}{{.slack_channel}},{{end}}"
     parsable_context_object: "{{root}}"
-    additional_message_payload: "{\"service\": \"{{.TriggerProperties.service}}\"}"
+    additional_message_payload: "{\"service\": \"{{.service}}\"}"
 

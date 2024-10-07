@@ -26,6 +26,11 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 		Input:      GetFileContentInput{},
 		OutputTags: []string{"metdata", "logs"},
 	},
+	"get_commit_diff": models.WorkflowFunctionDefinition{
+		Function:   getCommitDiff,
+		Input:      GetCommitDiff{},
+		OutputTags: []string{"metdata", "code"},
+	},
 }
 
 func (integration GithubIntegration) Execute(
@@ -78,10 +83,27 @@ func (integration GithubIntegration) ValidateStep(
 	return nil
 }
 
+type GetCommitDiff struct {
+}
+
 type GetFileContentInput struct {
 	ContentUrl string `json:"content_url" bson:"content_url"`
 	Path       string `json:"path" bson:"path"`
 	Type       string `json:"type" bson:"type"`
+}
+
+func getCommitDiff(input any, integration any) ([]any, error) {
+	var parsedInput GetFileContentInput
+	var output []any
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "get_commit_diff")
+	if err != nil {
+		return output, err
+	}
+
+	_ = integration.(GithubIntegration)
+
+	return output, nil
 }
 
 func getContent(input any, integration any) ([]any, error) {
