@@ -8,3 +8,4 @@ endpoints:
     upstream:
       url: 3000
       protocol: http1
+      
