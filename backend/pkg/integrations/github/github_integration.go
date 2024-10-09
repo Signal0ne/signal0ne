@@ -84,6 +84,8 @@ func (integration GithubIntegration) ValidateStep(
 }
 
 type GetCommitDiff struct {
+	Commit  string `json:"commit" bson:"commit"`
+	RepoUri string `json:"repo_uri" bson:"repo_uri"`
 }
 
 type GetFileContentInput struct {
@@ -93,7 +95,7 @@ type GetFileContentInput struct {
 }
 
 func getCommitDiff(input any, integration any) ([]any, error) {
-	var parsedInput GetFileContentInput
+	var parsedInput GetCommitDiff
 	var output []any
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "get_commit_diff")
@@ -101,7 +103,48 @@ func getCommitDiff(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	_ = integration.(GithubIntegration)
+	parsedIntegration := integration.(GithubIntegration)
+
+	//Get commit id from github action deployment
+	commitId := parsedInput.Commit
+
+	repoUriDecomposed := strings.Split(parsedInput.RepoUri, "/")
+	repo := fmt.Sprintf("%s/%s", repoUriDecomposed[len(repoUriDecomposed)-2], repoUriDecomposed[len(repoUriDecomposed)-1])
+
+	url := fmt.Sprintf("https://api.github.com/repos/%s/commits/%s", repo, commitId)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return output, err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github.diff")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("Authorization",
+		fmt.Sprintf("Bearer %s", parsedIntegration.ApiKey),
+	)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return output, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return output, fmt.Errorf("failed to get diff: %s", resp.Status)
+	}
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return output, err
+	}
+
+	parsedResponseBody := string(responseBody)
+
+	output = append(output, map[string]any{
+		"diff": parsedResponseBody,
+	})
 
 	return output, nil
 }
