@@ -6,6 +6,7 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/internal/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,10 +17,6 @@ import (
 type UserAuthRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-}
-
-type RefreshTokenRequest struct {
-	RefreshToken string `json:"refreshToken"`
 }
 
 type UserAuthController struct {
@@ -100,10 +97,14 @@ func (c *UserAuthController) Register(ctx *gin.Context) {
 		return
 	}
 
+	setRefreshTokenCookie(ctx, refreshToken)
+
+	user.Password = ""
+	user.Id = primitive.NilObjectID
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"user":         user,
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
+		"accessToken": accessToken,
+		"user":        user,
 	})
 }
 
@@ -141,23 +142,33 @@ func (c *UserAuthController) Login(ctx *gin.Context) {
 		return
 	}
 
+	setRefreshTokenCookie(ctx, refreshToken)
+
+	user.Password = ""
+	user.Id = primitive.NilObjectID
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"user":         user,
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
+		"accessToken": accessToken,
+		"user":        user,
 	})
 }
 
+func (c *UserAuthController) Logout(ctx *gin.Context) {
+	ctx.SetCookie("refreshToken", "", -1, "/", "", true, true)
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
 func (c *UserAuthController) RefreshToken(ctx *gin.Context) {
-	var data RefreshTokenRequest
 	var user models.User
 
-	if err := ctx.ShouldBindJSON(&data); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	refreshToken, err := ctx.Cookie("refreshToken")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "refresh token not found"})
 		return
 	}
 
-	userId, err := utils.VerifyToken(data.RefreshToken)
+	userId, err := utils.VerifyToken(refreshToken)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
@@ -181,14 +192,27 @@ func (c *UserAuthController) RefreshToken(ctx *gin.Context) {
 		return
 	}
 
-	refreshToken, err := utils.CreateToken(user, "refresh")
+	newRefreshToken, err := utils.CreateToken(user, "refresh")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	setRefreshTokenCookie(ctx, newRefreshToken)
+
+	user.Password = ""
+	user.Id = primitive.NilObjectID
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"accessToken":  accessToken,
-		"refreshToken": refreshToken,
+		"accessToken": accessToken,
+		"user":        user,
 	})
+}
+
+func setRefreshTokenCookie(ctx *gin.Context, refreshToken string) {
+	const REFRESH_TOKEN_EXPIRATION_TIME = time.Hour * 24
+
+	expirationTimeInSeconds := int(REFRESH_TOKEN_EXPIRATION_TIME.Seconds())
+
+	ctx.SetCookie("refreshToken", refreshToken, expirationTimeInSeconds, "/", "", true, true)
 }

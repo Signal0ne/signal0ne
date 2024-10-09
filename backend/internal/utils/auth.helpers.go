@@ -33,10 +33,8 @@ func CreateToken(user models.User, tokenType string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"exp":      time.Now().Add(expTime).Unix(),
-			"id":       user.Id.Hex(),
-			"userName": user.Name,
-			"role":     user.Role,
+			"exp": time.Now().Add(expTime).Unix(),
+			"id":  user.Id.Hex(),
 		})
 
 	tokenString, err := token.SignedString(SECRET_KEY)
