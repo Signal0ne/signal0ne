@@ -123,6 +123,7 @@ type CreateIncidentInput struct {
 func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 	var parsedInput CorrelateOngoingAlertsInput
 	var output []any
+	var services []string
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "correlate_ongoing_alerts")
 	if err != nil {
@@ -131,10 +132,14 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 
 	parsedIntegration := integration.(Signal0neIntegration)
 
-	services := strings.Split(parsedInput.DependencyMap, "\n")[1:]
-	for si, service := range services {
-		prefix := strings.Repeat("-", (si+1)*2)
-		services[si] = strings.TrimPrefix(service, prefix)
+	serviceDependencyMap := strings.Split(parsedInput.DependencyMap, ",")
+
+	for _, serviceDependency := range serviceDependencyMap {
+		operationServiceMap := strings.Split(serviceDependency, "\n")[1:]
+		for si, service := range operationServiceMap {
+			prefix := strings.Repeat("-", (si+1)*2)
+			services = append(services, strings.TrimPrefix(service, prefix))
+		}
 	}
 
 	startTime, err := time.Parse(time.RFC3339, parsedInput.StartTimestamp)
@@ -159,27 +164,33 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 
 	endTime := startTime.Add(delta)
 
-	fmt.Printf(("\n##Time range: %v - %v\n"), endTime, startTime)
-	fmt.Printf("\n##Services: %v\n", services)
+	q := bson.M{
+		"startTime": bson.M{
+			"$gte": endTime,
+			"$lte": startTime,
+		},
+		"service": bson.M{
+			"$in": services,
+		},
+		"state": models.AlertStatusActive,
+	}
+
+	stringifiedQuery, _ := json.Marshal(q)
+	fmt.Printf("\nQuery: %v\n", string(stringifiedQuery))
 
 	alerts, err := db.GetEnrichedAlertsByWorkflowId("",
 		context.Background(),
 		parsedIntegration.Inventory.AlertsCollection,
-		bson.M{
-			"startTime": bson.M{
-				"$gte": endTime,
-				"$lte": startTime,
-			},
-			"service": bson.M{
-				"$in": services,
-			},
-			"state": models.AlertStatusActive,
-		})
+		q)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get alerts: %v", err)
 	}
 
-	fmt.Printf("\n##Alerts len: %v\n", len(alerts))
+	fmt.Printf("\n##Time range: %v - %v\n##Services: %v\n##Alerts len: %v\n",
+		endTime,
+		startTime,
+		services,
+		len(alerts))
 
 	for _, alert := range alerts {
 		output = append(output, map[string]string{

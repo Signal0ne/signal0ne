@@ -55,14 +55,11 @@ steps:
   input:
     service: "{{.Service}}"
     operation: "{{ default .TriggerProperties.span \"all\"}}"
-    baseTraceTags: "{\"rpc.grpc.status_code\":\"0\"},{\"http.status_code\":\"200\"}"
-    comparedTraceTags: "{\"error\":\"true\"}"
-    baseTraceQuery: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=30m&maxDuration&minDuration"
-    comparedTraceQuery: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
+    traceTags: "{\"error\":\"true\"}"
+    traceQuery: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
   output:
     output_source: "output_source"
     operation: "operation"
-    processes_diff: "processes"
     dependency_map: "dependency_map"
 - displayName: Get relevant alerts
   name: correlate_ongoing_alerts

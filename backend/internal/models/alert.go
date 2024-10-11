@@ -9,7 +9,7 @@ import (
 type AlertStatus string
 
 const (
-	AlertStatusActive   AlertStatus = "active"
+	AlertStatusActive   AlertStatus = "open"
 	AlertStatusInactive AlertStatus = "inactive"
 )
 

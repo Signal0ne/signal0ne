@@ -105,10 +105,8 @@ type CompareTracesInput struct {
 	Service   string `json:"service"`
 	Operation string `json:"operation"`
 
-	BaseTraceTags      string `json:"baseTraceTags"`
-	ComparedTraceTags  string `json:"comparedTraceTags"`
-	BaseTraceQuery     string `json:"baseTraceQuery"`
-	ComparedTraceQuery string `json:"comparedTraceQuery"`
+	TraceTags  string `json:"traceTags"`
+	TraceQuery string `json:"traceQuery"`
 }
 
 func getPropertiesValues(input any, integration any) ([]any, error) {
@@ -257,7 +255,6 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 func compareTraces(input any, integration any) ([]any, error) {
 	type Diff struct {
 		Operation     string `json:"operation"`
-		Processes     string `json:"processes"`
 		Spans         string `json:"spans"`
 		DependencyMap string `json:"dependency_map"`
 	}
@@ -284,7 +281,6 @@ func compareTraces(input any, integration any) ([]any, error) {
 		finalUrl = fmt.Sprintf("%s%s", url, apiPath)
 
 		operations, err = getJaegerObjects(finalUrl)
-		fmt.Printf("operations: %v\n", operations)
 		if err != nil {
 			return output, err
 		}
@@ -295,14 +291,11 @@ func compareTraces(input any, integration any) ([]any, error) {
 	for _, operation := range operations {
 		var diff = Diff{}
 		var traces []any
-		var tracesToCompare []any
 
-		tracesTags := strings.Split(parsedInput.BaseTraceTags, ",")
-		tracesToCompareTags := strings.Split(parsedInput.ComparedTraceTags, ",")
+		tracesTags := strings.Split(parsedInput.TraceTags, ",")
 
-		//BaseTraces
 		for _, tag := range tracesTags {
-			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.BaseTraceQuery, operation, tag)
+			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.TraceQuery, operation, tag)
 
 			finalUrl = fmt.Sprintf("%s%s", url, apiPath)
 
@@ -315,61 +308,31 @@ func compareTraces(input any, integration any) ([]any, error) {
 			}
 		}
 
-		//ComparedTraces
-		for _, tag := range tracesToCompareTags {
-			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.ComparedTraceQuery, operation, tag)
-
-			finalUrl = fmt.Sprintf("%s%s", url, apiPath)
-
-			tracesToCompare, err = getJaegerObjects(finalUrl)
-			if err != nil {
-				break
-			}
-			if len(tracesToCompare) > 0 {
-				break
-			}
-		}
-
-		if len(traces) == 0 || len(tracesToCompare) == 0 {
+		if len(traces) == 0 {
+			fmt.Printf("No traces found for operation %s\n", operation)
 			continue
 		}
 
-		//Compare processes
 		baseProcesses := traces[0].(map[string]any)["processes"].(map[string]any)
-		comparedProcesses := tracesToCompare[0].(map[string]any)["processes"].(map[string]any)
 
-		baseProcessesSlice := make([]string, 0)
-		comparedProcessesSlice := make([]string, 0)
-
-		for _, process := range baseProcesses {
-			baseProcessesSlice = append(baseProcessesSlice, process.(map[string]any)["serviceName"].(string))
-		}
-
-		for _, process := range comparedProcesses {
-			comparedProcessesSlice = append(comparedProcessesSlice, process.(map[string]any)["serviceName"].(string))
-		}
-
-		processesDiffSlice := diffStringSlices(baseProcessesSlice, comparedProcessesSlice)
-
+		pid := 0
 		diff.DependencyMap = fmt.Sprintf("%s\n", parsedInput.Service)
-		for pid, process := range baseProcessesSlice {
+		for _, process := range baseProcesses {
 			spacing := strings.Repeat("-", (pid+1)*2)
-			diff.DependencyMap += fmt.Sprintf("%s%s\n", spacing, process)
-
+			diff.DependencyMap += fmt.Sprintf("%s%s\n", spacing, process.(map[string]any)["serviceName"].(string))
+			pid++
 		}
 
-		if len(processesDiffSlice) > 0 {
-			diff.Processes = strings.Join(processesDiffSlice, ",")
-			diff.Operation = operation.(string)
-			diff.Spans = "" //TODO: Implement spans comparison
-			translatedMap := map[string]any{
-				"dependency_map": diff.DependencyMap,
-				"operation":      diff.Operation,
-				"output_source":  parsedInput.Service,
-				"processes":      diff.Processes,
-			}
-			output = append(output, translatedMap)
+		diff.Operation = operation.(string)
+		diff.Spans = "" //TODO: Implement spans comparison
+		translatedMap := map[string]any{
+			"dependency_map": diff.DependencyMap,
+			"operation":      diff.Operation,
+			"output_source":  parsedInput.Service,
 		}
+
+		output = append(output, translatedMap)
+
 	}
 
 	return output, nil
@@ -411,37 +374,4 @@ func getJaegerObjects(url string) ([]any, error) {
 		return nil, err
 	}
 	return intermediateTracesOutput, nil
-}
-
-func diffStringSlices(old, new []string) []string {
-	var diff = make([]string, 0)
-	i, j, k := 0, 0, 0
-	for ; i < len(old); i++ {
-		present := false
-		j = 0
-		k = 0
-
-		// Skip if already exists in diff
-		for ; k < len(diff); k++ {
-			if old[i] == string(diff[k][1:]) {
-				present = true
-				break
-			}
-		}
-		if present {
-			continue
-		}
-
-		for ; j < len(new); j++ {
-			if old[i] == new[j] {
-				present = true
-				break
-			}
-		}
-		if !present {
-			diff = append(diff, "-"+old[i])
-		}
-	}
-
-	return diff
 }
