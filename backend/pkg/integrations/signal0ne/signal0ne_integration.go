@@ -137,7 +137,6 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 		services[si] = strings.TrimPrefix(service, prefix)
 	}
 
-	// Pre-filtering by start time +- lookback
 	startTime, err := time.Parse(time.RFC3339, parsedInput.StartTimestamp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse start time: %v", err)
@@ -160,6 +159,9 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 
 	endTime := startTime.Add(delta)
 
+	fmt.Printf(("\n##Time range: %v - %v\n"), endTime, startTime)
+	fmt.Printf("\n##Services: %v\n", services)
+
 	alerts, err := db.GetEnrichedAlertsByWorkflowId("",
 		context.Background(),
 		parsedIntegration.Inventory.AlertsCollection,
@@ -176,6 +178,8 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get alerts: %v", err)
 	}
+
+	fmt.Printf("\n##Alerts len: %v\n", len(alerts))
 
 	for _, alert := range alerts {
 		output = append(output, map[string]string{
@@ -239,7 +243,6 @@ func createIncident(input any, integration any) ([]any, error) {
 				Content: make([]models.ItemContent, 0),
 				Source:  step.Integration,
 			}
-			fmt.Printf("\nStep output %s_%s %v", step.Integration, step.Name, stepOutput)
 			var parsedValue string
 			for key, value := range stepOutput.(map[string]any) {
 				_, isString := value.(string)

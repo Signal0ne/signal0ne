@@ -17,19 +17,24 @@ import (
 
 type GithubIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
-	Config             `json:",inline" bson:",inline"`
+	Config             `json:"config" bson:"config"`
 }
 
 var functions = map[string]models.WorkflowFunctionDefinition{
 	"get_content": models.WorkflowFunctionDefinition{
 		Function:   getContent,
 		Input:      GetFileContentInput{},
-		OutputTags: []string{"metdata", "logs"},
+		OutputTags: []string{"metadata", "logs"},
 	},
 	"get_commit_diff": models.WorkflowFunctionDefinition{
 		Function:   getCommitDiff,
 		Input:      GetCommitDiff{},
-		OutputTags: []string{"metdata", "code"},
+		OutputTags: []string{"metadata", "code"},
+	},
+	"inspect_github_actions": models.WorkflowFunctionDefinition{
+		Function:   inspectGithubActions,
+		Input:      InspectGithubActionsInput{},
+		OutputTags: []string{"metadata"},
 	},
 }
 
@@ -84,14 +89,20 @@ func (integration GithubIntegration) ValidateStep(
 }
 
 type GetCommitDiff struct {
-	Commit  string `json:"commit" bson:"commit"`
-	RepoUri string `json:"repo_uri" bson:"repo_uri"`
+	Commit   string `json:"commit" bson:"commit"`
+	RepoName string `json:"repo_name" bson:"repo_name"`
 }
 
 type GetFileContentInput struct {
 	ContentUrl string `json:"content_url" bson:"content_url"`
 	Path       string `json:"path" bson:"path"`
 	Type       string `json:"type" bson:"type"`
+}
+
+type InspectGithubActionsInput struct {
+	ActionName string `json:"action_name" bson:"action_name"`
+	BranchName string `json:"branch_name" bson:"branch_name"`
+	RepoName   string `json:"repo_name" bson:"repo_name"`
 }
 
 func getCommitDiff(input any, integration any) ([]any, error) {
@@ -103,15 +114,15 @@ func getCommitDiff(input any, integration any) ([]any, error) {
 		return output, err
 	}
 
-	parsedIntegration := integration.(GithubIntegration)
+	assertedIntegration := integration.(GithubIntegration)
 
-	//Get commit id from github action deployment
 	commitId := parsedInput.Commit
 
-	repoUriDecomposed := strings.Split(parsedInput.RepoUri, "/")
-	repo := fmt.Sprintf("%s/%s", repoUriDecomposed[len(repoUriDecomposed)-2], repoUriDecomposed[len(repoUriDecomposed)-1])
+	assertedIntegration.Config.Url = strings.TrimSuffix(assertedIntegration.Config.Url, "/")
+	decomposedUri := strings.Split(assertedIntegration.Config.Url, "/")
+	org := decomposedUri[len(decomposedUri)-1]
 
-	url := fmt.Sprintf("https://api.github.com/repos/%s/commits/%s", repo, commitId)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits/%s", org, parsedInput.RepoName, commitId)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return output, err
@@ -120,7 +131,7 @@ func getCommitDiff(input any, integration any) ([]any, error) {
 	req.Header.Set("Accept", "application/vnd.github.diff")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 	req.Header.Set("Authorization",
-		fmt.Sprintf("Bearer %s", parsedIntegration.ApiKey),
+		fmt.Sprintf("Bearer %s", assertedIntegration.Config.ApiKey),
 	)
 
 	client := &http.Client{}
@@ -183,6 +194,76 @@ func getContent(input any, integration any) ([]any, error) {
 
 	output = append(output, map[string]any{
 		"content": content,
+	})
+
+	return output, nil
+}
+
+func inspectGithubActions(input any, integration any) ([]any, error) {
+	var parsedInput InspectGithubActionsInput
+	var output []any
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "inspect_github_actions")
+	if err != nil {
+		return output, err
+	}
+
+	assertedIntegration := integration.(GithubIntegration)
+
+	assertedIntegration.Config.Url = strings.TrimSuffix(assertedIntegration.Config.Url, "/")
+	decomposedUri := strings.Split(assertedIntegration.Config.Url, "/")
+	org := decomposedUri[len(decomposedUri)-1]
+
+	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/actions/runs", org, parsedInput.RepoName)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return output, err
+	}
+
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
+	req.Header.Set("Authorization",
+		fmt.Sprintf("Bearer %s", assertedIntegration.Config.ApiKey),
+	)
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return output, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return output, fmt.Errorf("failed to get GitHub actions: %s", resp.Status)
+	}
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return output, err
+	}
+
+	var actionsResponse map[string]any
+	err = json.Unmarshal(responseBody, &actionsResponse)
+	if err != nil {
+		return output, err
+	}
+
+	actionRuns, ok := actionsResponse["workflow_runs"].([]any)
+	if !ok {
+		return output, fmt.Errorf("cannot parse GitHub actions")
+	}
+
+	latestAction, ok := actionRuns[0].(map[string]any)
+	if !ok {
+		return output, fmt.Errorf("cannot parse GitHub actions")
+	}
+
+	output = append(output, map[string]any{
+		"status":     latestAction["conclusion"],
+		"commit":     latestAction["head_sha"],
+		"created_at": latestAction["created_at"],
+		"url":        latestAction["html_url"],
 	})
 
 	return output, nil

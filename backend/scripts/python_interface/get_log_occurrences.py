@@ -9,6 +9,9 @@ enc = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', default_activation_fu
 def log_occurrences(collectedLogs: list, comparedFields: list) -> list:
     unique_logs_list = []
 
+    if len(collectedLogs) == 0:
+        return unique_logs_list
+    
     for log in collectedLogs:
         new = True
         incoming_log_object = {

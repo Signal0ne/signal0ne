@@ -16,18 +16,18 @@ steps:
   integration: backstage
   function: get_properties_values
   input:
-    filter: kind=component,metadata.name={{.service}}
+    filter: kind=component,metadata.name={{.Service}}
   output:
     owner: "spec.owner"
     slack_channel: "metadata.labels.slack_channel"
-    repo_uri: "metadata.labels.repo_uri"
+    repo_name: "metadata.labels.repo_name"
 - displayName: Get relevant logs
   name: get_relevant_logs
   integration: opensearch
   function: get_log_occurrences
   input:
-    service: "{{.service}}"
-    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .TriggerProperties.timestamp \"-15m\" \"rfc\"}}\",\"lte\": \"{{date .TriggerProperties.timestamp \"+15m\" \"rfc\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
+    service: "{{.Service}}"
+    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.Service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .TriggerProperties.timestamp \"-15m\" \"rfc\"}}\",\"lte\": \"{{date .TriggerProperties.timestamp \"+15m\" \"rfc\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
     compare_by: "body, resource.host.name"
   output:
     output_source: "output_source"
@@ -39,7 +39,7 @@ steps:
   integration: jaeger
   function: get_properties_values
   input:
-    service: "{{.service}}"
+    service: "{{.Service}}"
     tags: "{\"error\":\"true\"}"
     query: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
     compare_by: "logs.exception.stacktrace, tags.grpc.error_message"
@@ -53,7 +53,7 @@ steps:
   integration: jaeger
   function: compare_traces
   input:
-    service: "{{.service}}"
+    service: "{{.Service}}"
     operation: "{{ default .TriggerProperties.span \"all\"}}"
     baseTraceTags: "{\"rpc.grpc.status_code\":\"0\"},{\"http.status_code\":\"200\"}"
     comparedTraceTags: "{\"error\":\"true\"}"
@@ -69,11 +69,31 @@ steps:
   integration: signal0ne
   function: correlate_ongoing_alerts
   input:
-    startTimestamp: "{{date .startTime \"-0m\" \"rfc\"}}"
+    startTimestamp: "{{date .TriggerProperties.timestamp \"-0m\" \"rfc\"}}"
     dependency_map: "{{range .AdditionalContext.jaeger_compare_traces}}{{.dependency_map}},{{end}}"
   output:
     ongoing_alerts: "ongoing_alerts"
-- displayName: Summarize issue content
+- displayName: Get latest GH action run
+  name: get_latest_gh_action_run
+  integration: github
+  function: inspect_github_actions
+  input:
+    action_name: "Deploy to Remote Server"
+    repo_name: "{{index .AdditionalContext.backstage_get_ownership 0 \"repo_name\"}}"
+    branch_name: "main"
+  output:
+    commitId: "commit"
+    status: "status"
+- displayName: Get code diff
+  name: get_code_diff
+  integration: github
+  function: get_commit_diff
+  input:
+    repo_name: "{{index .AdditionalContext.backstage_get_ownership 0 \"repo_name\"}}"
+    commit: "{{index .AdditionalContext.github_get_latest_gh_action_run 0 \"commitId\"}}"
+  output:
+    diff: "diff"
+- displayName: Summarize whole context
   name: summarize_issue_content
   integration: openai
   function: summarize_context
@@ -88,5 +108,5 @@ steps:
   input:
     slack_channel: "{{range .AdditionalContext.backstage_get_ownership}}{{.slack_channel}},{{end}}"
     parsable_context_object: "{{root}}"
-    additional_message_payload: "{\"service\": \"{{.service}}\"}"
+    additional_message_payload: "{\"service\": \"{{.Service}}\"}"
 

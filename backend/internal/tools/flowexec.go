@@ -142,7 +142,14 @@ func ExecutionResultWrapper(intermediateResults []any,
 	for _, result := range intermediateResults {
 		var traverseResult = map[string]any{}
 		for key, mapping := range output {
-			traverseResult[key] = TraverseOutput(result, key, mapping)
+			mappings := strings.Split(mapping, ",")
+			for _, localMapping := range mappings {
+				localMapping = strings.TrimSpace(localMapping)
+				traverseResult[key] = TraverseOutput(result, key, localMapping)
+				if traverseResult[key] != nil {
+					break
+				}
+			}
 		}
 		traverseResult["tags"] = outputTags
 		results = append(results, traverseResult)

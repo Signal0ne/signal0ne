@@ -284,6 +284,7 @@ func compareTraces(input any, integration any) ([]any, error) {
 		finalUrl = fmt.Sprintf("%s%s", url, apiPath)
 
 		operations, err = getJaegerObjects(finalUrl)
+		fmt.Printf("operations: %v\n", operations)
 		if err != nil {
 			return output, err
 		}
@@ -350,15 +351,16 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 		processesDiffSlice := diffStringSlices(baseProcessesSlice, comparedProcessesSlice)
 
+		diff.DependencyMap = fmt.Sprintf("%s\n", parsedInput.Service)
+		for pid, process := range baseProcessesSlice {
+			spacing := strings.Repeat("-", (pid+1)*2)
+			diff.DependencyMap += fmt.Sprintf("%s%s\n", spacing, process)
+
+		}
+
 		if len(processesDiffSlice) > 0 {
 			diff.Processes = strings.Join(processesDiffSlice, ",")
 			diff.Operation = operation.(string)
-			diff.DependencyMap = fmt.Sprintf("%s\n", parsedInput.Service)
-			for pid, process := range baseProcessesSlice {
-				spacing := strings.Repeat("-", (pid+1)*2)
-				diff.DependencyMap += fmt.Sprintf("%s%s\n", spacing, process)
-
-			}
 			diff.Spans = "" //TODO: Implement spans comparison
 			translatedMap := map[string]any{
 				"dependency_map": diff.DependencyMap,
