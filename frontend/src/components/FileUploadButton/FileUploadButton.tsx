@@ -44,7 +44,7 @@ const FileUploadButton = () => {
   );
   const [webhookUrl, setWebhookUrl] = useState('');
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { activeWorkflow, setActiveStep, setActiveWorkflow, setWorkflows } =
     useWorkflowsContext();
 
@@ -56,7 +56,12 @@ const FileUploadButton = () => {
 
   const fetchWorkflows = async () => {
     const res = await fetch(
-      `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/workflows`
+      `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/workflows`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}}`
+        }
+      }
     );
 
     const data: FetchWorkflowsResponse = await res.json();
@@ -80,6 +85,8 @@ const FileUploadButton = () => {
         try {
           if (!e.target) return;
 
+          if (!accessToken) return;
+
           if (!namespaceId) throw new Error('Namespace ID not found');
 
           const yamlText = e.target.result as string;
@@ -92,6 +99,7 @@ const FileUploadButton = () => {
             {
               body: JSON.stringify(jsonObject),
               headers: {
+                Authorization: `Bearer ${accessToken}}`,
                 'Content-Type': 'application/json'
               },
               method: 'POST'
@@ -139,7 +147,7 @@ const FileUploadButton = () => {
       await navigator.clipboard.writeText(webhookUrl);
 
       toast.success('Webhook URL copied to clipboard');
-    } catch (e) {
+    } catch (error) {
       toast.error('Failed to copy content to clipboard');
     }
   };

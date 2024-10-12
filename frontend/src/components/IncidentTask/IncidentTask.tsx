@@ -55,7 +55,7 @@ const IncidentTask = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { selectedIncident, setSelectedIncident } = useIncidentsContext();
 
   const abortControllerRef = useRef(new AbortController());
@@ -74,6 +74,7 @@ const IncidentTask = ({
               incidentTasks: newOrderedTasks
             }),
             headers: {
+              Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/json'
             },
             method: 'PATCH'
@@ -192,7 +193,13 @@ const IncidentTask = ({
         }
       })
     );
-  }, [incidentTask, namespaceId, selectedIncident, setSelectedIncident]);
+  }, [
+    accessToken,
+    incidentTask,
+    namespaceId,
+    selectedIncident,
+    setSelectedIncident
+  ]);
 
   useEffect(() => {
     if (isCommentEditorOpen) {
@@ -245,6 +252,7 @@ const IncidentTask = ({
             title: commentTitle
           }),
           headers: {
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
           method: 'POST'
@@ -283,6 +291,7 @@ const IncidentTask = ({
             updatedTaskStatus
           }),
           headers: {
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
           method: 'PATCH',
@@ -320,6 +329,7 @@ const IncidentTask = ({
             assignee: dropdownOption?.value
           }),
           headers: {
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
           method: 'PATCH'

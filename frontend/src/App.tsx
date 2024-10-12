@@ -12,6 +12,7 @@ const App = () => {
       <AuthContextProvider>
         <Navbar />
         <AppRoutes />
+        <ToastContainer />
       </AuthContextProvider>
       <Tooltip
         delayShow={50}
@@ -19,7 +20,6 @@ const App = () => {
         openEvents={{ focus: true, mouseover: true }}
         variant="light"
       />
-      <ToastContainer />
     </>
   );
 };

@@ -1,50 +1,25 @@
 import { AccountIcon, GearIcon, Signal0neLogo } from '../Icons/Icons';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../data/routes';
-import { User } from '../../contexts/AuthProvider/AuthProvider';
 import { useAuthContext } from '../../hooks/useAuthContext';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import Button from '../Button/Button';
 import './Navbar.scss';
 
 const Navbar = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
 
-  const { setCurrentUser } = useAuthContext();
-
-  const userRef = useRef<User | null>(null);
-
-  if (userRef.current === null) {
-    const userString = localStorage.getItem('user');
-
-    if (userString) {
-      userRef.current = JSON.parse(userString);
-    }
-  }
+  const { currentUser, logout } = useAuthContext();
 
   const handleLogout = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/auth/logout`,
-        {
-          credentials: 'include'
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to logout');
-
-      setCurrentUser(null);
-      localStorage.removeItem('user');
-      userRef.current = null;
-    } catch (error) {
-      console.error(error);
-    }
+    await logout();
+    setIsAccountOpen(false);
   };
 
   const handleOpenAccount = () => setIsAccountOpen(prev => !prev);
 
   const getNavbarLinks = () =>
-    userRef.current ? (
+    currentUser ? (
       <>
         <div className="navbar-content-links">
           {ROUTES.map(({ isDisabled, path, showInNavbar, title, unAuthed }) => {
@@ -79,7 +54,7 @@ const Navbar = () => {
             {isAccountOpen && (
               <div className="account-content">
                 <span className="account-name">
-                  User: <strong>{userRef.current.name}</strong>
+                  User: <strong>{currentUser.name}</strong>
                 </span>
                 <hr className="separator" />
                 <Button className="account-logout-btn" onClick={handleLogout}>

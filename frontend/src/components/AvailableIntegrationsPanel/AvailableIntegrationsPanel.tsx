@@ -14,14 +14,19 @@ const AvailableIntegrationsPanel = () => {
     Integration[]
   >([]);
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
 
   useEffect(() => {
-    if (!namespaceId) return;
+    if (!namespaceId || !accessToken) return;
 
     const fetchAvailableIntegrations = async () => {
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installable`
+        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installable`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
       );
       const data: FetchInstallableIntegrationsResponse = await response.json();
 
@@ -29,7 +34,7 @@ const AvailableIntegrationsPanel = () => {
     };
 
     fetchAvailableIntegrations();
-  }, [namespaceId]);
+  }, [accessToken, namespaceId]);
 
   return (
     <main className="available-integrations-container">

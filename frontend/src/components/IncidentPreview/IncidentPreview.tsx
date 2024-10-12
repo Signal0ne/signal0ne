@@ -59,7 +59,7 @@ const IncidentPreview = () => {
 
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { isIncidentPreviewLoading, selectedIncident, setSelectedIncident } =
     useIncidentsContext();
 
@@ -79,7 +79,12 @@ const IncidentPreview = () => {
     const fetchAvailableAssignees = async () => {
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/namespace/${namespaceId}/users`
+          `${import.meta.env.VITE_SERVER_API_URL}/namespace/${namespaceId}/users`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
         );
 
         if (!response.ok) throw new Error('Failed to fetch users');
@@ -99,7 +104,7 @@ const IncidentPreview = () => {
     };
 
     fetchAvailableAssignees();
-  }, [namespaceId, selectedIncident]);
+  }, [accessToken, namespaceId, selectedIncident]);
 
   const handleAddTask = async (e: FormEvent) => {
     e.preventDefault();
@@ -135,6 +140,7 @@ const IncidentPreview = () => {
             taskName
           }),
           headers: {
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
           method: 'POST'

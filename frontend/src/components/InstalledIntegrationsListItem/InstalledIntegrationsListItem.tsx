@@ -17,18 +17,23 @@ interface InstalledIntegrationResponse {
 const InstalledIntegrationsListItem = ({
   integration
 }: InstalledIntegrationsListItemProps) => {
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { selectedIntegration, setIsModalOpen, setSelectedIntegration } =
     useIntegrationsContext();
 
   const handleInstalledIntegrationClick = async () => {
-    if (!namespaceId) return;
+    if (!namespaceId || !accessToken) return;
 
     setIsModalOpen(true);
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${integration.id}`
+        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${integration.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
       );
 
       if (!res.ok) {

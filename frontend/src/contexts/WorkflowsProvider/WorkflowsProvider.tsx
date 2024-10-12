@@ -37,18 +37,23 @@ export const WorkflowsProvider = ({ children }: WorkflowsProviderProps) => {
   const [isWorkflowLoading, setIsWorkflowLoading] = useState(false);
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { workflowId } = useParams<{ workflowId?: string }>();
 
   useEffect(() => {
-    if (!namespaceId) return;
+    if (!namespaceId || !accessToken) return;
 
     const fetchWorkflow = async () => {
       try {
         setIsWorkflowLoading(true);
 
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/${workflowId}`
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/${workflowId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
         );
 
         if (!response.ok) throw new Error('Failed to fetch workflow');
@@ -73,7 +78,7 @@ export const WorkflowsProvider = ({ children }: WorkflowsProviderProps) => {
     } else {
       setActiveWorkflow(null);
     }
-  }, [namespaceId, workflowId]);
+  }, [accessToken, namespaceId, workflowId]);
 
   const VALUE = {
     activeStep,

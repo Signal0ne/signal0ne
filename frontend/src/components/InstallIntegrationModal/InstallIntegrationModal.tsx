@@ -71,7 +71,7 @@ const InstallIntegrationModal = () => {
 
   const nameFormValue = watch('name');
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const {
     isModalOpen,
     selectedIntegration,
@@ -124,6 +124,7 @@ const InstallIntegrationModal = () => {
           {
             body: JSON.stringify(newIntegration),
             headers: {
+              Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/json'
             },
             method: 'PATCH'
@@ -135,6 +136,7 @@ const InstallIntegrationModal = () => {
           {
             body: JSON.stringify(newIntegration),
             headers: {
+              Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/json'
             },
             method: 'POST'
@@ -151,7 +153,12 @@ const InstallIntegrationModal = () => {
         await res.json();
 
       const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`
+        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
       );
       const data: GetInstalledIntegrationsResponse = await response.json();
 

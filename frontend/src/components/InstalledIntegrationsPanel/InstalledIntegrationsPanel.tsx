@@ -15,19 +15,24 @@ const InstalledIntegrationsPanel = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { installedIntegrations, setInstalledIntegrations } =
     useIntegrationsContext();
 
   useEffect(() => {
-    if (!namespaceId) return;
+    if (!namespaceId || !accessToken) return;
 
     const fetchInstalledIntegrations = async () => {
       setIsLoading(true);
 
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
         );
 
         const data: GetInstalledIntegrationsResponse = await response.json();
@@ -41,7 +46,7 @@ const InstalledIntegrationsPanel = () => {
     };
 
     fetchInstalledIntegrations();
-  }, [namespaceId, setInstalledIntegrations]);
+  }, [accessToken, namespaceId, setInstalledIntegrations]);
 
   const handleSearch = (e: ChangeEvent) => {
     const target = e.target as HTMLInputElement;

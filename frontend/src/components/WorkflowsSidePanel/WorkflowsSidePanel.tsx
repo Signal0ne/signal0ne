@@ -16,18 +16,23 @@ const WorkflowsSidePanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { setWorkflows, workflows } = useWorkflowsContext();
 
   useEffect(() => {
-    if (!namespaceId) return;
+    if (!namespaceId || !accessToken) return;
 
     const fetchWorkflows = async () => {
       setIsLoading(true);
 
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/workflows`
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/workflows`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
         );
         const data: WorkflowsResponseBody = await response.json();
 
@@ -41,7 +46,7 @@ const WorkflowsSidePanel = () => {
     };
 
     fetchWorkflows();
-  }, [namespaceId, setWorkflows]);
+  }, [accessToken, namespaceId, setWorkflows]);
 
   const handleSearch = (e: ChangeEvent) => {
     const target = e.target as HTMLInputElement;

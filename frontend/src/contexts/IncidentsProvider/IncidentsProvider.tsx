@@ -84,16 +84,23 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
     null
   );
 
-  const { namespaceId } = useAuthContext();
+  const { accessToken, namespaceId } = useAuthContext();
   const { incidentId } = useParams<{ incidentId: string }>();
 
   useEffect(() => {
+    if (!namespaceId || !accessToken) return;
+
     const fetchIncident = async () => {
       try {
         setIsIncidentPreviewLoading(true);
 
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${incidentId}`
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${incidentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
         );
 
         if (!response.ok) throw new Error('Failed to fetch incident');
@@ -118,7 +125,7 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
     } else {
       setSelectedIncident(null);
     }
-  }, [incidentId, namespaceId]);
+  }, [accessToken, incidentId, namespaceId]);
 
   useEffect(() => {
     if (!namespaceId) return;
@@ -126,9 +133,16 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
     setIsIncidentListLoading(true);
 
     const fetchIncidents = async () => {
+      if (!namespaceId || !accessToken) return;
+
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/incidents`
+          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/incidents`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
         );
 
         if (!response.ok) {
@@ -149,7 +163,7 @@ export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
     };
 
     fetchIncidents();
-  }, [namespaceId]);
+  }, [accessToken, namespaceId]);
 
   const VALUE = {
     incidents,
