@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"net/http"
-	"signal0ne/cmd/config"
 	"signal0ne/internal/utils"
 	"strings"
 
@@ -10,13 +9,6 @@ import (
 )
 
 func CheckAuthorization(ctx *gin.Context) {
-	var skipAuth = config.GetInstance().SkipAuth
-
-	if skipAuth {
-		ctx.Next()
-		return
-	}
-
 	authHeader := ctx.GetHeader("Authorization")
 
 	var jwtToken = strings.TrimPrefix(authHeader, "Bearer ")
