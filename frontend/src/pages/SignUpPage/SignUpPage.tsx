@@ -109,7 +109,7 @@ const SignUpPage = () => {
                 },
                 pattern: {
                   message:
-                    'Password must contain at least one letter and one number',
+                    'Password must contain at least one uppercase, lowercase letter, one number and one special character',
                   value:
                     /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/
                 }
