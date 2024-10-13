@@ -83,7 +83,10 @@ func main() {
 		})
 	})
 
-	alertController := controllers.NewAlertController(alertsCollection)
+	alertController := controllers.NewAlertController(alertsCollection,
+		incidentsCollection,
+		conn,
+		workflowsCollection)
 	mainController := controllers.NewMainController()
 	namespaceController := controllers.NewNamespaceController(namespacesCollection, usersCollection)
 	workflowController := controllers.NewWorkflowController(

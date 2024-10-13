@@ -186,21 +186,26 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 		return nil, fmt.Errorf("failed to get alerts: %v", err)
 	}
 
-	fmt.Printf("\n##Time range: %v - %v\n##Services: %v\n##Alerts len: %v\n",
+	for _, alert := range alerts {
+		output = append(output, map[string]any{
+			"alertId":        alert.Id.Hex(),
+			"service":        alert.Service,
+			"state":          string(alert.State),
+			"name":           alert.AlertName,
+			"dependency_map": parsedInput.DependencyMap,
+		})
+	}
+	if len(output) == 0 {
+		output = append(output, map[string]any{
+			"dependency_map": parsedInput.DependencyMap,
+		})
+	}
+	fmt.Printf("\n##Time range: %v - %v\n##Services: %v\n##Alerts len: %v\n \n##Output: %v\n",
 		endTime,
 		startTime,
 		services,
-		len(alerts))
-
-	for _, alert := range alerts {
-		output = append(output, map[string]string{
-			"alertId": alert.Id.Hex(),
-			"service": alert.Service,
-			"state":   string(alert.State),
-			"name":    alert.AlertName,
-		})
-	}
-
+		len(alerts),
+		output)
 	return output, nil
 }
 

@@ -69,7 +69,11 @@ steps:
     startTimestamp: "{{date .TriggerProperties.timestamp \"-0m\" \"rfc\"}}"
     dependency_map: "{{range .AdditionalContext.jaeger_compare_traces}}{{.dependency_map}},{{end}}"
   output:
-    ongoing_alerts: "ongoing_alerts"
+    alertId: "alertId"
+    service: "service"
+    state: "state"
+    name: "name"
+    dependency_map: "dependency_map"
 - displayName: Get latest GH action run
   name: get_latest_gh_action_run
   integration: github
