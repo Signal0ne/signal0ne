@@ -200,12 +200,6 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 			"dependency_map": parsedInput.DependencyMap,
 		})
 	}
-	fmt.Printf("\n##Time range: %v - %v\n##Services: %v\n##Alerts len: %v\n \n##Output: %v\n",
-		endTime,
-		startTime,
-		services,
-		len(alerts),
-		output)
 	return output, nil
 }
 

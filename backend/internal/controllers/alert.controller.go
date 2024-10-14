@@ -107,7 +107,6 @@ func (ac *AlertController) SyncCorrelateAlertsFromDiffSources(ctx *gin.Context, 
 
 			ongoingAlertsOutput, _ := alert.AdditionalContext[fmt.Sprintf("%s_%s", step.Integration, step.Name)].(bson.A)
 			if ongoingAlertsOutput == nil {
-				fmt.Printf("output not found for step xyz %s", step.Name)
 				return fmt.Errorf("output not found for step %s", step.Name)
 			}
 			for _, alertOutput := range ongoingAlertsOutput {

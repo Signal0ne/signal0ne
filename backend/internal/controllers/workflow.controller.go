@@ -415,14 +415,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		result := c.IntegrationsCollection.FindOne(ctx, filter)
 		err := result.Decode(&integrationTemplate)
 		if err != nil {
-			fmt.Printf("integration schema parsing error, %s", err)
 			localErrorMessage = fmt.Sprintf("%v", err)
 			continue
 		}
 
 		_, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
-			fmt.Printf("cannot find integration type specified")
 			localErrorMessage = fmt.Sprintf("%v", err)
 			continue
 		}
@@ -623,8 +621,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				execResult)
 		}
 
-		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult
-		executionLog.Outputs[step.Name] = execResult
+		if execResult != nil {
+			alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult
+			executionLog.Outputs[step.Name] = execResult
+		}
 
 		status := "success"
 		if localErrorMessage != "" {

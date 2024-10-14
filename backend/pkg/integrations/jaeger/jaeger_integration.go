@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
+	"signal0ne/internal/utils"
 	"signal0ne/pkg/integrations/helpers"
 	"strings"
 )
@@ -113,6 +114,8 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 	var parsedInput GetPropertiesValuesInput
 	var output []any
 
+	var finalComparisonField = make([]string, 0)
+
 	err := helpers.ValidateInputParameters(input, &parsedInput, "get_properties_values")
 	if err != nil {
 		return output, err
@@ -182,7 +185,16 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 					intermediateSpan["logs"] = append(intermediateSpan["logs"].([]map[string]any), parsedLog)
 				}
 				for _, comparisonField := range comparedFieldParamSpliced {
-					spanWithDesiredValue[comparisonField] = tools.TraverseOutput(intermediateSpan, comparisonField, comparisonField)
+					fieldValuePlaceholder := tools.TraverseOutput(intermediateSpan, comparisonField, comparisonField)
+					if fieldValuePlaceholder != nil {
+						spanWithDesiredValue[comparisonField] = fieldValuePlaceholder
+						if !utils.Contains(finalComparisonField, comparisonField) {
+							finalComparisonField = append(finalComparisonField, comparisonField)
+						}
+					}
+				}
+				if len(spanWithDesiredValue) == 0 {
+					continue
 				}
 				spans = append(spans, spanWithDesiredValue)
 			}
@@ -193,7 +205,7 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		"command": "get_log_occurrences",
 		"params": map[string]any{
 			"collectedLogs":  spans,
-			"comparedFields": comparedFieldParamSpliced,
+			"comparedFields": finalComparisonField,
 		},
 	}
 
@@ -247,6 +259,8 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 	for _, outputElement := range output {
 		outputElement.(map[string]any)["output_source"] = parsedInput.Service
 	}
+
+	fmt.Printf("###\n RAW OUTPUT JAEGER: %v\n BEFORE PROCESSING %v\n####################Fields: %v\n", output, spans, finalComparisonField)
 
 	return output, nil
 

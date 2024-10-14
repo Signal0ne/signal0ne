@@ -9,6 +9,7 @@ import (
 	"net"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
+	"signal0ne/internal/utils"
 	"signal0ne/pkg/integrations/helpers"
 	"strings"
 
@@ -108,6 +109,8 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 	var output []any
 	var allLogObjects []any
 
+	var finalComparisonField = make([]string, 0)
+
 	assertedIntegration := integration.(OpenSearchIntegration)
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "get_log_occurrences")
@@ -170,7 +173,16 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 			return output, err
 		}
 		for _, mapping := range comparedFieldParamSpliced {
-			parsedIntermediateHit[mapping] = tools.TraverseOutput(intermediateHit, mapping, mapping)
+			fieldValuePlaceholder := tools.TraverseOutput(intermediateHit, mapping, mapping)
+			if fieldValuePlaceholder != nil {
+				parsedIntermediateHit[mapping] = fieldValuePlaceholder
+				if !utils.Contains(finalComparisonField, mapping) {
+					finalComparisonField = append(finalComparisonField, mapping)
+				}
+			}
+		}
+		if len(parsedIntermediateHit) == 0 {
+			continue
 		}
 		allLogObjects = append(allLogObjects, parsedIntermediateHit)
 	}
@@ -179,7 +191,7 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		"command": "get_log_occurrences",
 		"params": map[string]any{
 			"collectedLogs":  allLogObjects,
-			"comparedFields": comparedFieldParamSpliced,
+			"comparedFields": finalComparisonField,
 		},
 	}
 	payloadBytes, err := json.Marshal(pyInterfacePayload)
@@ -232,6 +244,8 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 	for _, outputElement := range output {
 		outputElement.(map[string]any)["output_source"] = parsedInput.Service
 	}
+
+	fmt.Printf("###\n RAW OUTPUT OPENSEARCH: %v\n, BEFORE PROCESSING %v\n", output, allLogObjects)
 
 	return output, nil
 }

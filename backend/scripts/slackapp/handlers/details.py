@@ -41,8 +41,10 @@ def handle(ack: Ack, respond: Respond, command):
         respond("An error occurred while fetching the alert details. Please try again later.")
 
 
-    
-    respond({
-        "response_type": "in_channel",
-        "blocks": blocks
-    })
+    if not blocks:
+        respond(f"No data found for the following alert[{alert_id}] and tags[{tags}].")
+    else:  
+        respond({
+            "response_type": "in_channel",
+            "blocks": blocks
+        })

@@ -17,7 +17,7 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 	"search": models.WorkflowFunctionDefinition{
 		Function:   search,
 		Input:      SearchInput{},
-		OutputTags: []string{"runbooks"},
+		OutputTags: []string{"docs"},
 	},
 }
 
