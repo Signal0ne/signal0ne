@@ -1,4 +1,4 @@
-import { ComponentProps } from 'react';
+import type { ComponentProps } from 'react';
 import { SearchIcon } from '../Icons/Icons';
 import './SearchInput.scss';
 
@@ -10,22 +10,20 @@ const SearchInput = ({
   onChange,
   placeholder = 'Search...',
   value
-}: SearchInputProps) => {
-  return (
-    <div className="search-input-container">
-      <input
-        aria-disabled={Boolean(disabled)}
-        className="search-input"
-        disabled={disabled}
-        id={id}
-        onChange={onChange}
-        placeholder={placeholder}
-        type="text"
-        value={value}
-      />
-      <SearchIcon className="search-icon" height={28} width={28} />
-    </div>
-  );
-};
+}: SearchInputProps) => (
+  <div className="search-input-container">
+    <input
+      aria-disabled={Boolean(disabled)}
+      className="search-input"
+      disabled={disabled}
+      id={id}
+      onChange={onChange}
+      placeholder={placeholder}
+      type="text"
+      value={value}
+    />
+    <SearchIcon className="search-icon" height={28} width={28} />
+  </div>
+);
 
 export default SearchInput;

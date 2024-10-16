@@ -20,6 +20,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     >
       {label && <span className="input-label">{label}</span>}
       <input
+        aria-disabled={disabled}
         className="input-field"
         disabled={disabled}
         id={id}
