@@ -1,5 +1,5 @@
+import type { Incident } from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { handleKeyDown } from '../../utils/utils';
-import { Incident } from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames';

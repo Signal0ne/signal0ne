@@ -25,6 +25,15 @@
     .comment-editor-buttons {
       display: flex;
       gap: 8px;
+
+      .save-comment-btn {
+        min-width: 130px;
+      }
+
+      .spinner-element {
+        height: 16px;
+        width: 16px;
+      }
     }
 
     .comment-editor-container {

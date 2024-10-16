@@ -1,3 +1,5 @@
+import type { IIncidentTask } from '../../contexts/IncidentsProvider/IncidentsProvider';
+import type { TaskAssigneeDropdownOption } from '../IncidentPreview/IncidentPreview';
 import {
   attachClosestEdge,
   Edge,
@@ -12,15 +14,12 @@ import {
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { DropIndicator } from '@atlaskit/pragmatic-drag-and-drop-react-drop-indicator/box';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import {
-  IIncidentTask,
-  Incident
-} from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { reorderWithEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/util/reorder-with-edge';
-import { TaskAssigneeDropdownOption } from '../IncidentPreview/IncidentPreview';
-import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
+import { useCreateIncidentTaskCommentMutation } from '../../hooks/mutations/useCreateIncidentTaskCommentMutation';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
+import { useUpdateIncidentTaskAssigneeMutation } from '../../hooks/mutations/useUpdateIncidentTaskAssignee';
+import { useUpdateIncidentTasksPrioritiesMutation } from '../../hooks/mutations/useUpdateIncidentTasksPrioritiesMutation';
+import { useUpdateIncidentTaskStatusMutation } from '../../hooks/mutations/useUpdateIncidentTaskStatusMutation';
 import AssigneeDropdownOption from '../Dropdown/AssigneeDropdown/AssigneeDropdownOption/AssigneeDropdownOption';
 import AssigneeDropdownSingleValue from '../Dropdown/AssigneeDropdown/AssigneeDropdownSingleValue/AssigneeDropdownSingleValue';
 import Button from '../Button/Button';
@@ -28,20 +27,13 @@ import classNames from 'classnames';
 import Dropdown from '../Dropdown/Dropdown';
 import Input from '../Input/Input';
 import MarkdownWrapper from '../MarkdownWrapper/MarkdownWrapper';
+import Spinner from '../Spinner/Spinner';
 import TextArea from '../TextArea/TextArea';
 import './IncidentTask.scss';
-
-interface AddCommentResponse {
-  updatedIncident: Incident;
-}
 
 interface IncidentTaskProps {
   availableAssignees: TaskAssigneeDropdownOption[];
   incidentTask: IIncidentTask;
-}
-
-interface TaskUpdateResponse {
-  updatedIncident: Incident;
 }
 
 const IncidentTask = ({
@@ -55,48 +47,33 @@ const IncidentTask = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const { accessToken, namespaceId } = useAuthContext();
-  const { selectedIncident, setSelectedIncident } = useIncidentsContext();
+  const { selectedIncident } = useIncidentsContext();
 
-  const abortControllerRef = useRef(new AbortController());
   const commentEditorTitleInputRef = useRef<HTMLInputElement>(null);
-
   const incidentTaskDragHandleRef = useRef(null);
   const incidentTaskRef = useRef(null);
 
+  const handleCloseCommentEditor = () => {
+    setCommentTitle('');
+    setCommentContent('');
+    setIsCommentEditorOpen(false);
+  };
+
+  const {
+    isPending: isCreateTaskCommentLoading,
+    mutate: createTaskCommentMutate
+  } = useCreateIncidentTaskCommentMutation({ handleCloseCommentEditor });
+
+  const { mutate: updateTaskAssigneeMutate } =
+    useUpdateIncidentTaskAssigneeMutation();
+
+  const { mutate: updateTasksPrioritiesMutate } =
+    useUpdateIncidentTasksPrioritiesMutation();
+
+  const { mutate: updateTaskStatusMutate } =
+    useUpdateIncidentTaskStatusMutation();
+
   useEffect(() => {
-    const handleUpdatePriority = async (newOrderedTasks: IIncidentTask[]) => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/update-tasks-priority`,
-          {
-            body: JSON.stringify({
-              incidentTasks: newOrderedTasks
-            }),
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            method: 'PATCH'
-          }
-        );
-
-        if (!response.ok) throw new Error('Failed to update the task priority');
-
-        const data: TaskUpdateResponse = await response.json();
-
-        setSelectedIncident(data.updatedIncident);
-
-        toast.success('Task priority updated successfully');
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error('An error occurred while updating the task priority');
-        }
-      }
-    };
-
     const incidentTaskEl = incidentTaskRef.current;
     const incidentTaskDragHandleEl = incidentTaskDragHandleRef.current;
 
@@ -189,22 +166,19 @@ const IncidentTask = ({
             priority: index
           }));
 
-          await handleUpdatePriority(formattedTasksArray);
+          await updateTasksPrioritiesMutate({
+            incidentId: selectedIncident?.id,
+            newTasks: {
+              incidentTasks: formattedTasksArray
+            }
+          });
         }
       })
     );
-  }, [
-    accessToken,
-    incidentTask,
-    namespaceId,
-    selectedIncident,
-    setSelectedIncident
-  ]);
+  }, [incidentTask, selectedIncident, updateTasksPrioritiesMutate]);
 
   useEffect(() => {
-    if (isCommentEditorOpen) {
-      commentEditorTitleInputRef.current?.focus();
-    }
+    if (isCommentEditorOpen) commentEditorTitleInputRef.current?.focus();
   }, [isCommentEditorOpen]);
 
   useEffect(() => {
@@ -225,12 +199,6 @@ const IncidentTask = ({
     };
   };
 
-  const handleCloseCommentEditor = () => {
-    setCommentTitle('');
-    setCommentContent('');
-    setIsCommentEditorOpen(false);
-  };
-
   const handleCommentContentChange = (
     e: React.ChangeEvent<HTMLTextAreaElement>
   ) => setCommentContent(e.target.value);
@@ -240,116 +208,47 @@ const IncidentTask = ({
 
   const handleOpenCommentEditor = () => setIsCommentEditorOpen(true);
 
-  const handleSaveComment = async (incidentItem: IIncidentTask) => {
+  const handleSaveComment = (incidentItem: IIncidentTask) => {
     if (!commentTitle || !commentContent) return;
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/${incidentItem.id}/add-task-comment`,
-        {
-          body: JSON.stringify({
-            content: commentContent,
-            title: commentTitle
-          }),
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          method: 'POST'
-        }
-      );
+    const payload = {
+      content: commentContent,
+      title: commentTitle
+    };
 
-      if (!response.ok) throw new Error('Failed to save the comment');
-
-      const data: AddCommentResponse = await response.json();
-
-      setSelectedIncident(data.updatedIncident);
-      setCommentTitle('');
-      setCommentContent('');
-      setIsCommentEditorOpen(false);
-      toast.success('Comment saved successfully');
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('An error occurred while saving the comment');
-      }
-    }
+    createTaskCommentMutate({
+      incidentId: selectedIncident?.id,
+      incidentTaskId: incidentItem.id,
+      newComment: payload
+    });
   };
 
-  const handleStatusChange = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleStatusChange = (e: ChangeEvent<HTMLInputElement>) => {
     const updatedTaskStatus = e.target.checked;
 
-    abortControllerRef.current.abort();
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/${incidentTask.id}/status`,
-        {
-          body: JSON.stringify({
-            updatedTaskStatus
-          }),
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          method: 'PATCH',
-          signal: abortControllerRef.current.signal
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to update task status');
-
-      const data: TaskUpdateResponse = await response.json();
-
-      setSelectedIncident(data.updatedIncident);
-      toast.success('Task status updated successfully');
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.name !== 'AbortError') toast.error(error.message);
-      } else {
-        toast.error('An error occurred while updating the task status');
-      }
-    }
+    updateTaskStatusMutate({
+      incidentId: selectedIncident?.id,
+      incidentTaskId: incidentTask.id,
+      newStatus: { updatedTaskStatus }
+    });
   };
 
   const handleToggleOpen = () => setIsOpen(prev => !prev);
 
-  const updateTaskAssignee = async (
+  const updateTaskAssignee = (
     dropdownOption: TaskAssigneeDropdownOption | null
   ) => {
     if (incidentTask.assignee?.id === dropdownOption?.value.id) return;
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/${incidentTask.id}/assignee`,
-        {
-          body: JSON.stringify({
-            assignee: dropdownOption?.value
-          }),
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          method: 'PATCH'
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to update task assignee');
-
-      const data: TaskUpdateResponse = await response.json();
-
-      setSelectedIncident(data.updatedIncident);
-      toast.success('Task assignee updated successfully');
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('An error occurred while updating the task assignee');
-      }
-    }
+    updateTaskAssigneeMutate({
+      incidentId: selectedIncident?.id,
+      incidentTaskId: incidentTask.id,
+      newAssignee: { assignee: dropdownOption?.value }
+    });
   };
+
+  const isSaveCommentBtnDisabled =
+    !commentTitle || !commentContent || isCreateTaskCommentLoading;
 
   return (
     <li
@@ -393,8 +292,8 @@ const IncidentTask = ({
             <input
               className="incident-task-checkbox-input"
               defaultChecked={incidentTask.isDone}
-              onChange={handleStatusChange}
               id={incidentTask.taskName}
+              onChange={handleStatusChange}
               type="checkbox"
             />
             <span className="incident-task-checkbox-label">Done</span>
@@ -452,7 +351,7 @@ const IncidentTask = ({
           <div className="users-comments-container">
             <h3 className="users-comments-header-title">Users Comments</h3>
             <hr className="users-comments-separator" />
-            {incidentTask.comments.length > 0 && (
+            {incidentTask.comments?.length > 0 && (
               <div className="users-comments-body">
                 {incidentTask.comments.map((comment, index) => (
                   <div className="user-comment-container" key={index}>
@@ -516,11 +415,11 @@ const IncidentTask = ({
                   Discard Comment
                 </Button>
                 <Button
-                  aria-disabled={!commentTitle || !commentContent}
-                  disabled={!commentTitle || !commentContent}
+                  className="save-comment-btn"
+                  disabled={isSaveCommentBtnDisabled}
                   onClick={() => handleSaveComment(incidentTask)}
                 >
-                  Save Comment
+                  {isCreateTaskCommentLoading ? <Spinner /> : 'Save Comment'}
                 </Button>
               </>
             )}

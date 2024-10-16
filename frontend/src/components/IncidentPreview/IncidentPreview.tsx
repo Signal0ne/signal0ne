@@ -1,11 +1,9 @@
+import type { IncidentAssignee } from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
-import { FormEvent, useEffect, useRef, useState } from 'react';
-import {
-  Incident,
-  IncidentAssignee
-} from '../../contexts/IncidentsProvider/IncidentsProvider';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
+import { useCreateNewIncidentTaskMutation } from '../../hooks/mutations/useCreateNewIncidentTaskMutation';
+import { useGetNamespaceUsersQuery } from '../../hooks/queries/useGetNamespaceUsersQuery';
 import { useIncidentsContext } from '../../hooks/useIncidentsContext';
 import AssigneeDropdownOption from '../Dropdown/AssigneeDropdown/AssigneeDropdownOption/AssigneeDropdownOption';
 import AssigneeDropdownSingleValueWithImage from '../Dropdown/AssigneeDropdown/AssigneeDropdownSingleValueWithImage/AssigneeDropdownSingleValueWithImage';
@@ -16,14 +14,6 @@ import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
 import Spinner from '../Spinner/Spinner';
 import './IncidentPreview.scss';
-
-interface IncidentNewTaskResponse {
-  updatedIncident: Incident;
-}
-
-interface NamespaceUsersResponse {
-  users: IncidentAssignee[];
-}
 
 export interface TaskAssigneeDropdownOption {
   disabled?: boolean;
@@ -48,9 +38,6 @@ const CUSTOM_STYLES: Styles = {
 };
 
 const IncidentPreview = () => {
-  const [availableAssignees, setAvailableAssignees] = useState<
-    TaskAssigneeDropdownOption[]
-  >([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskAssignee, setTaskAssignee] =
     useState<TaskAssigneeDropdownOption | null>(null);
@@ -59,9 +46,22 @@ const IncidentPreview = () => {
 
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const { accessToken, namespaceId } = useAuthContext();
-  const { isIncidentPreviewLoading, selectedIncident, setSelectedIncident } =
-    useIncidentsContext();
+  const { isIncidentPreviewLoading, selectedIncident } = useIncidentsContext();
+
+  const { data, isError, isLoading } =
+    useGetNamespaceUsersQuery(selectedIncident);
+
+  const handleTaskModalClose = () => {
+    setIsTaskModalOpen(false);
+    setTaskAssignee(null);
+    setTaskName('');
+    setTaskErrorMessage('');
+  };
+
+  const { isPending: isAddTaskLoading, mutate: saveNewIncidentTaskMutate } =
+    useCreateNewIncidentTaskMutation({
+      handleTaskModalClose
+    });
 
   useEffect(() => {
     const element = previewRef.current;
@@ -74,37 +74,8 @@ const IncidentPreview = () => {
   }, [selectedIncident]);
 
   useEffect(() => {
-    if (!selectedIncident) return;
-
-    const fetchAvailableAssignees = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/namespace/${namespaceId}/users`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch users');
-
-        const data: NamespaceUsersResponse = await response.json();
-
-        setAvailableAssignees(
-          data.users?.map(user => ({
-            label: user.name,
-            value: user
-          }))
-        );
-      } catch (error) {
-        console.error(error);
-        setAvailableAssignees([]);
-      }
-    };
-
-    fetchAvailableAssignees();
-  }, [accessToken, namespaceId, selectedIncident]);
+    if (isError) toast.error('Failed to fetch users');
+  }, [isError]);
 
   const handleAddTask = async (e: FormEvent) => {
     e.preventDefault();
@@ -117,50 +88,27 @@ const IncidentPreview = () => {
     await saveNewTask();
   };
 
-  const handleTaskModalClose = () => {
-    setIsTaskModalOpen(false);
-    setTaskAssignee(null);
-    setTaskName('');
-    setTaskErrorMessage('');
-  };
+  const handleTaskNameChange = (e: ChangeEvent<HTMLInputElement>) =>
+    setTaskName(e.target.value);
+
+  const openTaskModal = () => setIsTaskModalOpen(true);
 
   const saveNewTask = async () => {
-    if (!taskAssignee || !taskName) return;
+    if (!selectedIncident || !taskAssignee || !taskName) return;
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${selectedIncident?.id}/tasks`,
-        {
-          body: JSON.stringify({
-            assignee: taskAssignee.value,
-            comments: [],
-            isDone: false,
-            items: [],
-            priority: selectedIncident?.tasks.length,
-            taskName
-          }),
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          method: 'POST'
-        }
-      );
+    const payload = {
+      assignee: taskAssignee.value,
+      comments: [],
+      isDone: false,
+      items: [],
+      priority: selectedIncident.tasks.length,
+      taskName
+    };
 
-      if (!response.ok) throw new Error('Failed to add task');
-
-      const data: IncidentNewTaskResponse = await response.json();
-
-      setSelectedIncident(data.updatedIncident);
-      handleTaskModalClose();
-      toast.success('Task added successfully');
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('An error occurred while adding the task');
-      }
-    }
+    await saveNewIncidentTaskMutate({
+      incidentId: selectedIncident?.id,
+      newIncidentTask: payload
+    });
   };
 
   const getContent = () => {
@@ -191,7 +139,7 @@ const IncidentPreview = () => {
                 Summary:
               </h4>
               <p className="incident-preview-header-summary-content">
-                {selectedIncident?.summary}
+                {selectedIncident.summary}
               </p>
             </div>
           )}
@@ -199,7 +147,7 @@ const IncidentPreview = () => {
         <div className="incident-preview-content">
           <ul className="incident-preview-tasks-list">
             {selectedIncident?.tasks &&
-              selectedIncident?.tasks?.map(task => (
+              selectedIncident.tasks?.map(task => (
                 <IncidentTask
                   availableAssignees={availableAssignees}
                   incidentTask={task}
@@ -208,10 +156,7 @@ const IncidentPreview = () => {
               ))}
           </ul>
           {selectedIncident && (
-            <Button
-              className="add-task-btn"
-              onClick={() => setIsTaskModalOpen(true)}
-            >
+            <Button className="add-task-btn" onClick={openTaskModal}>
               Add Task
             </Button>
           )}
@@ -219,6 +164,16 @@ const IncidentPreview = () => {
       </section>
     );
   };
+
+  const availableAssignees: TaskAssigneeDropdownOption[] = (
+    data?.users ?? []
+  ).map(user => ({
+    label: user.name,
+    value: user
+  }));
+
+  const isAddTaskButtonDisabled =
+    !taskName || !taskAssignee || isAddTaskLoading;
 
   return (
     <main className="incident-preview-container">
@@ -237,15 +192,13 @@ const IncidentPreview = () => {
             incident
           </h2>
           <form className="incident-task-form" onSubmit={handleAddTask}>
-            <Input
-              label="Task Name"
-              onChange={e => setTaskName(e.target.value)}
-            />
+            <Input label="Task Name" onChange={handleTaskNameChange} />
             <Dropdown
               components={{
                 Option: AssigneeDropdownOption,
                 SingleValue: AssigneeDropdownSingleValueWithImage
               }}
+              isDisabled={isLoading}
               label="Assignee"
               maxMenuHeight={200}
               menuPortalSelector=".ReactModal__Content"
@@ -258,8 +211,12 @@ const IncidentPreview = () => {
             {taskErrorMessage && (
               <p className="error-msg">{taskErrorMessage}</p>
             )}
-            <Button disabled={!taskName || !taskAssignee} type="submit">
-              Add Task
+            <Button
+              className="add-task-modal-btn"
+              disabled={isAddTaskButtonDisabled}
+              type="submit"
+            >
+              {isAddTaskLoading ? <Spinner /> : 'Add Task'}
             </Button>
           </form>
         </div>

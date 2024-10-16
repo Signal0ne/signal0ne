@@ -1,6 +1,6 @@
 import { createContext, ReactNode, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
+import { useGetIncidentByIdQuery } from '../../hooks/queries/useGetIncidentByIdQuery';
 import { useParams } from 'react-router-dom';
 
 type IncidentSeverity = 'critical' | 'high' | 'moderate' | 'low';
@@ -23,12 +23,8 @@ export interface IncidentAssignee {
 }
 
 export interface IncidentsContextType {
-  incidents: Incident[];
-  isIncidentListLoading: boolean;
   isIncidentPreviewLoading: boolean;
   selectedIncident: Incident | null;
-  setIncidents: (incidents: Incident[]) => void;
-  setIsIncidentPreviewLoading: (isLoading: boolean) => void;
   setSelectedIncident: (incident: Incident | null) => void;
 }
 
@@ -63,115 +59,34 @@ interface IncidentTaskItemContent {
   valueType: 'graph' | 'markdown' | 'text';
 }
 
-interface IncidentResponseBody {
-  incident: Incident;
-}
-
-interface IncidentsResponseBody {
-  incidents: Incident[];
-}
-
 export const IncidentsContext = createContext<IncidentsContextType | null>(
   null
 );
 
 export const IncidentsProvider = ({ children }: IncidentsProviderProps) => {
-  const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [isIncidentListLoading, setIsIncidentListLoading] = useState(false);
-  const [isIncidentPreviewLoading, setIsIncidentPreviewLoading] =
-    useState(false);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(
     null
   );
 
-  const { accessToken, namespaceId } = useAuthContext();
   const { incidentId } = useParams<{ incidentId: string }>();
 
-  useEffect(() => {
-    if (!namespaceId || !accessToken) return;
-
-    const fetchIncident = async () => {
-      try {
-        setIsIncidentPreviewLoading(true);
-
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/${incidentId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch incident');
-
-        const data: IncidentResponseBody = await response.json();
-
-        setSelectedIncident(data.incident);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error('An unexpected error occurred. Please try again later.');
-        }
-      } finally {
-        setIsIncidentPreviewLoading(false);
-      }
-    };
-
-    if (incidentId) {
-      setSelectedIncident(null);
-      fetchIncident();
-    } else {
-      setSelectedIncident(null);
-    }
-  }, [accessToken, incidentId, namespaceId]);
+  const { data, isError, isLoading } = useGetIncidentByIdQuery(incidentId);
 
   useEffect(() => {
-    if (!namespaceId) return;
+    if (isError) toast.error('Failed to get incident data');
+  }, [isError]);
 
-    setIsIncidentListLoading(true);
+  useEffect(() => {
+    if (data) setSelectedIncident(data.incident);
+  }, [data]);
 
-    const fetchIncidents = async () => {
-      if (!namespaceId || !accessToken) return;
-
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/incident/incidents`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch incidents');
-        }
-
-        const data: IncidentsResponseBody = await response.json();
-        setIncidents(data.incidents);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error('An unexpected error occurred. Please try again later.');
-        }
-      } finally {
-        setIsIncidentListLoading(false);
-      }
-    };
-
-    fetchIncidents();
-  }, [accessToken, namespaceId]);
+  useEffect(() => {
+    if (!incidentId) setSelectedIncident(null);
+  }, [incidentId]);
 
   const VALUE = {
-    incidents,
-    isIncidentListLoading,
-    isIncidentPreviewLoading,
+    isIncidentPreviewLoading: isLoading,
     selectedIncident,
-    setIncidents,
-    setIsIncidentPreviewLoading,
     setSelectedIncident
   };
 

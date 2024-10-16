@@ -1,5 +1,5 @@
+import type { IncidentAssignee } from '../../../../contexts/IncidentsProvider/IncidentsProvider';
 import { components, GroupBase, SingleValueProps } from 'react-select';
-import { IncidentAssignee } from '../../../../contexts/IncidentsProvider/IncidentsProvider';
 import { UserIcon } from '../../../Icons/Icons';
 import './AssigneeDropdownSingleValue.scss';
 
