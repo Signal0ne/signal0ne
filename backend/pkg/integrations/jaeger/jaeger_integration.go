@@ -12,6 +12,7 @@ import (
 	"signal0ne/internal/utils"
 	"signal0ne/pkg/integrations/helpers"
 	"strings"
+	"time"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -24,6 +25,11 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 		Function:   getPropertiesValues,
 		Input:      GetPropertiesValuesInput{},
 		OutputTags: []string{"logs", "traces"},
+	},
+	"get_dependencies": models.WorkflowFunctionDefinition{
+		Function:   getDependencies,
+		Input:      GetDependenciesInput{},
+		OutputTags: []string{"metadata"},
 	},
 }
 
@@ -110,6 +116,10 @@ type CompareTracesInput struct {
 	TraceQuery string `json:"traceQuery"`
 }
 
+type GetDependenciesInput struct {
+	Service string `json:"service"`
+}
+
 func getPropertiesValues(input any, integration any) ([]any, error) {
 	var parsedInput GetPropertiesValuesInput
 	var output []any
@@ -186,7 +196,7 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 				}
 				for _, comparisonField := range comparedFieldParamSpliced {
 					fieldValuePlaceholder := tools.TraverseOutput(intermediateSpan, comparisonField, comparisonField)
-					if fieldValuePlaceholder != nil {
+					if fieldValuePlaceholder != nil || fieldValuePlaceholder != "" {
 						spanWithDesiredValue[comparisonField] = fieldValuePlaceholder
 						if !utils.Contains(finalComparisonField, comparisonField) {
 							finalComparisonField = append(finalComparisonField, comparisonField)
@@ -259,8 +269,6 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 	for _, outputElement := range output {
 		outputElement.(map[string]any)["output_source"] = parsedInput.Service
 	}
-
-	fmt.Printf("###\n RAW OUTPUT JAEGER: %v\n BEFORE PROCESSING %v\n####################Fields: %v\n", output, spans, finalComparisonField)
 
 	return output, nil
 
@@ -353,6 +361,46 @@ func compareTraces(input any, integration any) ([]any, error) {
 
 }
 
+func getDependencies(input any, integration any) ([]any, error) {
+	var parsedInput GetDependenciesInput
+	var output []any
+	var dependencyMap = make(map[string]any)
+	var SERVICE_MAP_LOOKBACK = 604800000
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "get_dependencies")
+	if err != nil {
+		return output, err
+	}
+
+	fmt.Printf("###\nExecuting Jaeger integration function...\n")
+
+	assertedIntegration := integration.(JaegerIntegration)
+
+	url := assertedIntegration.Url
+	currentTimeInMs := time.Now().Unix() * 1000
+	apiPath := fmt.Sprintf("/api/dependencies?endTs=%d&lookback=%d", currentTimeInMs, SERVICE_MAP_LOOKBACK)
+
+	finalUrl := fmt.Sprintf("%s%s", url, apiPath)
+
+	intermediateServiceOuput, err := getJaegerObjects(finalUrl)
+	if err != nil {
+		return output, fmt.Errorf("cannot retrieve service map, %s", err)
+	}
+
+	buildDependencyMap(intermediateServiceOuput, parsedInput.Service, dependencyMap)
+
+	jsonifiedDependencyMap, err := json.Marshal(dependencyMap)
+	if err != nil {
+		return output, fmt.Errorf("cannot parse dependency map")
+	}
+
+	output = append(output, map[string]any{
+		"dependency_map": string(jsonifiedDependencyMap),
+	})
+
+	return output, nil
+}
+
 func getJaegerObjects(url string) ([]any, error) {
 	client := &http.Client{}
 
@@ -388,4 +436,20 @@ func getJaegerObjects(url string) ([]any, error) {
 		return nil, err
 	}
 	return intermediateTracesOutput, nil
+}
+
+func buildDependencyMap(servicesData []any, service string, serviceMap map[string]any) {
+	for _, serviceObj := range servicesData {
+		serviceName, ok := serviceObj.(map[string]any)["parent"].(string)
+		if !ok {
+			continue
+		}
+		if serviceName == service {
+			child := serviceObj.(map[string]any)["child"].(string)
+			serviceMap[service] = map[string]any{
+				child: map[string]any{},
+			}
+			buildDependencyMap(servicesData, child, serviceMap[service].(map[string]any))
+		}
+	}
 }

@@ -29,7 +29,7 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 	"get_commit_diff": models.WorkflowFunctionDefinition{
 		Function:   getCommitDiff,
 		Input:      GetCommitDiff{},
-		OutputTags: []string{"metadata", "code"},
+		OutputTags: []string{"code", "metadata"},
 	},
 	"inspect_github_actions": models.WorkflowFunctionDefinition{
 		Function:   inspectGithubActions,

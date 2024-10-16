@@ -2,26 +2,38 @@ package openai
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"signal0ne/internal/db"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
+	"strings"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type OpenAIIntegrationInventory struct {
+	AlertsCollection *mongo.Collection `json:"-" bson:"-"`
+}
+
+func NewOpenAIIntegrationInventory(
+	alertsCollection *mongo.Collection) OpenAIIntegrationInventory {
+	return OpenAIIntegrationInventory{
+		AlertsCollection: alertsCollection,
+	}
+}
 
 type OpenaiIntegration struct {
 	models.Integration `json:",inline" bson:",inline"`
 	Config             `json:"config" bson:"config"`
+	Inventory          OpenAIIntegrationInventory
 }
 
 var functions = map[string]models.WorkflowFunctionDefinition{
-	"propose_resolution_steps": models.WorkflowFunctionDefinition{
-		Function:   proposeResolutions,
-		Input:      ProposeResolutionsInput{},
-		OutputTags: []string{"copilot"},
-	},
 	"summarize_context": models.WorkflowFunctionDefinition{
 		Function:   summarizeContext,
 		Input:      SummarizeContextInput{},
@@ -83,45 +95,18 @@ type SummarizeContextInput struct {
 	Context string `json:"context"`
 }
 
-type ProposeResolutionsInput struct {
-	AdditionalContext string `json:"additional_context"`
-	Logs              string `json:"logs"`
-}
-
-func proposeResolutions(input any, integration any) ([]any, error) {
-	var parsedInput ProposeResolutionsInput
-	var output []any
-
-	err := helpers.ValidateInputParameters(input, &parsedInput, "propose_resolution_steps")
-	if err != nil {
-		return output, err
-	}
-
-	assertedIntegration := integration.(OpenaiIntegration)
-
-	fmt.Printf("###\nExecuting OpenAi integration function...\n")
-	model := assertedIntegration.Model
-	apiKey := assertedIntegration.ApiKey
-	prompt := fmt.Sprintf(`You are on-call engineer Based on the logs and additional context like documentation or runbooks propose resolutions.
-		Response must contain up to 3 steps with resolutions.
-		Logs: %s
-		Additional Context %s`, parsedInput.Logs, parsedInput.AdditionalContext)
-
-	resolutions, err := callOpenAiApi(prompt, model, apiKey)
-	if err != nil {
-		return output, err
-	}
-
-	output = append(output, map[string]any{
-		"content": resolutions,
-	})
-
-	return output, nil
-}
-
 func summarizeContext(input any, integration any) ([]any, error) {
 	var parsedInput SummarizeContextInput
 	var output []any
+	var alertContext models.EnrichedAlert
+	var partialSummaries = make([]string, 0)
+
+	var tagContextGroups = map[string][]map[string]any{
+		"code":     make([]map[string]any, 0),
+		"logs":     make([]map[string]any, 0),
+		"alerts":   make([]map[string]any, 0),
+		"metadata": make([]map[string]any, 0),
+	}
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "summarize_context")
 	if err != nil {
@@ -131,16 +116,104 @@ func summarizeContext(input any, integration any) ([]any, error) {
 	assertedIntegration := integration.(OpenaiIntegration)
 
 	fmt.Printf("###\nExecuting OpenAi integration function...\n")
+
+	contextBytes := []byte(parsedInput.Context)
+
+	err = json.Unmarshal(contextBytes, &alertContext)
+	if err != nil {
+		return output, fmt.Errorf("error parsing input alert context: %v", err)
+	}
+
+	for _, contextValue := range alertContext.AdditionalContext {
+		for _, partialContext := range contextValue.([]any) {
+			tags, ok := partialContext.(map[string]any)["tags"].([]any)
+			if !ok {
+				continue
+			}
+			mainTag := tags[0].(string)
+			switch mainTag {
+			case "metadata":
+				fmt.Printf("Metadata found %v", partialContext)
+				tagContextGroups["metadata"] = append(tagContextGroups["metadata"], partialContext.(map[string]any))
+			case "code":
+				fmt.Printf("Code found %v", partialContext)
+				tagContextGroups["code"] = append(tagContextGroups["code"], partialContext.(map[string]any))
+			case "logs":
+				tagContextGroups["logs"] = append(tagContextGroups["logs"], partialContext.(map[string]any))
+			case "alerts":
+				fmt.Printf("Alert found %v", partialContext)
+				id, ok := partialContext.(map[string]any)["alertId"].(string)
+				if !ok {
+					fmt.Printf("Error parsing alert id: %v", err)
+					continue
+				}
+				alert, err := db.GetEnrichedAlertById(id, context.Background(), assertedIntegration.Inventory.AlertsCollection)
+				if err != nil {
+					fmt.Printf("Error getting alert by id: %v", err)
+					continue
+				}
+				partialContext.(map[string]any)["additional_context"] = alert.AdditionalContext
+				tagContextGroups["alerts"] = append(tagContextGroups["alerts"], partialContext.(map[string]any))
+			}
+		}
+	}
+
 	model := assertedIntegration.Model
 	apiKey := assertedIntegration.ApiKey
-	prompt := fmt.Sprintf(`You are on-call engineer Based on the full context from the investigation summarize investigation context for other engineers.
-		Response must contain one short paragraph of explanation of the probable root causes in full sentences. Try to correlate different context for an holistic overview.
-		The full issue context: %s`, parsedInput.Context)
+
+	if len(tagContextGroups["code"]) == 0 {
+		delete(tagContextGroups, "code")
+	}
+	if len(tagContextGroups["logs"]) == 0 {
+		delete(tagContextGroups, "logs")
+	}
+	if len(tagContextGroups["alerts"]) == 0 {
+		delete(tagContextGroups, "alerts")
+	}
+	if len(tagContextGroups["metadata"]) == 0 {
+		delete(tagContextGroups, "metadata")
+	}
+
+	if len(tagContextGroups) == 0 {
+		return output, fmt.Errorf("no context found")
+	}
+
+	for contextKey, contextGroup := range tagContextGroups {
+
+		jsonifiedContextGroup, err := json.Marshal(contextGroup)
+		if err != nil {
+			return output, fmt.Errorf("error parsing context group: %v", err)
+		}
+
+		prompt := fmt.Sprintf(`You are principal on-call engineer. 
+		Based on these %s, draw some initial conclusions about the system and it's state and summarize the context for other engineers.
+		It must fit in one paragraph.
+		If you cannot draw any tangible conclusions, you must state that by saying "Not enough context" and just this.
+		%s: %s`, contextKey, contextKey, jsonifiedContextGroup)
+
+		localSum, err := callOpenAiApi(prompt, model, apiKey)
+		if err != nil {
+			return output, err
+		}
+
+		if strings.Contains(localSum, "Not enough context") {
+			continue
+		}
+
+		partialSummaries = append(partialSummaries, localSum)
+
+	}
+
+	prompt := fmt.Sprintf(`You are a principal on-call engineer Based on the full context from the investigation summarize investigation context for other engineers.
+		Response must contain one short paragraph of explanation of the probable root causes in full sentences. Try to correlate different contexts for an holistic overview.
+		If you cannot draw any tangible conclusions, you must state that and give a reason.
+		The full issue context and some initial reasoning: %s`, strings.Join(partialSummaries, "\n---"))
 
 	summary, err := callOpenAiApi(prompt, model, apiKey)
 	if err != nil {
 		return output, err
 	}
+	fmt.Printf("Prompt %s ||||||||||||||||||||||||||||| Summary %s", prompt, summary)
 
 	output = append(output, map[string]any{
 		"summary": summary,

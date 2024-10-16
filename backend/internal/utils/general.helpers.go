@@ -24,3 +24,14 @@ func Contains(slice []string, item string) bool {
 	}
 	return false
 }
+
+func UnpackDependencyMap(dependencyMap map[string]any, services *[]string) {
+	for service, children := range dependencyMap {
+		if !Contains(*services, service) {
+			*services = append(*services, service)
+		}
+		if children != nil {
+			UnpackDependencyMap(children.(map[string]any), services)
+		}
+	}
+}

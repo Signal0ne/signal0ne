@@ -9,9 +9,9 @@ import (
 	"signal0ne/internal/db"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
+	"signal0ne/internal/utils"
 	"signal0ne/pkg/integrations/helpers"
 	"strconv"
-	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -124,6 +124,7 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 	var parsedInput CorrelateOngoingAlertsInput
 	var output []any
 	var services []string
+	var dependencyMap map[string]any
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "correlate_ongoing_alerts")
 	if err != nil {
@@ -132,15 +133,12 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 
 	parsedIntegration := integration.(Signal0neIntegration)
 
-	serviceDependencyMap := strings.Split(parsedInput.DependencyMap, ",")
-
-	for _, serviceDependency := range serviceDependencyMap {
-		operationServiceMap := strings.Split(serviceDependency, "\n")[1:]
-		for si, service := range operationServiceMap {
-			prefix := strings.Repeat("-", (si+1)*2)
-			services = append(services, strings.TrimPrefix(service, prefix))
-		}
+	err = json.Unmarshal([]byte(parsedInput.DependencyMap), &dependencyMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %v", err)
 	}
+
+	utils.UnpackDependencyMap(dependencyMap, &services)
 
 	startTime, err := time.Parse(time.RFC3339, parsedInput.StartTimestamp)
 	if err != nil {
@@ -174,9 +172,6 @@ func correlateOngoingAlerts(input any, integration any) ([]any, error) {
 		},
 		"state": models.AlertStatusActive,
 	}
-
-	stringifiedQuery, _ := json.Marshal(q)
-	fmt.Printf("\nQuery: %v\n", string(stringifiedQuery))
 
 	alerts, err := db.GetEnrichedAlertsByWorkflowId("",
 		context.Background(),

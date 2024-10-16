@@ -458,7 +458,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				Inventory: inventory,
 			}
 		case "openai":
-			integration = &openai.OpenaiIntegration{}
+			inventory := openai.NewOpenAIIntegrationInventory(
+				c.AlertsCollection,
+			)
+			integration = &openai.OpenaiIntegration{
+				Inventory: inventory,
+			}
 		case "opensearch":
 			inventory := opensearch.NewOpenSearchIntegrationInventory(
 				c.PyInterface,

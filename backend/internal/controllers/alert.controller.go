@@ -109,10 +109,7 @@ func (ac *AlertController) SyncCorrelateAlertsFromDiffSources(ctx *gin.Context, 
 			if ongoingAlertsOutput == nil {
 				return fmt.Errorf("output not found for step %s", step.Name)
 			}
-			for _, alertOutput := range ongoingAlertsOutput {
-				dependencyMap += "," + alertOutput.(map[string]any)["dependency_map"].(string)
-
-			}
+			dependencyMap += ongoingAlertsOutput[0].(map[string]any)["dependency_map"].(string)
 
 			switch step.Integration {
 			case "signal0ne":

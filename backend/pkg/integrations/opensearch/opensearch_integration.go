@@ -245,7 +245,5 @@ func getLogOccurrences(input any, integration any) ([]any, error) {
 		outputElement.(map[string]any)["output_source"] = parsedInput.Service
 	}
 
-	fmt.Printf("###\n RAW OUTPUT OPENSEARCH: %v\n, BEFORE PROCESSING %v\n", output, allLogObjects)
-
 	return output, nil
 }
