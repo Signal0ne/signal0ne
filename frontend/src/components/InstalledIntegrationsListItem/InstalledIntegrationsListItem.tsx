@@ -1,57 +1,24 @@
+import type { InstalledIntegration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
-import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
+import { useGetIntegrationByIdMutation } from '../../hooks/mutations/useGetIntegrationByIdMutation';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import classNames from 'classnames';
 import './InstalledIntegrationsListItem.scss';
 
 interface InstalledIntegrationsListItemProps {
-  integration: Integration;
-}
-
-interface InstalledIntegrationResponse {
-  integration: Integration;
+  integration: InstalledIntegration;
 }
 
 const InstalledIntegrationsListItem = ({
   integration
 }: InstalledIntegrationsListItemProps) => {
-  const { accessToken, namespaceId } = useAuthContext();
-  const { selectedIntegration, setIsModalOpen, setSelectedIntegration } =
-    useIntegrationsContext();
+  const { selectedIntegration } = useIntegrationsContext();
 
-  const handleInstalledIntegrationClick = async () => {
-    if (!namespaceId || !accessToken) return;
+  const { mutate } = useGetIntegrationByIdMutation({
+    integrationId: integration.id
+  });
 
-    setIsModalOpen(true);
-
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${integration.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error(
-          'Failed to fetch integration data, please try again later'
-        );
-      }
-
-      const data: InstalledIntegrationResponse = await res.json();
-      setSelectedIntegration(data.integration);
-    } catch (err) {
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error('Oops! Something went wrong, please try again later');
-      }
-    }
-  };
+  const handleInstalledIntegrationClick = () => mutate();
 
   return (
     <li

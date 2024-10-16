@@ -1,4 +1,4 @@
-import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
+import type { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import AvailableIntegrationsListItem from '../AvailableIntegrationsListItem/AvailableIntegrationsListItem';
 import './AvailableIntegrationsList.scss';
 

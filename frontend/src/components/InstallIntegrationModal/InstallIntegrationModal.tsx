@@ -4,12 +4,12 @@ import {
   getInputType,
   getIntegrationGradientColor
 } from '../../utils/utils';
-import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
-import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
+import { useCreateIntegrationMutation } from '../../hooks/mutations/useCreateIntegrationMutation';
 import { useEffect, useMemo, useState } from 'react';
+import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
+import { useUpdateIntegrationMutation } from '../../hooks/mutations/useUpdateIntegrationMutation';
 import Button from '../Button/Button';
 import Input from '../Input/Input';
 import ReactModal, { Styles } from 'react-modal';
@@ -20,22 +20,8 @@ interface ConfigData {
   [key: string]: string;
 }
 
-interface Error {
-  message: string;
-}
-
-interface FormData {
+interface IntegrationFormData extends ConfigData {
   name: string;
-  [key: string]: unknown;
-}
-
-interface GetInstalledIntegrationsResponse {
-  installedIntegrations: Integration[];
-}
-
-interface InstallIntegrationResponse {
-  configData: ConfigData | null;
-  integration: Integration;
 }
 
 type InstallationStep = 0 | 1;
@@ -47,7 +33,6 @@ const CUSTOM_STYLES: Styles = {
     borderRadius: '8px',
     height: 'max-content',
     margin: 'auto',
-    maxWidth: '50%',
     padding: '2rem',
     width: 'max-content'
   },
@@ -65,20 +50,29 @@ const InstallIntegrationModal = () => {
     formState: { errors },
     handleSubmit,
     register,
-    reset,
-    watch
-  } = useForm<FormData>();
+    reset
+  } = useForm<IntegrationFormData>();
 
-  const nameFormValue = watch('name');
-
-  const { accessToken, namespaceId } = useAuthContext();
   const {
     isModalOpen,
     selectedIntegration,
-    setInstalledIntegrations,
     setIsModalOpen,
     setSelectedIntegration
   } = useIntegrationsContext();
+
+  const { isPending: isCreatePending, mutate: createIntegrationMutate } =
+    useCreateIntegrationMutation({
+      setConfigData,
+      setError,
+      setInstallationStep
+    });
+
+  const { isPending: isUpdatePending, mutate: updateIntegrationMutate } =
+    useUpdateIntegrationMutation({
+      setConfigData,
+      setError,
+      setInstallationStep
+    });
 
   useEffect(() => {
     setError(null);
@@ -90,10 +84,9 @@ const InstallIntegrationModal = () => {
     setIsModalOpen(false);
   };
 
-  const handleContentCopy = async (content: string, key: string) => {
+  const handleContentCopy = (content: string, key: string) => {
     try {
-      await navigator.clipboard.writeText(content);
-
+      navigator.clipboard.writeText(content);
       toast.success(key + ' copied to clipboard');
     } catch (error) {
       toast.error('Failed to copy content to clipboard');
@@ -102,99 +95,22 @@ const InstallIntegrationModal = () => {
 
   const resetSteps = () => setInstallationStep(0);
 
-  const submitForm: SubmitHandler<FormData> = async data => {
+  const submitForm: SubmitHandler<IntegrationFormData> = async data => {
     const { name, ...rest } = data;
 
     if (!selectedIntegration) return;
 
     const newIntegration = {
       config: rest,
-      name: transformIntegrationName(name),
+      name,
       type: selectedIntegration.type
     };
 
-    try {
-      setError(null);
-
-      let res: Response;
-
-      if (selectedIntegration.id) {
-        res = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/${selectedIntegration.id}`,
-          {
-            body: JSON.stringify(newIntegration),
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            method: 'PATCH'
-          }
-        );
-      } else {
-        res = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration`,
-          {
-            body: JSON.stringify(newIntegration),
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            },
-            method: 'POST'
-          }
-        );
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error);
-      }
-
-      const installationOutputData: InstallIntegrationResponse =
-        await res.json();
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        }
-      );
-      const data: GetInstalledIntegrationsResponse = await response.json();
-
-      setInstalledIntegrations(data.installedIntegrations);
-      if (installationOutputData.configData) {
-        setConfigData(installationOutputData.configData);
-        setInstallationStep(1);
-      } else {
-        resetSteps();
-        setIsModalOpen(false);
-      }
-
-      toast.success(
-        `Integration ${selectedIntegration.id ? 'updated' : 'installed'} successfully`
-      );
-    } catch (err) {
-      toast.error('Failed to install integration');
-
-      if (err instanceof Error) {
-        setError(err);
-      } else {
-        setError(new Error('An unknown error occurred'));
-      }
+    if (selectedIntegration.id) {
+      updateIntegrationMutate(newIntegration);
+    } else {
+      createIntegrationMutate(newIntegration);
     }
-  };
-
-  const transformIntegrationName = (name: string) => {
-    if (!name) return '';
-
-    return name
-      ?.toLowerCase()
-      .trim()
-      .replace(/[\s-]/g, '_')
-      .replace(/[^a-z0-9_]/g, '')
-      .replace(/_+$/, '')
-      .replace(/^_+/, '');
   };
 
   const formattedSelectedIntegration = useMemo(() => {
@@ -224,6 +140,8 @@ const InstallIntegrationModal = () => {
 
     return formFields;
   }, [selectedIntegration]);
+
+  const isPending = isCreatePending || isUpdatePending;
 
   return (
     <ReactModal
@@ -286,20 +204,18 @@ const InstallIntegrationModal = () => {
                           required: 'This field is required'
                         })}
                       />
-                      {key === 'name' && nameFormValue && (
-                        <p className="field-hint">
-                          Your integration name:{' '}
-                          <strong>
-                            {transformIntegrationName(nameFormValue)}
-                          </strong>
-                        </p>
-                      )}
                     </div>
                   );
                 })}
               {error ? <p className="error-msg">{error.message}</p> : null}
-              <Button type="submit">
-                {selectedIntegration.id ? 'Save Changes' : 'Install'}
+              <Button className="submit-btn" disabled={isPending} type="submit">
+                {isPending ? (
+                  <Spinner />
+                ) : selectedIntegration.id ? (
+                  'Save Changes'
+                ) : (
+                  'Install'
+                )}
               </Button>
             </form>
           ) : (

@@ -1,5 +1,5 @@
+import type { InstalledIntegration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { checkDisplayScrollOffset } from '../../utils/utils';
-import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import InstalledIntegrationsListItem from '../InstalledIntegrationsListItem/InstalledIntegrationsListItem';
@@ -7,12 +7,14 @@ import Spinner from '../Spinner/Spinner';
 import './InstalledIntegrationsList.scss';
 
 interface InstalledIntegrationsListProps {
-  installedIntegrations: Integration[];
+  installedIntegrations: InstalledIntegration[];
+  isError: boolean;
   isLoading: boolean;
 }
 
 const InstalledIntegrationsList = ({
   installedIntegrations,
+  isError,
   isLoading
 }: InstalledIntegrationsListProps) => {
   const [shouldDisplayScrollOffset, setShouldDisplayScrollOffset] =
@@ -30,6 +32,33 @@ const InstalledIntegrationsList = ({
     setShouldDisplayScrollOffset(shouldDisplayOffset);
   }, [installedIntegrations]);
 
+  const getContent = () => {
+    if (isLoading) return <Spinner />;
+
+    if (isError)
+      return (
+        <p className="installed-integrations-list--empty">
+          Something went wrong!
+          <span className="helpful-msg">Please try again later.</span>
+        </p>
+      );
+
+    if (!installedIntegrations?.length)
+      return (
+        <p className="installed-integrations-list--empty">
+          No integrations found
+          <span className="helpful-msg">Please refine your search</span>
+        </p>
+      );
+
+    return installedIntegrations.map(integration => (
+      <InstalledIntegrationsListItem
+        integration={integration}
+        key={integration.id}
+      />
+    ));
+  };
+
   return (
     <ul
       className={classNames('installed-integrations-list', {
@@ -37,23 +66,7 @@ const InstalledIntegrationsList = ({
       })}
       ref={installedIntegrationsListRef}
     >
-      {isLoading ? (
-        <Spinner />
-      ) : installedIntegrations?.length ? (
-        installedIntegrations.map(integration => (
-          <InstalledIntegrationsListItem
-            integration={integration}
-            key={integration.id}
-          />
-        ))
-      ) : (
-        <p className="installed-integrations-list--empty">
-          No installed integrations found
-          <span className="helpful-msg">
-            Select desired integrations from the list on the right to install
-          </span>
-        </p>
-      )}
+      {getContent()}
     </ul>
   );
 };

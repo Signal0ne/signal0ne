@@ -29,6 +29,17 @@
       white-space: pre-wrap;
       width: 100%;
       word-wrap: break-word;
+      @include customScrollbar;
+
+      &::-webkit-scrollbar {
+        height: 6px;
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background-color: #555;
+        border-radius: 4px;
+      }
     }
 
     .modal-copy-icon {
@@ -69,20 +80,13 @@
       }
     }
 
-    .submit {
-      background-color: #424242;
-      border: 1px solid #888;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
-      font-size: 14px;
-      padding: 8px 16px;
-      text-align: center;
-      transition: background-color 0.3s;
-      width: fit-content;
+    .submit-btn {
+      justify-content: center;
+      min-width: 80px;
 
-      &:hover {
-        background-color: #383838;
+      .spinner-element {
+        height: 16px;
+        width: 16px;
       }
     }
   }

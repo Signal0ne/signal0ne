@@ -1,52 +1,18 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
-import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
-import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
+import { useGetInstalledIntegrationsQuery } from '../../hooks/queries/useGetInstalledIntegrationsQuery';
 import InstalledIntegrationsList from '../InstalledIntegrationsList/InstalledIntegrationsList';
 import SearchInput from '../SearchInput/SearchInput';
 import './InstalledIntegrationsPanel.scss';
 
-interface GetInstalledIntegrationsResponse {
-  installedIntegrations: Integration[];
-}
-
 const InstalledIntegrationsPanel = () => {
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const { accessToken, namespaceId } = useAuthContext();
-  const { installedIntegrations, setInstalledIntegrations } =
-    useIntegrationsContext();
+  const { data, isError, isLoading } = useGetInstalledIntegrationsQuery();
 
   useEffect(() => {
-    if (!namespaceId || !accessToken) return;
-
-    const fetchInstalledIntegrations = async () => {
-      setIsLoading(true);
-
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installed`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }
-        );
-
-        const data: GetInstalledIntegrationsResponse = await response.json();
-
-        setInstalledIntegrations(data.installedIntegrations);
-      } catch (error) {
-        toast.error('Cannot fetch installed integrations');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchInstalledIntegrations();
-  }, [accessToken, namespaceId, setInstalledIntegrations]);
+    if (isError) toast.error('Cannot load installed integrations');
+  }, [isError]);
 
   const handleSearch = (e: ChangeEvent) => {
     const target = e.target as HTMLInputElement;
@@ -55,10 +21,10 @@ const InstalledIntegrationsPanel = () => {
 
   const FILTERED_INSTALLED_INTEGRATIONS = useMemo(
     () =>
-      installedIntegrations.filter(integration =>
+      (data?.installedIntegrations ?? []).filter(integration =>
         integration.name?.toLowerCase().includes(search.trim().toLowerCase())
       ),
-    [installedIntegrations, search]
+    [data, search]
   );
 
   return (
@@ -70,8 +36,9 @@ const InstalledIntegrationsPanel = () => {
         value={search}
       />
       <InstalledIntegrationsList
-        isLoading={isLoading}
         installedIntegrations={FILTERED_INSTALLED_INTEGRATIONS}
+        isError={isError}
+        isLoading={isLoading}
       />
     </aside>
   );
