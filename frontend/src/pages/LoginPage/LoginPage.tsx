@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
-import { User } from '../../contexts/AuthProvider/AuthProvider';
-import { useAuthContext } from '../../hooks/useAuthContext';
-import { useState } from 'react';
+import { useLoginMutation } from '../../hooks/mutations/useLoginMutation';
 import Button from '../../components/Button/Button';
 import Input from '../../components/Input/Input';
 import Spinner from '../../components/Spinner/Spinner';
@@ -14,61 +11,19 @@ interface LoginFormData {
   username: string;
 }
 
-interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: User;
-}
-
 const LoginPage = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { setAccessToken, setCurrentUser } = useAuthContext();
-
   const {
     formState: { errors },
     handleSubmit,
     register
   } = useForm<LoginFormData>();
 
+  const { isPending, mutate } = useLoginMutation();
+
   const handleLogin: SubmitHandler<LoginFormData> = async data => {
     const { password, username } = data;
 
-    try {
-      setIsSubmitting(true);
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/auth/login`,
-        {
-          body: JSON.stringify({ password, username }),
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          method: 'POST',
-          credentials: 'include'
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to login');
-
-      const data: LoginResponse = await response.json();
-
-      setAccessToken(data.accessToken);
-      setCurrentUser(data.user);
-      saveToLocalStorage(data.user);
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('An unknown error occurred. Please try again later.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const saveToLocalStorage = (data: User) => {
-    localStorage.setItem('user', JSON.stringify(data));
+    await mutate({ password, username });
   };
 
   return (
@@ -107,12 +62,8 @@ const LoginPage = () => {
             )}
           </div>
         </div>
-        <Button
-          className="form-submit-btn"
-          disabled={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? <Spinner /> : 'Log In'}
+        <Button className="form-submit-btn" disabled={isPending} type="submit">
+          {isPending ? <Spinner /> : 'Log In'}
         </Button>
         <p className="form-register-info">
           Don't have an account?{' '}

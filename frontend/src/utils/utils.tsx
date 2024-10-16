@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   BackStageIcon,
   ConfluenceIcon,
@@ -14,7 +15,6 @@ import {
   SlackIcon,
   WebhookIcon
 } from '../components/Icons/Icons';
-import { ReactNode } from 'react';
 
 export const checkDisplayScrollOffset = (element: HTMLElement) => {
   if (!element) return false;

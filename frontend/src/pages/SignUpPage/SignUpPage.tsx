@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { toast } from 'react-toastify';
-import { User } from '../../contexts/AuthProvider/AuthProvider';
-import { useAuthContext } from '../../hooks/useAuthContext';
-import { useState } from 'react';
+import { useRegisterMutation } from '../../hooks/mutations/useRegisterMutation';
 import Button from '../../components/Button/Button';
 import Input from '../../components/Input/Input';
 import Spinner from '../../components/Spinner/Spinner';
@@ -15,15 +12,7 @@ interface SignUpFormData {
   username: string;
 }
 
-interface SignUpResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: User;
-}
-
 const SignUpPage = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const {
     formState: { errors },
     handleSubmit,
@@ -33,45 +22,12 @@ const SignUpPage = () => {
 
   const password = watch('password');
 
-  const { setAccessToken, setCurrentUser } = useAuthContext();
+  const { isPending, mutate } = useRegisterMutation();
 
   const handleSignUp: SubmitHandler<SignUpFormData> = async data => {
     const { password, username } = data;
 
-    try {
-      setIsSubmitting(true);
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/auth/register`,
-        {
-          body: JSON.stringify({ password, username }),
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          method: 'POST'
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to register');
-
-      const data: SignUpResponse = await response.json();
-
-      setAccessToken(data.accessToken);
-      setCurrentUser(data.user);
-      saveToLocalStorage(data.user);
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('An unknown error occurred. Please try again later.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const saveToLocalStorage = (data: User) => {
-    localStorage.setItem('user', JSON.stringify(data));
+    await mutate({ password, username });
   };
 
   return (
@@ -131,19 +87,15 @@ const SignUpPage = () => {
                   value === password || 'Passwords do not match'
               })}
             />
-            {errors.password && (
+            {errors.confirmPassword && (
               <span className="error-msg">
                 {errors.confirmPassword?.message}
               </span>
             )}
           </div>
         </div>
-        <Button
-          className="form-submit-btn"
-          disabled={isSubmitting}
-          type="submit"
-        >
-          {isSubmitting ? <Spinner /> : 'Register'}
+        <Button className="form-submit-btn" disabled={isPending} type="submit">
+          {isPending ? <Spinner /> : 'Register'}
         </Button>
         <p className="form-register-info">
           Already have an account?{' '}

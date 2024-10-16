@@ -34,5 +34,5 @@ export const useLocalStorage = (keyName: string, defaultValue: unknown) => {
     setStoredValue(newValue);
   };
 
-  return { storedValue, removeValue, setValue };
+  return { removeValue, setValue, storedValue };
 };

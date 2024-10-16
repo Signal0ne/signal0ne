@@ -1,4 +1,5 @@
 import { AccountIcon, GearIcon, Signal0neLogo } from '../Icons/Icons';
+import { handleKeyDown } from '../../utils/utils';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../data/routes';
 import { useAuthContext } from '../../hooks/useAuthContext';
@@ -48,6 +49,7 @@ const Navbar = () => {
             <AccountIcon
               height={36}
               onClick={handleOpenAccount}
+              onKeyDown={handleKeyDown(handleOpenAccount)}
               tabIndex={0}
               width={36}
             />
