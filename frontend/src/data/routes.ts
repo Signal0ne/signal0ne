@@ -1,4 +1,4 @@
-import { ComponentType, ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import AlertsPage from '../pages/AlertsPage/AlertsPage';
 import IncidentsPage from '../pages/IncidentsPage/IncidentsPage';
 import IntegrationsPage from '../pages/IntegrationsPage/IntegrationsPage';
@@ -52,7 +52,6 @@ export const ROUTES: RouteConfig[] = [
   },
   {
     Component: WorkflowsPage,
-    isDisabled: false,
     path: '/',
     redirectTo: '/login',
     showInNavbar: true,
@@ -61,7 +60,6 @@ export const ROUTES: RouteConfig[] = [
   },
   {
     Component: WorkflowsPage,
-    isDisabled: false,
     path: '/:workflowId',
     redirectTo: '/login',
     showInNavbar: false,
@@ -70,7 +68,6 @@ export const ROUTES: RouteConfig[] = [
   },
   {
     Component: LoginPage,
-    isDisabled: true,
     path: '/login',
     redirectTo: '/',
     showInNavbar: true,
