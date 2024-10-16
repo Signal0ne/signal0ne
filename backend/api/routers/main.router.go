@@ -50,7 +50,7 @@ func (r *MainRouter) RegisterRoutes(rg *gin.RouterGroup) {
 	authGroup := rg.Group("/auth")
 	{
 		authGroup.POST("/login", r.UserAuthController.Login)
-		authGroup.GET("/logout", r.UserAuthController.Logout)
+		authGroup.GET("/logout", middlewares.CheckAuthorization, r.UserAuthController.Logout)
 		authGroup.POST("/register", r.UserAuthController.Register)
 		authGroup.GET("/token/refresh", r.UserAuthController.RefreshToken)
 	}
