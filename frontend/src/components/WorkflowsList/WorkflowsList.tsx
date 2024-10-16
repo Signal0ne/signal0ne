@@ -1,7 +1,7 @@
+import type { Workflow } from '../../data/dummyWorkflows';
 import { checkDisplayScrollOffset } from '../../utils/utils';
 import { useEffect, useRef, useState } from 'react';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
-import { Workflow } from '../../data/dummyWorkflows';
 import classNames from 'classnames';
 import Spinner from '../Spinner/Spinner';
 import WorkflowsListItem from '../WorkflowsListItem/WorkflowsListItem';
@@ -9,12 +9,14 @@ import './WorkflowsList.scss';
 
 interface WorkflowsListProps {
   isEmpty: boolean;
+  isError: boolean;
   isLoading: boolean;
   workflows: Workflow[];
 }
 
 const WorkflowsList = ({
   isEmpty,
+  isError,
   isLoading,
   workflows
 }: WorkflowsListProps) => {
@@ -37,6 +39,14 @@ const WorkflowsList = ({
 
   const getContent = () => {
     if (isLoading) return <Spinner />;
+
+    if (isError)
+      return (
+        <p className="workflows-list--empty">
+          Something went wrong!
+          <span className="helpful-msg">Please try again later</span>
+        </p>
+      );
 
     if (!workflows?.length)
       return (

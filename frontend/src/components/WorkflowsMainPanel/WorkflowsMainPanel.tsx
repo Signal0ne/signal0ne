@@ -1,7 +1,7 @@
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import Spinner from '../Spinner/Spinner';
-import WorkflowSteps from '../WorkflowSteps/WorkflowSteps';
 import WorkflowStepDetails from '../WorkflowStepDetails/WorkflowStepDetails';
+import WorkflowSteps from '../WorkflowSteps/WorkflowSteps';
 import './WorkflowsMainPanel.scss';
 
 const WorkflowsMainPanel = () => {
