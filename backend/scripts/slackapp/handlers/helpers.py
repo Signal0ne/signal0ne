@@ -10,8 +10,8 @@ BACKEND_URL = os.getenv("BACKEND_URL")
 BACKEND_AUTH_TOKEN = os.getenv("BACKEND_AUTH_TOKEN")
 NAMESPACE_ID = os.getenv("ORG_NAMESPACE_ID")
     
-def get_enriched_alert_by_id(alert_id):
-    url = f"{BACKEND_URL}/api/{NAMESPACE_ID}/alert/{alert_id}"
+def get_enriched_alert_by_id(alert_id, commandFilter):
+    url = f"{BACKEND_URL}/api/{NAMESPACE_ID}/alert/{alert_id}?commandFilter={commandFilter}"
     headers = {
         "Authorization": f"Bearer {BACKEND_AUTH_TOKEN}"
     }

@@ -11,7 +11,6 @@ import (
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations/helpers"
-	"strings"
 
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -39,6 +38,27 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 		Input:      SummarizeContextInput{},
 		OutputTags: []string{"copilot"},
 	},
+}
+
+var partialPromptsMap = map[string]string{
+	"code": `
+				Based on the code diff and other potential clues like commit ID, draw some initial conclusions about this particular change and summarize the context for other engineers.
+				You must extract all relevant details and put them in quotes. It must fit in one paragraph.
+				%s: %s`,
+
+	"logs": `
+				Based on the provided logs, draw some initial conclusions about the state of the system and summarize the context for other engineers.
+				You must extract all relevant details and put them in quotes. It must fit in one paragraph.
+				%s: %s`,
+
+	"alerts": `
+				Based on the provided alerts with additional context, draw some initial conclusions about the state of the system and summarize the context for other engineers.
+				You must extract all relevant details like logs, code changes etc. It must fit in one paragraph.
+				%s: %s`,
+	"metadata": `
+				Based on the provided metadata for additional context, draw some initial conclusions about the architecture of the system and it's dependencies and summarize the context for other engineers.
+				You must extract all relevant details. It must fit in one paragraph.
+				%s: %s`,
 }
 
 func (integration OpenaiIntegration) Execute(
@@ -99,7 +119,6 @@ func summarizeContext(input any, integration any) ([]any, error) {
 	var parsedInput SummarizeContextInput
 	var output []any
 	var alertContext models.EnrichedAlert
-	var partialSummaries = make([]string, 0)
 
 	var tagContextGroups = map[string][]map[string]any{
 		"code":     make([]map[string]any, 0),
@@ -133,15 +152,12 @@ func summarizeContext(input any, integration any) ([]any, error) {
 			mainTag := tags[0].(string)
 			switch mainTag {
 			case "metadata":
-				fmt.Printf("Metadata found %v", partialContext)
 				tagContextGroups["metadata"] = append(tagContextGroups["metadata"], partialContext.(map[string]any))
 			case "code":
-				fmt.Printf("Code found %v", partialContext)
 				tagContextGroups["code"] = append(tagContextGroups["code"], partialContext.(map[string]any))
 			case "logs":
 				tagContextGroups["logs"] = append(tagContextGroups["logs"], partialContext.(map[string]any))
 			case "alerts":
-				fmt.Printf("Alert found %v", partialContext)
 				id, ok := partialContext.(map[string]any)["alertId"].(string)
 				if !ok {
 					fmt.Printf("Error parsing alert id: %v", err)
@@ -178,6 +194,7 @@ func summarizeContext(input any, integration any) ([]any, error) {
 		return output, fmt.Errorf("no context found")
 	}
 
+	var summary = ""
 	for contextKey, contextGroup := range tagContextGroups {
 
 		jsonifiedContextGroup, err := json.Marshal(contextGroup)
@@ -185,35 +202,25 @@ func summarizeContext(input any, integration any) ([]any, error) {
 			return output, fmt.Errorf("error parsing context group: %v", err)
 		}
 
-		prompt := fmt.Sprintf(`You are principal on-call engineer. 
-		Based on these %s, draw some initial conclusions about the system and it's state and summarize the context for other engineers.
-		It must fit in one paragraph.
-		If you cannot draw any tangible conclusions, you must state that by saying "Not enough context" and just this.
-		%s: %s`, contextKey, contextKey, jsonifiedContextGroup)
+		partialPromptTemplate, ok := partialPromptsMap[contextKey]
+		partialPrompt := fmt.Sprintf(partialPromptTemplate, contextKey, jsonifiedContextGroup)
+		if !ok {
+			partialPrompt = fmt.Sprintf(`You are principal on-call engineer. 
+			Based on these %s, draw some initial conclusions about the system and it's state and summarize the context for other engineers.
+			It must fit in one paragraph.
+			If you cannot draw any tangible conclusions, you must state that by saying "Not enough context" and just this.
+			%s: %s`, contextKey, contextKey, jsonifiedContextGroup)
+		}
 
-		localSum, err := callOpenAiApi(prompt, model, apiKey)
+		prompt := fmt.Sprintf(`You are a principal on-call engineer Based on the infromation that context comes from %s alert full context from the investigation complete this task: %s : 
+		Full context: %s`, alertContext.AlertName, partialPrompt, summary)
+
+		summary, err = callOpenAiApi(prompt, model, apiKey)
 		if err != nil {
 			return output, err
 		}
 
-		if strings.Contains(localSum, "Not enough context") {
-			continue
-		}
-
-		partialSummaries = append(partialSummaries, localSum)
-
 	}
-
-	prompt := fmt.Sprintf(`You are a principal on-call engineer Based on the full context from the investigation summarize investigation context for other engineers.
-		Response must contain one short paragraph of explanation of the probable root causes in full sentences. Try to correlate different contexts for an holistic overview.
-		If you cannot draw any tangible conclusions, you must state that and give a reason.
-		The full issue context and some initial reasoning: %s`, strings.Join(partialSummaries, "\n---"))
-
-	summary, err := callOpenAiApi(prompt, model, apiKey)
-	if err != nil {
-		return output, err
-	}
-	fmt.Printf("Prompt %s ||||||||||||||||||||||||||||| Summary %s", prompt, summary)
 
 	output = append(output, map[string]any{
 		"summary": summary,

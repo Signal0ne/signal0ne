@@ -85,6 +85,7 @@ func main() {
 
 	alertController := controllers.NewAlertController(alertsCollection,
 		incidentsCollection,
+		integrationsCollection,
 		conn,
 		workflowsCollection)
 	mainController := controllers.NewMainController()

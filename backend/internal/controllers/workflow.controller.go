@@ -280,6 +280,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		Id:                primitive.NewObjectID(),
 		TriggerProperties: map[string]any{},
 		AdditionalContext: map[string]any{},
+		Tags:              []string{},
 	}
 
 	namespaceId := ctx.Param("namespaceid")
@@ -501,7 +502,6 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 		err = result.Decode(integration)
 		if err != nil {
-			fmt.Printf("integration schema parsing error, %s", err)
 			localErrorMessage = fmt.Sprintf("%v", err)
 			continue
 		}
@@ -628,6 +628,13 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 		if execResult != nil {
 			alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult
+			for _, resultObject := range execResult {
+				for key, value := range resultObject {
+					if key == "tags" {
+						alert.Tags = append(alert.Tags, value.([]string)...)
+					}
+				}
+			}
 			executionLog.Outputs[step.Name] = execResult
 		}
 

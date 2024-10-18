@@ -30,10 +30,10 @@ def handle_create(ack: Ack, respond: Respond, command):
             "text": {
                 "type": "mrkdwn",
                 "text": f"""*Id:* {incident['id']}\n
-                        *Name:* {incident['name']}\n
-                        *Status:* {incident['status']}\n
-                        *Severity:* {incident['severity']}\n
-                        *Link:* {incident['url']}"""
+*Name:* {incident['name']}\n
+*Status:* {incident['status']}\n
+*Severity:* {incident['severity']}\n
+*Link:* {incident['url']}"""
             }
         })
     except requests.RequestException as e:

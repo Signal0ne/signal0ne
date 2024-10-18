@@ -19,7 +19,7 @@ def handle(ack: Ack, respond: Respond, command):
     tags = command_params[1:]
     
     try:
-        data = get_enriched_alert_by_id(alert_id)
+        data = get_enriched_alert_by_id(alert_id, tags[0])
         for k,v in dict(data)["additionalContext"].items():
             if not v:
                 continue

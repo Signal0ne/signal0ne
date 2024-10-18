@@ -241,6 +241,7 @@ func createIncident(input any, integration any) ([]any, error) {
 			Items:    make([]models.Item, 0),
 			Priority: si,
 			TaskName: step.DisplayName,
+			Comments: make([]models.Comment, 0),
 		}
 
 		for _, stepOutput := range stepOutputs {
@@ -321,6 +322,7 @@ func createIncident(input any, integration any) ([]any, error) {
 			IsDone:   true,
 			Items:    items,
 			Priority: len(tasks),
+			Comments: make([]models.Comment, 0),
 			TaskName: "Manually Correlated Alerts via Slack Integration",
 		}
 		incident.Tasks = append(incident.Tasks, task)

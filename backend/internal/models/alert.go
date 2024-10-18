@@ -19,6 +19,7 @@ type EnrichedAlert struct {
 	AlertName         string             `json:"alertName" bson:"alertName"`
 	Integration       string             `json:"integration" bson:"integration"`
 	OriginalUrl       string             `json:"originalUrl" bson:"originalUrl"`
+	Tags              []string           `json:"tags" bson:"tags"`
 	StartTime         time.Time          `json:"startTime" bson:"startTime"`
 	State             AlertStatus        `json:"state" bson:"state"`
 	Service           string             `json:"service" bson:"service"`

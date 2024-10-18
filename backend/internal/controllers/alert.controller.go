@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 
 	"signal0ne/internal/db"
 	"signal0ne/internal/models"
+	"signal0ne/internal/utils"
+	"signal0ne/pkg/integrations/openai"
 	"signal0ne/pkg/integrations/signal0ne"
 
 	"github.com/gin-gonic/gin"
@@ -21,20 +24,23 @@ type AlertController struct {
 	PyInterface      net.Conn
 
 	// ==== Use as readonly ====
-	WorkflowsCollection *mongo.Collection
-	IncidentsCollection *mongo.Collection
+	WorkflowsCollection    *mongo.Collection
+	IncidentsCollection    *mongo.Collection
+	IntegrationsCollection *mongo.Collection
 	// =========================
 }
 
 func NewAlertController(alertsCollection *mongo.Collection,
 	incidentsCollection *mongo.Collection,
+	integrationsCollection *mongo.Collection,
 	pyInterface net.Conn,
 	workflowsCollection *mongo.Collection) *AlertController {
 	return &AlertController{
-		AlertsCollection:    alertsCollection,
-		IncidentsCollection: incidentsCollection,
-		PyInterface:         pyInterface,
-		WorkflowsCollection: workflowsCollection,
+		AlertsCollection:       alertsCollection,
+		IncidentsCollection:    incidentsCollection,
+		IntegrationsCollection: integrationsCollection,
+		PyInterface:            pyInterface,
+		WorkflowsCollection:    workflowsCollection,
 	}
 }
 
@@ -43,6 +49,8 @@ func (ac *AlertController) GetAlert(ctx *gin.Context) {
 
 	_ = ctx.Param("namespaceid")
 	alertId := ctx.Param("alertid")
+
+	commandFilter := ctx.Query("commandFilter")
 
 	parsedAlertId, err := primitive.ObjectIDFromHex(alertId)
 	if err != nil {
@@ -72,13 +80,16 @@ func (ac *AlertController) GetAlert(ctx *gin.Context) {
 	// non existing alerts are correlated. If it does work well trough alfa we can
 	// consider to refresh all outputs on GET
 	//---------
-	_ = ac.SyncCorrelateAlertsFromDiffSources(ctx, alert)
+	if commandFilter != "" {
+		_ = ac.SyncCorrelateAlertsFromDiffSources(ctx, alert, commandFilter)
+	}
 
 	ctx.JSON(http.StatusOK, alert)
 }
 
-func (ac *AlertController) SyncCorrelateAlertsFromDiffSources(ctx *gin.Context, alert models.EnrichedAlert) error {
+func (ac *AlertController) SyncCorrelateAlertsFromDiffSources(ctx *gin.Context, alert models.EnrichedAlert, commandFilter string) error {
 	var functionKey = "correlate_ongoing_alerts"
+	var copilotFunctionKey = "summarize_context"
 
 	var workflow models.Workflow
 	var dependencyMap string
@@ -139,6 +150,45 @@ func (ac *AlertController) SyncCorrelateAlertsFromDiffSources(ctx *gin.Context, 
 			err = db.UpdateEnrichedAlert(alert, ctx, ac.AlertsCollection)
 			if err != nil {
 				return err
+			}
+		}
+	}
+
+	if utils.Contains(alert.Tags, "copilot") && commandFilter == "copilot" {
+		for _, copilotStep := range workflow.Steps {
+			if copilotStep.Function == copilotFunctionKey {
+				jsonifiedAlert, _ := json.Marshal(alert)
+				input := openai.SummarizeContextInput{
+					Context: string(jsonifiedAlert),
+				}
+				inventory := openai.NewOpenAIIntegrationInventory(
+					ac.AlertsCollection,
+				)
+
+				filter := bson.M{
+					"name": copilotStep.Integration,
+				}
+				result := ac.IntegrationsCollection.FindOne(ctx, filter)
+
+				integration := openai.OpenaiIntegration{
+					Inventory: inventory,
+				}
+
+				err = result.Decode(&integration)
+				if err != nil {
+					return err
+				}
+
+				execResult, err := integration.Execute(input, copilotStep.Output, copilotStep.Function)
+				if err != nil {
+					return err
+				}
+				alert.AdditionalContext[fmt.Sprintf("%s_%s", copilotStep.Integration, copilotStep.Name)] = execResult
+
+				err = db.UpdateEnrichedAlert(alert, ctx, ac.AlertsCollection)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
