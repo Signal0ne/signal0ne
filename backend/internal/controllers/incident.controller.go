@@ -291,6 +291,7 @@ func (ic *IncidentController) CreateIncident(ctx *gin.Context) {
 
 	default: //signal0ne is the default
 		inventory := signal0ne.NewSignal0neIntegrationInventory(
+			ic.AlertsCollection,
 			ic.IncidentsCollection,
 			ic.PyInterface,
 			&workflow,

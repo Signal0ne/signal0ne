@@ -1,6 +1,6 @@
 from slack_bolt import Ack, Respond
 import requests
-from handlers.helpers import get_enriched_alert_by_id, create_incident
+from handlers.helpers import create_incident
 
 def handle_create(ack: Ack, respond: Respond, command):
     ack()
@@ -14,9 +14,6 @@ def handle_create(ack: Ack, respond: Respond, command):
     
     incident_destination = command_params[0]
     alert_ids = command_params[1:]
-
-    print("ALERT IDS", alert_ids)
-    print("INCIDENT DESTINATION", incident_destination)
 
     try:
         incident_creation_response = create_incident(incident_destination, alert_ids)
@@ -33,10 +30,10 @@ def handle_create(ack: Ack, respond: Respond, command):
             "text": {
                 "type": "mrkdwn",
                 "text": f"""*Id:* {incident['id']}\n
-                        *Name:* {incident['name']}\n
-                        *Status:* {incident['status']}\n
-                        *Severity:* {incident['severity']}\n
-                        *Link:* {incident['url']}"""
+*Name:* {incident['name']}\n
+*Status:* {incident['status']}\n
+*Severity:* {incident['severity']}\n
+*Link:* {incident['url']}"""
             }
         })
     except requests.RequestException as e:

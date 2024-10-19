@@ -12,6 +12,7 @@ type WebhookTrigger struct {
 type Webhook struct {
 	Output      map[string]string `json:"output"`
 	Integration string            `json:"integration"`
+	Service     string            `json:"service"`
 	Condition   string            `json:"condition"`
 }
 

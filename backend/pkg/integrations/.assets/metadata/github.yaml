@@ -3,3 +3,4 @@ name: GitHub
 imageUri: ../logos/github.svg
 config:
   apiKey: secret
+  url: string

@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"signal0ne/cmd/config"
 	"signal0ne/internal/db"
+	"signal0ne/internal/errors"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
 	"signal0ne/pkg/integrations"
@@ -279,6 +280,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		Id:                primitive.NewObjectID(),
 		TriggerProperties: map[string]any{},
 		AdditionalContext: map[string]any{},
+		Tags:              []string{},
 	}
 
 	namespaceId := ctx.Param("namespaceid")
@@ -387,6 +389,10 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		}
 		err = integration.Trigger(incomingTriggerPayload, &alert, workflow)
 	}
+	if err == errors.ErrConditionNotSatisfied || err == errors.ErrAlertAlreadyInactive {
+		ctx.JSON(http.StatusAccepted, nil)
+		return
+	}
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		localErrorMessage = fmt.Sprintf("%v", err)
@@ -410,14 +416,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 		result := c.IntegrationsCollection.FindOne(ctx, filter)
 		err := result.Decode(&integrationTemplate)
 		if err != nil {
-			fmt.Printf("integration schema parsing error, %s", err)
 			localErrorMessage = fmt.Sprintf("%v", err)
 			continue
 		}
 
 		_, exists := integrations.InstallableIntegrationTypesLibrary[integrationTemplate.Type]
 		if !exists {
-			fmt.Printf("cannot find integration type specified")
 			localErrorMessage = fmt.Sprintf("%v", err)
 			continue
 		}
@@ -455,7 +459,12 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				Inventory: inventory,
 			}
 		case "openai":
-			integration = &openai.OpenaiIntegration{}
+			inventory := openai.NewOpenAIIntegrationInventory(
+				c.AlertsCollection,
+			)
+			integration = &openai.OpenaiIntegration{
+				Inventory: inventory,
+			}
 		case "opensearch":
 			inventory := opensearch.NewOpenSearchIntegrationInventory(
 				c.PyInterface,
@@ -474,6 +483,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			integration = &servicenow.ServicenowIntegration{}
 		case "signal0ne":
 			inventory := signal0ne.NewSignal0neIntegrationInventory(
+				c.AlertsCollection,
 				c.IncidentsCollection,
 				c.PyInterface,
 				workflow,
@@ -492,7 +502,6 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 
 		err = result.Decode(integration)
 		if err != nil {
-			fmt.Printf("integration schema parsing error, %s", err)
 			localErrorMessage = fmt.Sprintf("%v", err)
 			continue
 		}
@@ -617,8 +626,17 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 				execResult)
 		}
 
-		alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult
-		executionLog.Outputs[step.Name] = execResult
+		if execResult != nil {
+			alert.AdditionalContext[fmt.Sprintf("%s_%s", integrationTemplate.Name, step.Name)] = execResult
+			for _, resultObject := range execResult {
+				for key, value := range resultObject {
+					if key == "tags" {
+						alert.Tags = append(alert.Tags, value.([]string)...)
+					}
+				}
+			}
+			executionLog.Outputs[step.Name] = execResult
+		}
 
 		status := "success"
 		if localErrorMessage != "" {
@@ -629,6 +647,7 @@ func (c *WorkflowController) WebhookTriggerHandler(ctx *gin.Context) {
 			LogMessage: localErrorMessage,
 		})
 	}
+
 	executionLog.ParsedWorkflow = models.ParsedWorkflow{
 		Steps:   workflow.Steps,
 		Trigger: workflow.Trigger,

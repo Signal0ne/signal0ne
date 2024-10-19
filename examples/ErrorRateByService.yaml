@@ -4,8 +4,8 @@ lookback: 15m
 trigger:
   webhook:
     integration: alertmanager
+    service: "labels.job"
     output:
-      service: "job"
       alertname: "labels.alertname"
       span: "span_name"
       timestamp: "startsAt"
@@ -16,17 +16,18 @@ steps:
   integration: backstage
   function: get_properties_values
   input:
-    filter: kind=component,metadata.name={{.TriggerProperties.service}}
+    filter: kind=component,metadata.name={{.Service}}
   output:
     owner: "spec.owner"
     slack_channel: "metadata.labels.slack_channel"
+    repo_name: "metadata.labels.repo_name"
 - displayName: Get relevant logs
   name: get_relevant_logs
   integration: opensearch
   function: get_log_occurrences
   input:
-    service: "{{.TriggerProperties.service}}"
-    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.TriggerProperties.service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .TriggerProperties.timestamp \"-15m\" \"rfc\"}}\",\"lte\": \"{{date .TriggerProperties.timestamp \"+15m\" \"rfc\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
+    service: "{{.Service}}"
+    query: "{\"query\": {\"bool\": {\"must\": [{\"match\": {\"resource.service.name\": \"{{.Service}}\"}},{\"range\": {\"@timestamp\": {\"gte\": \"{{date .TriggerProperties.timestamp \"-15m\" \"rfc\"}}\",\"lte\": \"{{date .TriggerProperties.timestamp \"+15m\" \"rfc\"}}\"}}}],\"must_not\": [{\"match\": {\"severity.text\": \"INFO\"}},{\"match\": {\"severity.text\": \"Information\"}}]}}}"
     compare_by: "body, resource.host.name"
   output:
     output_source: "output_source"
@@ -38,44 +39,57 @@ steps:
   integration: jaeger
   function: get_properties_values
   input:
-    service: "{{.TriggerProperties.service}}"
+    service: "{{.Service}}"
     tags: "{\"error\":\"true\"}"
     query: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
-    compare_by: "logs.exception.stacktrace, tags.grpc.error_message"
+    compare_by: "logs.exception.stacktrace, tags.grpc.error_message, logs.exception.message, tags.otel.status_description"
   output:
     output_source: "output_source"
     count: "count"
-    log: "logs.exception.stacktrace, tags.grpc.error_message"
+    log: "logs.exception.stacktrace, tags.grpc.error_message, logs.exception.message, tags.otel.status_description"
   condition: "{{if eq (len .AdditionalContext.opensearch_get_relevant_logs) 0}}true{{else}}false{{end}}"
-- displayName: Compare traces
-  name: compare_traces
+- displayName: Get dependency map
+  name: get_dependencies
   integration: jaeger
-  function: compare_traces
+  function: get_dependencies
   input:
-    service: "{{.TriggerProperties.service}}"
-    operation: "{{ default .TriggerProperties.span \"all\"}}"
-    baseTraceTags: "{\"rpc.grpc.status_code\":\"0\"},{\"http.status_code\":\"200\"}"
-    comparedTraceTags: "{\"error\":\"true\"}"
-    baseTraceQuery: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=30m&maxDuration&minDuration"
-    comparedTraceQuery: "&start={{date .TriggerProperties.timestamp \"-0m\" \"ts\"}}&lookback=15m&maxDuration&minDuration"
+    service: "{{.Service}}"
   output:
-    output_source: "output_source"
-    operation: "operation"
-    processes_diff: "processes"
-    # TBD - 
-    # spans_diff:
-    # errors_diff:
-    # duration_diff: 
-- displayName: Get containers status
-  name: get_containers_status
-  integration: alertmanager
-  function: get_relevant_alerts
+    dependency_map: "dependency_map"
+- displayName: Get relevant alerts
+  name: correlate_ongoing_alerts
+  integration: signal0ne
+  function: correlate_ongoing_alerts
   input:
-    filter: "{{range .AdditionalContext.jaeger_compare_traces}}name={{.processes_diff.processName}},{{end}}"
+    startTimestamp: "{{date .TriggerProperties.timestamp \"-0m\" \"rfc\"}}"
+    dependency_map: "{{index .AdditionalContext.jaeger_get_dependencies 0 \"dependency_map\"}}"
   output:
-    output_source: "output_source"
-    alert: "alert"
-- displayName: Summarize issue content
+    alertId: "alertId"
+    service: "service"
+    state: "state"
+    name: "name"
+    dependency_map: "dependency_map"
+- displayName: Get latest GH action run
+  name: get_latest_gh_action_run
+  integration: github
+  function: inspect_github_actions
+  input:
+    action_name: "Deploy to Remote Server"
+    repo_name: "{{index .AdditionalContext.backstage_get_ownership 0 \"repo_name\"}}"
+    branch_name: "main"
+  output:
+    commitId: "commit"
+    status: "status"
+- displayName: Get code diff
+  name: get_code_diff
+  integration: github
+  function: get_commit_diff
+  input:
+    repo_name: "{{index .AdditionalContext.backstage_get_ownership 0 \"repo_name\"}}"
+    commit: "{{index .AdditionalContext.github_get_latest_gh_action_run 0 \"commitId\"}}"
+  output:
+    diff: "diff"
+- displayName: Summarize whole context
   name: summarize_issue_content
   integration: openai
   function: summarize_context
@@ -90,5 +104,5 @@ steps:
   input:
     slack_channel: "{{range .AdditionalContext.backstage_get_ownership}}{{.slack_channel}},{{end}}"
     parsable_context_object: "{{root}}"
-    additional_message_payload: "{\"service\": \"{{.TriggerProperties.service}}\"}"
+    additional_message_payload: "{\"service\": \"{{.Service}}\"}"
 

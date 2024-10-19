@@ -2,6 +2,9 @@ from slack_bolt import Ack, Respond
 import requests
 from handlers.helpers import get_enriched_alert_by_id
 
+
+IGNORED_FIELDS = ["tags", "dependency_map"]
+
 def handle(ack: Ack, respond: Respond, command):
     ack()
     blocks = []
@@ -16,17 +19,21 @@ def handle(ack: Ack, respond: Respond, command):
     tags = command_params[1:]
     
     try:
-        data = get_enriched_alert_by_id(alert_id)
+        data = get_enriched_alert_by_id(alert_id, tags[0])
         for k,v in dict(data)["additionalContext"].items():
             if not v:
                 continue
             for item in v:
                 if any(tag in list(item["tags"]) for tag in tags):
+                    item_markdown = ""
+                    for k, v in item.items():
+                        if v != None and k not in IGNORED_FIELDS:
+                            item_markdown += f"*{k}:*\n```{v}```\n"
                     blocks.append({
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": f"*{k}:*\n```{item}```"
+                            "text": f"*{k}:*\n{item_markdown}"
                         }
                     })
     except requests.RequestException as e:
@@ -34,8 +41,10 @@ def handle(ack: Ack, respond: Respond, command):
         respond("An error occurred while fetching the alert details. Please try again later.")
 
 
-    
-    respond({
-        "response_type": "in_channel",
-        "blocks": blocks
-    })
+    if not blocks:
+        respond(f"No data found for the following alert[{alert_id}] and tags[{tags}].")
+    else:  
+        respond({
+            "response_type": "in_channel",
+            "blocks": blocks
+        })

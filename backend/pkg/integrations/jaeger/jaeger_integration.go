@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
+	"signal0ne/internal/utils"
 	"signal0ne/pkg/integrations/helpers"
 	"strings"
+	"time"
 )
 
 var functions = map[string]models.WorkflowFunctionDefinition{
@@ -23,6 +25,11 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 		Function:   getPropertiesValues,
 		Input:      GetPropertiesValuesInput{},
 		OutputTags: []string{"logs", "traces"},
+	},
+	"get_dependencies": models.WorkflowFunctionDefinition{
+		Function:   getDependencies,
+		Input:      GetDependenciesInput{},
+		OutputTags: []string{"metadata"},
 	},
 }
 
@@ -105,15 +112,19 @@ type CompareTracesInput struct {
 	Service   string `json:"service"`
 	Operation string `json:"operation"`
 
-	BaseTraceTags      string `json:"baseTraceTags"`
-	ComparedTraceTags  string `json:"comparedTraceTags"`
-	BaseTraceQuery     string `json:"baseTraceQuery"`
-	ComparedTraceQuery string `json:"comparedTraceQuery"`
+	TraceTags  string `json:"traceTags"`
+	TraceQuery string `json:"traceQuery"`
+}
+
+type GetDependenciesInput struct {
+	Service string `json:"service"`
 }
 
 func getPropertiesValues(input any, integration any) ([]any, error) {
 	var parsedInput GetPropertiesValuesInput
 	var output []any
+
+	var finalComparisonField = make([]string, 0)
 
 	err := helpers.ValidateInputParameters(input, &parsedInput, "get_properties_values")
 	if err != nil {
@@ -184,7 +195,16 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 					intermediateSpan["logs"] = append(intermediateSpan["logs"].([]map[string]any), parsedLog)
 				}
 				for _, comparisonField := range comparedFieldParamSpliced {
-					spanWithDesiredValue[comparisonField] = tools.TraverseOutput(intermediateSpan, comparisonField, comparisonField)
+					fieldValuePlaceholder := tools.TraverseOutput(intermediateSpan, comparisonField, comparisonField)
+					if fieldValuePlaceholder != nil || fieldValuePlaceholder != "" {
+						spanWithDesiredValue[comparisonField] = fieldValuePlaceholder
+						if !utils.Contains(finalComparisonField, comparisonField) {
+							finalComparisonField = append(finalComparisonField, comparisonField)
+						}
+					}
+				}
+				if len(spanWithDesiredValue) == 0 {
+					continue
 				}
 				spans = append(spans, spanWithDesiredValue)
 			}
@@ -195,7 +215,7 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 		"command": "get_log_occurrences",
 		"params": map[string]any{
 			"collectedLogs":  spans,
-			"comparedFields": comparedFieldParamSpliced,
+			"comparedFields": finalComparisonField,
 		},
 	}
 
@@ -256,9 +276,9 @@ func getPropertiesValues(input any, integration any) ([]any, error) {
 
 func compareTraces(input any, integration any) ([]any, error) {
 	type Diff struct {
-		Operation string         `json:"operation"`
-		Processes map[string]any `json:"processes"`
-		Spans     map[string]any `json:"spans"`
+		Operation     string `json:"operation"`
+		Spans         string `json:"spans"`
+		DependencyMap string `json:"dependency_map"`
 	}
 	var parsedInput CompareTracesInput
 	var output []any
@@ -293,14 +313,11 @@ func compareTraces(input any, integration any) ([]any, error) {
 	for _, operation := range operations {
 		var diff = Diff{}
 		var traces []any
-		var tracesToCompare []any
 
-		tracesTags := strings.Split(parsedInput.BaseTraceTags, ",")
-		tracesToCompareTags := strings.Split(parsedInput.ComparedTraceTags, ",")
+		tracesTags := strings.Split(parsedInput.TraceTags, ",")
 
-		//BaseTraces
 		for _, tag := range tracesTags {
-			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.BaseTraceQuery, operation, tag)
+			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.TraceQuery, operation, tag)
 
 			finalUrl = fmt.Sprintf("%s%s", url, apiPath)
 
@@ -313,64 +330,75 @@ func compareTraces(input any, integration any) ([]any, error) {
 			}
 		}
 
-		//ComparedTraces
-		for _, tag := range tracesToCompareTags {
-			apiPath = fmt.Sprintf("/api/traces?service=%s%s&operation=%s&limit=1&tags=%s", parsedInput.Service, parsedInput.ComparedTraceQuery, operation, tag)
-
-			finalUrl = fmt.Sprintf("%s%s", url, apiPath)
-
-			tracesToCompare, err = getJaegerObjects(finalUrl)
-			if err != nil {
-				break
-			}
-			if len(tracesToCompare) > 0 {
-				break
-			}
-		}
-
-		if len(traces) == 0 || len(tracesToCompare) == 0 {
+		if len(traces) == 0 {
+			fmt.Printf("No traces found for operation %s\n", operation)
 			continue
 		}
 
-		//Compare processes
 		baseProcesses := traces[0].(map[string]any)["processes"].(map[string]any)
-		comparedProcesses := tracesToCompare[0].(map[string]any)["processes"].(map[string]any)
 
-		baseProcessesSlice := make([]string, 0)
-		comparedProcessesSlice := make([]string, 0)
-
+		pid := 0
+		diff.DependencyMap = fmt.Sprintf("%s\n", parsedInput.Service)
 		for _, process := range baseProcesses {
-			baseProcessesSlice = append(baseProcessesSlice, process.(map[string]any)["serviceName"].(string))
+			spacing := strings.Repeat("-", (pid+1)*2)
+			diff.DependencyMap += fmt.Sprintf("%s%s\n", spacing, process.(map[string]any)["serviceName"].(string))
+			pid++
 		}
 
-		for _, process := range comparedProcesses {
-			comparedProcessesSlice = append(comparedProcessesSlice, process.(map[string]any)["serviceName"].(string))
+		diff.Operation = operation.(string)
+		diff.Spans = "" //TODO: Implement spans comparison
+		translatedMap := map[string]any{
+			"dependency_map": diff.DependencyMap,
+			"operation":      diff.Operation,
+			"output_source":  parsedInput.Service,
 		}
 
-		processesDiffSlice := diffStringSlices(baseProcessesSlice, comparedProcessesSlice)
-		//Compare spans, errors, durations --- TBD
-		if len(processesDiffSlice) > 0 {
-			for _, process := range processesDiffSlice {
-				sign := string(process[0])
-				processName := string(process[1:])
-				diff.Processes = map[string]any{
-					"sign":        sign,
-					"processName": processName,
-				}
-			}
+		output = append(output, translatedMap)
 
-			diff.Operation = operation.(string)
-			translatedMap := map[string]any{
-				"output_source": parsedInput.Service,
-				"processes":     diff.Processes,
-				"operation":     diff.Operation,
-			}
-			output = append(output, translatedMap)
-		}
 	}
 
 	return output, nil
 
+}
+
+func getDependencies(input any, integration any) ([]any, error) {
+	var parsedInput GetDependenciesInput
+	var output []any
+	var dependencyMap = make(map[string]any)
+	var SERVICE_MAP_LOOKBACK = 604800000
+
+	err := helpers.ValidateInputParameters(input, &parsedInput, "get_dependencies")
+	if err != nil {
+		return output, err
+	}
+
+	fmt.Printf("###\nExecuting Jaeger integration function...\n")
+
+	assertedIntegration := integration.(JaegerIntegration)
+
+	url := assertedIntegration.Url
+	currentTimeInMs := time.Now().Unix() * 1000
+	apiPath := fmt.Sprintf("/api/dependencies?endTs=%d&lookback=%d", currentTimeInMs, SERVICE_MAP_LOOKBACK)
+
+	finalUrl := fmt.Sprintf("%s%s", url, apiPath)
+
+	intermediateServiceOuput, err := getJaegerObjects(finalUrl)
+	if err != nil {
+		return output, fmt.Errorf("cannot retrieve service map, %s", err)
+	}
+
+	buildDependencyMap(intermediateServiceOuput, parsedInput.Service, dependencyMap)
+
+	jsonifiedDependencyMap, err := json.Marshal(dependencyMap)
+	if err != nil {
+		return output, fmt.Errorf("cannot parse dependency map")
+	}
+
+	output = append(output, map[string]any{
+		"dependency_map": string(jsonifiedDependencyMap),
+	})
+
+	return output, nil
 }
 
 func getJaegerObjects(url string) ([]any, error) {
@@ -410,35 +438,18 @@ func getJaegerObjects(url string) ([]any, error) {
 	return intermediateTracesOutput, nil
 }
 
-func diffStringSlices(old, new []string) []string {
-	var diff = make([]string, 0)
-	i, j, k := 0, 0, 0
-	for ; i < len(old); i++ {
-		present := false
-		j = 0
-		k = 0
-
-		// Skip if already exists in diff
-		for ; k < len(diff); k++ {
-			if old[i] == string(diff[k][1:]) {
-				present = true
-				break
-			}
-		}
-		if present {
+func buildDependencyMap(servicesData []any, service string, serviceMap map[string]any) {
+	for _, serviceObj := range servicesData {
+		serviceName, ok := serviceObj.(map[string]any)["parent"].(string)
+		if !ok {
 			continue
 		}
-
-		for ; j < len(new); j++ {
-			if old[i] == new[j] {
-				present = true
-				break
+		if serviceName == service {
+			child := serviceObj.(map[string]any)["child"].(string)
+			serviceMap[service] = map[string]any{
+				child: map[string]any{},
 			}
-		}
-		if !present {
-			diff = append(diff, "-"+old[i])
+			buildDependencyMap(servicesData, child, serviceMap[service].(map[string]any))
 		}
 	}
-
-	return diff
 }
