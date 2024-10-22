@@ -1,43 +1,43 @@
-import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
-import { useAuthContext } from '../../hooks/useAuthContext';
-import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { useEffect } from 'react';
+import { useGetAvailableIntegrationsQuery } from '../../hooks/queries/useGetAvailableIntegrationsQuery';
 import AvailableIntegrationsList from '../AvailableIntegrationsList/AvailableIntegrationsList';
 import InstallIntegrationModal from '../InstallIntegrationModal/InstallIntegrationModal';
+import Spinner from '../Spinner/Spinner';
 import './AvailableIntegrationsPanel.scss';
 
-interface FetchInstallableIntegrationsResponse {
-  installableIntegrations: Integration[];
-}
-
 const AvailableIntegrationsPanel = () => {
-  const [availableIntegrations, setAvailableIntegrations] = useState<
-    Integration[]
-  >([]);
-
-  const { namespaceId } = useAuthContext();
+  const { data, isError, isLoading } = useGetAvailableIntegrationsQuery();
 
   useEffect(() => {
-    if (!namespaceId) return;
+    if (isError) toast.error('Cannot load available integrations');
+  }, [isError]);
 
-    const fetchAvailableIntegrations = async () => {
-      const response = await fetch(
-        `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/integration/installable`
+  const getContent = () => {
+    if (isLoading) return <Spinner />;
+
+    if (isError)
+      return (
+        <p className="error-msg">
+          Something went wrong!
+          <span className="error-msg-subtext">Please try again later.</span>
+        </p>
       );
-      const data: FetchInstallableIntegrationsResponse = await response.json();
 
-      setAvailableIntegrations(data.installableIntegrations);
-    };
-
-    fetchAvailableIntegrations();
-  }, [namespaceId]);
+    return (
+      <>
+        <AvailableIntegrationsList
+          availableIntegrations={data?.installableIntegrations ?? []}
+        />
+        <InstallIntegrationModal />
+      </>
+    );
+  };
 
   return (
     <main className="available-integrations-container">
       <h3 className="available-integrations-title">Available Integrations:</h3>
-      <AvailableIntegrationsList
-        availableIntegrations={availableIntegrations}
-      />
-      <InstallIntegrationModal />
+      {getContent()}
     </main>
   );
 };

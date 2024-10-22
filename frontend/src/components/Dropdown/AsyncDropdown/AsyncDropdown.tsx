@@ -1,4 +1,4 @@
-import { ActionMeta, GroupBase, Props as SelectProps } from 'react-select';
+import type { ActionMeta, GroupBase, Props as SelectProps } from 'react-select';
 import AsyncSelect from 'react-select/async';
 import classNames from 'classnames';
 import '../Dropdown.scss';

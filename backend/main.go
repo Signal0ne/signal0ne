@@ -70,9 +70,9 @@ func main() {
 	}
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"*"}
-	corsConfig.AllowHeaders = []string{"*"}
 	corsConfig.AllowCredentials = true
+	corsConfig.AllowHeaders = []string{"Accept", "Authorization", "Content-Type", "Origin", "X-Source"}
+	corsConfig.AllowOrigins = []string{"http://localhost:5173", "http://localhost"}
 
 	server.Use(cors.New(corsConfig))
 

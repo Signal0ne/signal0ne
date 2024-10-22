@@ -7,7 +7,7 @@
   min-width: 320px;
   padding: 24px;
   width: 320px;
-  
+
   //TODO: remove after creating button component
   .install-integration-btn {
     appearance: none;
@@ -28,10 +28,9 @@
     }
   }
 
-  .installed-integrations-title { 
-    font-size: 24px;
+  .installed-integrations-title {
+    font-size: 28px;
     margin: 0;
-    text-align: center;
     text-shadow: 0 3px 4px rgba(0, 0, 0, 0.15);
   }
 }

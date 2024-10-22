@@ -1,5 +1,5 @@
+import type { IWorkflowTrigger } from '../../data/dummyWorkflows';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import { IWorkflowTrigger } from '../../data/dummyWorkflows';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import classNames from 'classnames';
 import './WorkflowStepTrigger.scss';

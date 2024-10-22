@@ -1,4 +1,4 @@
-import { Integration } from '../contexts/IntegrationsProvider/IntegrationsProvider';
+import type { Integration } from '../contexts/IntegrationsProvider/IntegrationsProvider';
 
 export const DUMMY_AVAILABLE_INTEGRATIONS: Integration[] = [
   {

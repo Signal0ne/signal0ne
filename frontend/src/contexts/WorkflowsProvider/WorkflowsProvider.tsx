@@ -1,11 +1,11 @@
-import { createContext, ReactNode, useEffect, useState } from 'react';
-import {
+import type {
   IWorkflowStep,
   IWorkflowTrigger,
   Workflow
 } from '../../data/dummyWorkflows';
+import { createContext, ReactNode, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { useAuthContext } from '../../hooks/useAuthContext';
+import { useGetWorkflowByIdQuery } from '../../hooks/queries/useGetWorkflowByIdQuery';
 import { useParams } from 'react-router-dom';
 
 export interface WorkflowsContextType {
@@ -13,17 +13,10 @@ export interface WorkflowsContextType {
   activeWorkflow: Workflow | null;
   isWorkflowLoading: boolean;
   setActiveStep: (step: IWorkflowStep | IWorkflowTrigger | null) => void;
-  setActiveWorkflow: (workflow: any) => void;
-  setWorkflows: (workflows: Workflow[]) => void;
-  workflows: Workflow[];
 }
 
 interface WorkflowsProviderProps {
   children: ReactNode;
-}
-
-interface WorkflowResponseBody {
-  workflow: Workflow;
 }
 
 export const WorkflowsContext = createContext<WorkflowsContextType | undefined>(
@@ -34,55 +27,32 @@ export const WorkflowsProvider = ({ children }: WorkflowsProviderProps) => {
   const [activeStep, setActiveStep] =
     useState<WorkflowsContextType['activeStep']>(null);
   const [activeWorkflow, setActiveWorkflow] = useState<Workflow | null>(null);
-  const [isWorkflowLoading, setIsWorkflowLoading] = useState(false);
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
 
-  const { namespaceId } = useAuthContext();
   const { workflowId } = useParams<{ workflowId?: string }>();
 
+  const { data, isError, isLoading } = useGetWorkflowByIdQuery(workflowId);
+
   useEffect(() => {
-    if (!namespaceId) return;
+    if (isError) toast.error('Failed to get workflow data');
+  }, [isError]);
 
-    const fetchWorkflow = async () => {
-      try {
-        setIsWorkflowLoading(true);
+  useEffect(() => {
+    if (data?.workflow) setActiveWorkflow(data.workflow);
+  }, [data]);
 
-        const response = await fetch(
-          `${import.meta.env.VITE_SERVER_API_URL}/${namespaceId}/workflow/${workflowId}`
-        );
+  useEffect(() => {
+    if (!workflowId) setActiveWorkflow(null);
+  }, [workflowId]);
 
-        if (!response.ok) throw new Error('Failed to fetch workflow');
-
-        const data: WorkflowResponseBody = await response.json();
-
-        setActiveWorkflow(data.workflow);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error('An unexpected error occurred. Please try again later.');
-        }
-      } finally {
-        setIsWorkflowLoading(false);
-      }
-    };
-
-    if (workflowId) {
-      setActiveWorkflow(null);
-      fetchWorkflow();
-    } else {
-      setActiveWorkflow(null);
-    }
-  }, [namespaceId, workflowId]);
+  useEffect(() => {
+    activeWorkflow && setActiveStep(activeWorkflow?.steps[0]);
+  }, [activeWorkflow]);
 
   const VALUE = {
     activeStep,
     activeWorkflow,
-    isWorkflowLoading,
-    setActiveStep,
-    setActiveWorkflow,
-    setWorkflows,
-    workflows
+    isWorkflowLoading: isLoading,
+    setActiveStep
   };
 
   return (

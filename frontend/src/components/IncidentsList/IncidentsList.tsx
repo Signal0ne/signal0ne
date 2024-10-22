@@ -1,7 +1,6 @@
+import type { Incident } from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { checkDisplayScrollOffset } from '../../utils/utils';
-import { Incident } from '../../contexts/IncidentsProvider/IncidentsProvider';
 import { useEffect, useRef, useState } from 'react';
-import { useIncidentsContext } from '../../hooks/useIncidentsContext';
 import classNames from 'classnames';
 import IncidentsListItem from '../IncidentsListItem/IncidentsListItem';
 import Spinner from '../Spinner/Spinner';
@@ -9,13 +8,17 @@ import './IncidentsList.scss';
 
 interface IncidentsListProps {
   incidentsList: Incident[];
+  isError: boolean;
+  isLoading: boolean;
 }
 
-const IncidentsList = ({ incidentsList }: IncidentsListProps) => {
+const IncidentsList = ({
+  incidentsList,
+  isError,
+  isLoading
+}: IncidentsListProps) => {
   const [shouldDisplayScrollOffset, setShouldDisplayScrollOffset] =
     useState(false);
-
-  const { isIncidentListLoading } = useIncidentsContext();
 
   const incidentsListRef = useRef<HTMLUListElement>(null);
 
@@ -29,6 +32,30 @@ const IncidentsList = ({ incidentsList }: IncidentsListProps) => {
     setShouldDisplayScrollOffset(shouldDisplayOffset);
   }, [incidentsList]);
 
+  const getContent = () => {
+    if (isLoading) return <Spinner />;
+
+    if (isError)
+      return (
+        <p className="incidents-list--empty">
+          Something went wrong!
+          <span className="helpful-msg">Please try again later</span>
+        </p>
+      );
+
+    if (!incidentsList?.length)
+      return (
+        <p className="incidents-list--empty">
+          No incidents found
+          <span className="helpful-msg">Please refine your search</span>
+        </p>
+      );
+
+    return incidentsList.map(incident => (
+      <IncidentsListItem incident={incident} key={incident.id} />
+    ));
+  };
+
   return (
     <ul
       className={classNames('incidents-list', {
@@ -36,19 +63,7 @@ const IncidentsList = ({ incidentsList }: IncidentsListProps) => {
       })}
       ref={incidentsListRef}
     >
-      {isIncidentListLoading ? (
-        <Spinner />
-      ) : incidentsList.length ? (
-        incidentsList.map(incident => (
-          <IncidentsListItem incident={incident} key={incident.id} />
-        ))
-      ) : (
-        <p className="incidents-list--empty">
-          No incidents found
-          <br />
-          <span className="helpful-msg">Please refine your search</span>
-        </p>
-      )}
+      {getContent()}
     </ul>
   );
 };

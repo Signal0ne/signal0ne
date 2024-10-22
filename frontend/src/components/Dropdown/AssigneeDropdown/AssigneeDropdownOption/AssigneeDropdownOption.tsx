@@ -1,5 +1,5 @@
+import type { IncidentAssignee } from '../../../../contexts/IncidentsProvider/IncidentsProvider';
 import { components, GroupBase, OptionProps } from 'react-select';
-import { IncidentAssignee } from '../../../../contexts/IncidentsProvider/IncidentsProvider';
 import './AssigneeDropdownOption.scss';
 
 type AssigneeDropdownOptionProps = OptionProps<

@@ -1,5 +1,5 @@
+import type { Workflow } from '../../data/dummyWorkflows';
 import { handleKeyDown } from '../../utils/utils';
-import { Workflow } from '../../data/dummyWorkflows';
 import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames';
 import './WorkflowsListItem.scss';

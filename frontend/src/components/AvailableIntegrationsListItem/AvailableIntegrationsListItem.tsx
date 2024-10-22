@@ -1,5 +1,5 @@
+import type { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import { Integration } from '../../contexts/IntegrationsProvider/IntegrationsProvider';
 import { useIntegrationsContext } from '../../hooks/useIntegrationsContext';
 import './AvailableIntegrationsListItem.scss';
 

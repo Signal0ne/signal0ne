@@ -1,13 +1,23 @@
 import { AccountIcon, GearIcon, Signal0neLogo } from '../Icons/Icons';
+import { handleKeyDown } from '../../utils/utils';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../data/routes';
 import { useAuthContext } from '../../hooks/useAuthContext';
+import { useState } from 'react';
+import Button from '../Button/Button';
 import './Navbar.scss';
 
 const Navbar = () => {
-  const { currentUser } = useAuthContext();
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
 
-  console.log(currentUser);
+  const { currentUser, logout } = useAuthContext();
+
+  const handleLogout = async () => {
+    await logout();
+    setIsAccountOpen(false);
+  };
+
+  const handleOpenAccount = () => setIsAccountOpen(prev => !prev);
 
   const getNavbarLinks = () =>
     currentUser ? (
@@ -35,7 +45,26 @@ const Navbar = () => {
         </div>
         <div className="navbar-content-actions">
           <GearIcon height={32} tabIndex={0} width={32} />
-          <AccountIcon height={36} tabIndex={0} width={36} />
+          <div className="account-container">
+            <AccountIcon
+              height={36}
+              onClick={handleOpenAccount}
+              onKeyDown={handleKeyDown(handleOpenAccount)}
+              tabIndex={0}
+              width={36}
+            />
+            {isAccountOpen && (
+              <div className="account-content">
+                <span className="account-name">
+                  User: <strong>{currentUser.name}</strong>
+                </span>
+                <hr className="separator" />
+                <Button className="account-logout-btn" onClick={handleLogout}>
+                  Log Out
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </>
     ) : (

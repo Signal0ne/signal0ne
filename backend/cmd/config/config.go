@@ -20,7 +20,6 @@ type Config struct {
 	MongoUri                        string `mapstructure:"MONGO_URI"`
 	Server                          Server `mapstructure:",squash"`
 	SignalOneSecret                 string `mapstructure:"SIGNAL_ONE_SECRET"`
-	SkipAuth                        bool   `mapstructure:"SKIP_AUTH"`
 	WorkflowsExecutionsHistoryLimit int64  `mapstructure:"WORKFLOWS_EXECUTIONS_HISTORY_LIMIT"`
 }
 

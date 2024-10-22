@@ -1,23 +1,24 @@
+import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { ReactNode } from 'react';
 import { useAuthContext } from '../../hooks/useAuthContext';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  isDisabled?: boolean;
   redirectTo?: string;
   unAuthed: boolean;
 }
 
 const ProtectedRoute = ({
   children,
+  isDisabled,
   redirectTo = '/login',
   unAuthed
 }: ProtectedRouteProps) => {
   const { currentUser } = useAuthContext();
 
-  return children;
+  if (isDisabled) return <Navigate to={redirectTo} />;
 
-  //TODO: Uncomment after finishing the authentication logic
   if (unAuthed) return !currentUser ? children : <Navigate to={redirectTo} />;
 
   return currentUser ? children : <Navigate to={redirectTo} />;

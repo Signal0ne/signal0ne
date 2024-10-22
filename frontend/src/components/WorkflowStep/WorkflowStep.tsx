@@ -1,5 +1,5 @@
+import type { IWorkflowStep } from '../../data/dummyWorkflows';
 import { getIntegrationIcon, handleKeyDown } from '../../utils/utils';
-import { IWorkflowStep } from '../../data/dummyWorkflows';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import classNames from 'classnames';
 import './WorkflowStep.scss';

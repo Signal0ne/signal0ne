@@ -1,5 +1,8 @@
+import type {
+  IWorkflowStep,
+  IWorkflowTrigger
+} from '../../data/dummyWorkflows';
 import { getIntegrationIcon } from '../../utils/utils';
-import { IWorkflowStep, IWorkflowTrigger } from '../../data/dummyWorkflows';
 import { useWorkflowsContext } from '../../hooks/useWorkflowsContext';
 import './WorkflowStepDetails.scss';
 
@@ -35,28 +38,30 @@ const WorkflowStepDetails = () => {
           />
         </div>
         {isWebhook && (
-          <div className="workflow-step-details-group condition">
-            <h3 className="workflow-step-details-group-header">Condition</h3>
-            <div className="workflow-step-details-group-content">
-              {activeStep?.webhook.condition && (
-                <div className="workflow-step-group-item">
-                  {activeStep.webhook.condition}
-                </div>
-              )}
+          <>
+            <div className="workflow-step-details-group condition">
+              <h3 className="workflow-step-details-group-header">Condition</h3>
+              <div className="workflow-step-details-group-content">
+                {activeStep?.webhook.condition && (
+                  <div className="workflow-step-group-item">
+                    {activeStep.webhook.condition}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-        {isWebhook && (
-          <div className="workflow-step-details-group condition">
-            <h3 className="workflow-step-details-group-header">Integration</h3>
-            <div className="workflow-step-details-group-content">
-              {activeStep?.webhook.integration && (
-                <div className="workflow-step-group-item">
-                  {activeStep.webhook.integration}
-                </div>
-              )}
+            <div className="workflow-step-details-group integration">
+              <h3 className="workflow-step-details-group-header">
+                Integration
+              </h3>
+              <div className="workflow-step-details-group-content">
+                {activeStep?.webhook.integration && (
+                  <div className="workflow-step-group-item">
+                    {activeStep.webhook.integration}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
         {!isWebhook && (
           <div className="workflow-step-details-group scheduled">
