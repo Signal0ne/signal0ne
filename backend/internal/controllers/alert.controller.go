@@ -81,7 +81,12 @@ func (ac *AlertController) GetAlert(ctx *gin.Context) {
 	// consider to refresh all outputs on GET
 	//---------
 	if commandFilter != "" {
-		_ = ac.SyncCorrelateAlertsFromDiffSources(ctx, alert, commandFilter)
+		err = ac.SyncCorrelateAlertsFromDiffSources(ctx, alert, commandFilter)
+		if err != nil {
+			fmt.Printf("Error syncing alerts: %v", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, alert)

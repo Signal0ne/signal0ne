@@ -42,22 +42,22 @@ var functions = map[string]models.WorkflowFunctionDefinition{
 
 var partialPromptsMap = map[string]string{
 	"code": `
-				Based on the code diff and other potential clues like commit ID, draw some initial conclusions about this particular change and summarize the context for other engineers.
-				You must extract all relevant details and put them in quotes. It must fit in one paragraph.
+				Based on the code diff and other potential clues like commit ID, summarize the information about this particular change and summarize the context for other engineers.
+				You must extract all relevant details and put them in quotes. It must be short enough to fit in one one sentence bullet point.
 				%s: %s`,
 
 	"logs": `
-				Based on the provided logs, draw some initial conclusions about the state of the system and summarize the context for other engineers.
-				You must extract all relevant details and put them in quotes. It must fit in one paragraph.
+				Based on the provided logs, summarize the information about the state of the system and summarize the context for other engineers.
+				You must extract all relevant details and put them in quotes. It must be short enough to fit in one one sentence bullet point.
 				%s: %s`,
 
 	"alerts": `
-				Based on the provided alerts with additional context, draw some initial conclusions about the state of the system and summarize the context for other engineers.
-				You must extract all relevant details like logs, code changes etc. It must fit in one paragraph.
+				Based on the provided alerts with additional context, summarize the information about the state of the system and summarize the context for other engineers.
+				You must extract all relevant details like logs, code changes etc. It must be short enough to fit in one one sentence bullet point.
 				%s: %s`,
 	"metadata": `
-				Based on the provided metadata for additional context, draw some initial conclusions about the architecture of the system and it's dependencies and summarize the context for other engineers.
-				You must extract all relevant details. It must fit in one paragraph.
+				Based on the provided metadata for additional context, summarize the information about the architecture of the system and it's dependencies and summarize the context for other engineers.
+				You must extract all relevant details. It must be short enough to fit in one one sentence bullet point.
 				%s: %s`,
 }
 
@@ -195,8 +195,9 @@ func summarizeContext(input any, integration any) ([]any, error) {
 	}
 
 	var summary = ""
+	var modelOutput []map[string]string
 	for contextKey, contextGroup := range tagContextGroups {
-
+		fmt.Printf("###\nProcessing context group: %s\n", contextKey)
 		jsonifiedContextGroup, err := json.Marshal(contextGroup)
 		if err != nil {
 			return output, fmt.Errorf("error parsing context group: %v", err)
@@ -212,7 +213,13 @@ func summarizeContext(input any, integration any) ([]any, error) {
 			%s: %s`, contextKey, contextKey, jsonifiedContextGroup)
 		}
 
-		prompt := fmt.Sprintf(`You are a principal on-call engineer Based on the infromation that context comes from %s alert full context from the investigation complete this task: %s : 
+		prompt := fmt.Sprintf(`You are a principal on-call engineer Based on the information that context comes from %s alert full context from the investigation complete this task: %s 
+		Your response must be bullet points in JSON with following format:
+			{
+				"topic": "<generated topic1>",
+				"insight": "<generated insight in markdown format1>"
+			}
+		You must always return only latest insight, consider full context as already known insights.
 		Full context: %s`, alertContext.AlertName, partialPrompt, summary)
 
 		summary, err = callOpenAiApi(prompt, model, apiKey)
@@ -220,6 +227,30 @@ func summarizeContext(input any, integration any) ([]any, error) {
 			return output, err
 		}
 
+		var intermediateOutput map[string]string
+		err = json.Unmarshal([]byte(summary), &intermediateOutput)
+		if err != nil {
+			return output, fmt.Errorf("error parsing model output: %v", err)
+		}
+
+		modelOutput = append(modelOutput, intermediateOutput)
+
+	}
+
+	fmt.Printf("###\nOpenAi model output: %s\n", summary)
+
+	summary = ""
+	for _, modelOutputItem := range modelOutput {
+		topic, ok := modelOutputItem["topic"]
+		if !ok {
+			continue
+		}
+		insight, ok := modelOutputItem["insight"]
+		if !ok {
+			continue
+		}
+
+		summary += fmt.Sprintf(" • *%s:*\n%s\n\n", topic, insight)
 	}
 
 	output = append(output, map[string]any{
@@ -236,9 +267,10 @@ func callOpenAiApi(prompt string, model string, apiKey string) (string, error) {
 	}
 
 	type Request struct {
-		Model       string    `json:"model"`
-		Messages    []Message `json:"messages"`
-		Temperature float64   `json:"temperature"`
+		Model          string            `json:"model"`
+		Messages       []Message         `json:"messages"`
+		Temperature    float64           `json:"temperature"`
+		ResponseFormat map[string]string `json:"response_format"`
 	}
 
 	type Response struct {
@@ -261,6 +293,9 @@ func callOpenAiApi(prompt string, model string, apiKey string) (string, error) {
 		Model:       model,
 		Messages:    messages,
 		Temperature: 0.1,
+		ResponseFormat: map[string]string{
+			"type": "json_object",
+		},
 	})
 	if err != nil {
 		return "", err
