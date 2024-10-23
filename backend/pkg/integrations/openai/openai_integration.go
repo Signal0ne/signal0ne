@@ -197,7 +197,6 @@ func summarizeContext(input any, integration any) ([]any, error) {
 	var summary = ""
 	var modelOutput []map[string]string
 	for contextKey, contextGroup := range tagContextGroups {
-		fmt.Printf("###\nProcessing context group: %s\n", contextKey)
 		jsonifiedContextGroup, err := json.Marshal(contextGroup)
 		if err != nil {
 			return output, fmt.Errorf("error parsing context group: %v", err)
@@ -236,8 +235,6 @@ func summarizeContext(input any, integration any) ([]any, error) {
 		modelOutput = append(modelOutput, intermediateOutput)
 
 	}
-
-	fmt.Printf("###\nOpenAi model output: %s\n", summary)
 
 	summary = ""
 	for _, modelOutputItem := range modelOutput {
