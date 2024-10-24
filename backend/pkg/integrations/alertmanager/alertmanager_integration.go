@@ -104,6 +104,7 @@ func (integration AlertmanagerIntegration) Trigger(
 		integration.Inventory.AlertsCollection,
 		bson.M{
 			"startTime": alert.StartTime,
+			"service":   alert.Service,
 		},
 	)
 	if err != nil {

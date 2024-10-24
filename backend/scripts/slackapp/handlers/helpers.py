@@ -13,7 +13,8 @@ NAMESPACE_ID = os.getenv("ORG_NAMESPACE_ID")
 def get_enriched_alert_by_id(alert_id, commandFilter):
     url = f"{BACKEND_URL}/api/{NAMESPACE_ID}/alert/{alert_id}?commandFilter={commandFilter}"
     headers = {
-        "Authorization": f"Bearer {BACKEND_AUTH_TOKEN}"
+        "Authorization": f"Bearer {BACKEND_AUTH_TOKEN}",
+        "X-Source": "integration"
     }
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
@@ -25,7 +26,8 @@ def get_enriched_alert_by_id(alert_id, commandFilter):
 def create_incident(incident_destination: str, alert_ids: list):
     url = f"{BACKEND_URL}/api/{NAMESPACE_ID}/incident"
     headers = {
-        "Authorization": f"Bearer {BACKEND_AUTH_TOKEN}"
+        "Authorization": f"Bearer {BACKEND_AUTH_TOKEN}",
+        "X-Source": "integration"
     }
     data = {
         "integration": incident_destination,

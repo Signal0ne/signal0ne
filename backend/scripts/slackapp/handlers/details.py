@@ -26,16 +26,21 @@ def handle(ack: Ack, respond: Respond, command):
             for item in v:
                 if any(tag in list(item["tags"]) for tag in tags):
                     item_markdown = ""
+
                     for k, v in item.items():
-                        if v != None and k not in IGNORED_FIELDS:
+                        if "copilot" in list(item["tags"]):
+                            item_markdown += f"{v}"
+                        elif v != None and k not in IGNORED_FIELDS:
                             item_markdown += f"*{k}:*\n```{v}```\n"
-                    blocks.append({
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*{k}:*\n{item_markdown}"
-                        }
-                    })
+
+                    if item_markdown != "":
+                        blocks.append({
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*{k}:*\n{item_markdown}"
+                            }
+                        })
     except requests.RequestException as e:
         print(f"An error occurred: {e}")
         respond("An error occurred while fetching the alert details. Please try again later.")
