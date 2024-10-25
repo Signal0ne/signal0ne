@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"signal0ne/cmd/config"
 	"signal0ne/internal/db"
 	"signal0ne/internal/models"
 	"signal0ne/internal/tools"
@@ -154,7 +155,11 @@ func (c *UserAuthController) Login(ctx *gin.Context) {
 }
 
 func (c *UserAuthController) Logout(ctx *gin.Context) {
-	ctx.SetCookie("refreshToken", "", -1, "/", "", true, true)
+	cfg := config.GetInstance()
+	var domain = cfg.Server.ServerDomain
+	var isSecure = cfg.Server.ServerIsSecure
+
+	ctx.SetCookie("refreshToken", "", -1, "/", domain, isSecure, true)
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "success"})
 }
@@ -210,9 +215,13 @@ func (c *UserAuthController) RefreshToken(ctx *gin.Context) {
 }
 
 func setRefreshTokenCookie(ctx *gin.Context, refreshToken string) {
+	cfg := config.GetInstance()
 	const REFRESH_TOKEN_EXPIRATION_TIME = time.Hour * 24
+	var domain = cfg.Server.ServerDomain
+	var isSecure = cfg.Server.ServerIsSecure
 
 	expirationTimeInSeconds := int(REFRESH_TOKEN_EXPIRATION_TIME.Seconds())
 
-	ctx.SetCookie("refreshToken", refreshToken, expirationTimeInSeconds, "/", "", true, true)
+	ctx.SetSameSite(http.SameSiteLaxMode)
+	ctx.SetCookie("refreshToken", refreshToken, expirationTimeInSeconds, "/", domain, isSecure, true)
 }
