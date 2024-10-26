@@ -1,6 +1,7 @@
 ---
 name: Integration request
-about: Suggest integration you would like to use
+about: Suggest integration or new function to existing integration that you would
+  like to use
 title: "[INTEGRATION]"
 labels: enhancement, integration
 assignees: SzymonSt
@@ -8,7 +9,7 @@ assignees: SzymonSt
 ---
 
 Integration Name: [e.g. Sentry]
-[ ] Integration already exists, but new function is needed
+- [ ] Integration already exists, but new function is needed
 Integration URL (only for new integrations): [e.g. https://example-integration-homepage.com]
 
 **How would you like to use this integration within Signal0ne app?**
