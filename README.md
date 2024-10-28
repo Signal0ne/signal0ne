@@ -1,8 +1,8 @@
 # signal0ne
 Incident and alert management tool which plays a role of and additional on-call engineer in the team.
 
-### Click to watch the demo
-[<img src="https://signaloneai.com/online-assets/signal0ne_thumbnail.png" width="50%">](https://www.loom.com/share/b0b67a6750634a89a204122668db1412?sid=86565b92-bf22-4af2-ab20-12e6236b5a85)
+### Click below to watch the demo
+[Demo](https://www.loom.com/share/96b460b8d2ff445eadd6d7cc696ddf22?sid=c41a83f2-f102-419c-8a63-eb45b980e236)
 
 
 > [!WARNING]
